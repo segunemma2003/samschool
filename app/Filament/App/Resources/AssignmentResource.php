@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Filament\App\Resources;
+
+use App\Filament\App\Resources\AssignmentResource\Pages;
+use App\Filament\App\Resources\AssignmentResource\RelationManagers;
+use App\Models\Assignment;
+use App\Models\SchoolClass;
+use App\Models\SchoolSection;
+use App\Models\Subject;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class AssignmentResource extends Resource
+{
+    protected static ?string $model = Assignment::class;
+
+    protected static ?string $navigationGroup = 'Academic';
+
+    protected static ?string $navigationIcon = 'heroicon-o-calendar';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\TextInput::make('title')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextArea::make('description')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\DatePicker::make('deadline')
+                    ->required(),
+                Forms\Components\Select::make('class_id')
+                    ->label('Class Name')
+                    ->options(SchoolClass::all()->pluck('name', 'id'))
+                    ->searchable(),
+
+                Forms\Components\Select::make('section_id')
+                    ->label('Section')
+                    ->options(SchoolSection::all()->pluck('name', 'id'))
+                    ->searchable(),
+                Forms\Components\Select::make('subject_id')
+                    ->label('Subject')
+                    ->options(Subject::all()->pluck('name', 'id'))
+                    ->searchable(),
+                Forms\Components\FileUpload::make('file')
+                    ->disk('cloudinary')
+                        ->required(),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                //
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListAssignments::route('/'),
+            'create' => Pages\CreateAssignment::route('/create'),
+            'view' => Pages\ViewAssignment::route('/{record}'),
+            'edit' => Pages\EditAssignment::route('/{record}/edit'),
+        ];
+    }
+}

@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
@@ -30,12 +31,16 @@ class UserResource extends Resource
                     ->email()
                     ->unique(table: User::class)
                     ->required()
-                    ->maxLength(255),
-                Forms\Components\DateTimePicker::make('email_verified_at'),
+                    ->maxLength(255)
+                    ->disabled(fn(?User $record) => $record !== null),
+
+                // Forms\Components\DateTimePicker::make('email_verified_at'),
                 Forms\Components\TextInput::make('password')
                     ->password()
-                    ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->dehydrateStateUsing(fn($state) => !empty($state) ? Hash::make($state) : null)  // Hash password if provided
+                    ->dehydrated(fn($state) => filled($state))  // Only save the password if it's not empty
+                    ->required(fn(?User $record) => $record === null),
                 Forms\Components\DatePicker::make('date_of_birth'),
                 Forms\Components\Select::make('religion')
                 ->options([
@@ -53,7 +58,7 @@ class UserResource extends Resource
                     ->disk('cloudinary')
                         ->required(),
                 Forms\Components\TextInput::make('username')->unique(table: User::class)
-                    ->maxLength(255)->required(),
+                    ->maxLength(255),
 
                 Forms\Components\Select::make('roles')
                     ->relationship('roles', 'name')

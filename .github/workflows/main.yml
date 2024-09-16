@@ -22,7 +22,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@18.204.90.3 << 'EOF'
             cd /var/www/html/samschool
-            git pull origin main
+            git pull origin main --rebase
             composer update
             php artisan migrate --force
             php artisan config:cache

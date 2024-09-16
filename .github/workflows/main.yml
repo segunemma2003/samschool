@@ -3,28 +3,28 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main  # Trigger this action on pushes to the "main" branch
+      - main # Trigger this action on pushes to the "main" branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install SSH Key
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}  # Add your private SSH key as a secret in the GitHub repository
+      - name: Install SSH Key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }} # Add your private SSH key as a secret in the GitHub repository
 
-    - name: Deploy to EC2
-      run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@<EC2_PUBLIC_IP> << 'EOF'
-        cd /var/www/html/samschool
-        git pull origin main
-        composer install --no-dev
-        php artisan migrate --force
-        php artisan config:cache
-        sudo systemctl restart nginx
-      EOF
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@18.204.90.3 << 'EOF'
+            cd /var/www/html/samschool
+            git pull origin main
+            composer install --no-dev
+            php artisan migrate --force
+            php artisan config:cache
+            sudo systemctl restart nginx
+          EOF

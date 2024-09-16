@@ -1,25 +1,30 @@
-name: Laravel Deployment
+name: Deploy to EC2
+
 on:
- push:
- branches:
- - main
+  push:
+    branches:
+      - main  # Trigger this action on pushes to the "main" branch
+
 jobs:
- deploy:
- runs-on: ubuntu-latest
-steps:
- - name: Checkout repository
- uses: actions/checkout@v2
-- name: Set up PHP
- uses: shivammathur/setup-php@v2
- with:
- php-version: '8.3'
-- name: Install dependencies
- run: composer install - no-dev
-- name: Set up AWS CLI
- uses: aws-actions/configure-aws-credentials@v1
- with:
- aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
- aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
- aws-region: ${{ secrets.AWS_REGION }}
-- name: Deploy to AWS EC2
- run: ssh ${{ secrets.AWS_INSTANCE_IP }} "mkdir -p /var/www/html && cd /var/www/html && git pull && composer install - no-dev"
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install SSH Key
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}  # Add your private SSH key as a secret in the GitHub repository
+
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@<EC2_INSTANCE_PUBLIC_IP> << 'EOF'
+        cd /path/to/your/repository
+        git pull origin main
+        composer install --no-dev
+        php artisan migrate --force
+        php artisan config:cache
+        sudo systemctl restart nginx
+      EOF

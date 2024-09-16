@@ -30,7 +30,7 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('email')
                     ->email()
                     ->unique(table: User::class)
-                    ->required()
+                    ->dehydrated(false)
                     ->maxLength(255)
                     ->disabledOn('edit'),
 

@@ -32,7 +32,7 @@ class UserResource extends Resource
                     ->unique(table: User::class)
                     ->required()
                     ->maxLength(255)
-                    ->disabled(fn(?User $record) => $record !== null),
+                    ->disabledOn('edit'),
 
                 // Forms\Components\DateTimePicker::make('email_verified_at'),
                 Forms\Components\TextInput::make('password')
@@ -47,16 +47,16 @@ class UserResource extends Resource
                     'christianity' => 'Christianity',
                     'muslim' => 'Muslim',
                     'others' => 'Others',
-                ])->required(),
+                ]),
                 Forms\Components\Select::make('gender')
                 ->options([
                     'male' => 'Male',
                     'female' => 'Female',
-                ])->required(),
-                Forms\Components\DatePicker::make('joining_date')->required(),
+                ]),
+                Forms\Components\DatePicker::make('joining_date'),
                 Forms\Components\FileUpload::make('avatar')
                     ->disk('cloudinary')
-                        ->required(),
+                        ,
                 Forms\Components\TextInput::make('username')->unique(table: User::class)
                     ->maxLength(255),
 

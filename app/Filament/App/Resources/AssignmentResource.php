@@ -31,7 +31,7 @@ class AssignmentResource extends Resource
                 Forms\Components\TextInput::make('title')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextArea::make('description')
+                Forms\Components\Textarea::make('description')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\DatePicker::make('deadline')

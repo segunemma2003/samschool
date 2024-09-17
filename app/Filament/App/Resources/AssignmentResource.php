@@ -43,7 +43,7 @@ class AssignmentResource extends Resource
 
                 Forms\Components\Select::make('section_id')
                     ->label('Section')
-                    ->options(SchoolSection::all()->pluck('name', 'id'))
+                    ->options(SchoolSection::all()->pluck('section', 'id'))
                     ->searchable(),
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject')
@@ -59,7 +59,16 @@ class AssignmentResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('title')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('class.name')
+                ->searchable(),
+
+                Tables\Columns\TextColumn::make('section.section')
+                ->searchable(),
+
+                Tables\Columns\TextColumn::make('subject.name')
+                ->searchable(),
             ])
             ->filters([
                 //

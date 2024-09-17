@@ -50,7 +50,10 @@ class ExamCommentResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('exam')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('title')
+                ->searchable(),
             ])
             ->filters([
                 //

@@ -41,7 +41,7 @@ class SchoolSectionResource extends Resource
                 ->required()
                 ->maxLength(255),
             Forms\Components\Select::make('class_id')
-                ->label('Teacher Name')
+                ->label('Class Name')
                 ->options(SchoolClass::all()->pluck('name', 'id'))
                 ->searchable(),
             Forms\Components\Select::make('teacher_id')
@@ -59,7 +59,8 @@ class SchoolSectionResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('section')
+                ->searchable(),
             ])
             ->filters([
                 //

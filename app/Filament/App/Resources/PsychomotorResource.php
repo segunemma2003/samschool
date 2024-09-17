@@ -41,7 +41,8 @@ class PsychomotorResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('skill')
+                ->searchable(),
             ])
             ->filters([
                 //

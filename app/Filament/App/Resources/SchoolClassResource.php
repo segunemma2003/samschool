@@ -52,7 +52,12 @@ class SchoolClassResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('name')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('class_numeric')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('teacher.name')
+                ->searchable(),
             ])
             ->filters([
                 //

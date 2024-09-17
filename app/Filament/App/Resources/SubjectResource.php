@@ -71,7 +71,12 @@ class SubjectResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('name')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('class.name')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('code')
+                ->searchable(),
             ])
             ->filters([
                 //

@@ -9,4 +9,9 @@ class Routine extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+
+
+    public function academy(){
+        return $this->belongsTo(AcademicYear::class,'academic_id');
+    }
 }

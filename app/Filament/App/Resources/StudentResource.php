@@ -84,7 +84,7 @@ class StudentResource extends Resource
                 Forms\Components\TextInput::make('roll')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextArea::make('remarks')
+                Forms\Components\Textarea::make('remarks')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Select::make('class_id')
@@ -118,7 +118,12 @@ class StudentResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('name')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('username')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('email')
+                ->searchable(),
             ])
             ->filters([
                 //

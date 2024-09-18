@@ -60,12 +60,12 @@ class AppPanelProvider extends PanelProvider
                 Authenticate::class,
             ])->plugin(
                 FilamentTenancyAppPlugin::make())->plugins([
-        //             \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
-        // ->allowLocationSettings()
-        // ->allowSiteSettings()
-        // ->allowSocialMenuSettings(),
+                    \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
+        ->allowLocationSettings()
+        ->allowSiteSettings()
+        ->allowSocialMenuSettings(),
                     \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-                    FilamentGeneralSettingsPlugin::make(),
+                    // FilamentGeneralSettingsPlugin::make(),
                     \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
                     \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()

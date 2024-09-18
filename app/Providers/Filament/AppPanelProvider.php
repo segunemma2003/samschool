@@ -65,7 +65,7 @@ class AppPanelProvider extends PanelProvider
         ->allowSiteSettings()
         ->allowSocialMenuSettings(),
                     \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-                    // FilamentGeneralSettingsPlugin::make(),
+                    FilamentGeneralSettingsPlugin::make(),
                     \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
                     \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()

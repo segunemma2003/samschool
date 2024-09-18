@@ -15,6 +15,7 @@
         "laravel/framework": "^11.9",
         "laravel/octane": "^2.5",
         "laravel/tinker": "^2.9",
+        "predis/predis": "^2.2",
         "rickdbcn/filament-email": "^1.6",
         "tomatophp/filament-invoices": "^1.0",
         "tomatophp/filament-media-manager": "^1.1",

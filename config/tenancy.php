@@ -99,7 +99,6 @@ return [
         'disks' => [
             'local',
             'public',
-            'cloudinary'
             // 's3',
         ],
 

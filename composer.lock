@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b894aad233e5337d35827da07d65608e",
+    "content-hash": "b9e30d9cc939ca2b52b68a523c0e6d06",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -5689,6 +5689,67 @@
             "time": "2024-09-07T20:13:05+00:00"
         },
         {
+            "name": "predis/predis",
+            "version": "v2.2.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/predis/predis.git",
+                "reference": "b1d3255ed9ad4d7254f9f9bba386c99f4bb983d1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/predis/predis/zipball/b1d3255ed9ad4d7254f9f9bba386c99f4bb983d1",
+                "reference": "b1d3255ed9ad4d7254f9f9bba386c99f4bb983d1",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2 || ^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.3",
+                "phpstan/phpstan": "^1.9",
+                "phpunit/phpunit": "^8.0 || ~9.4.4"
+            },
+            "suggest": {
+                "ext-relay": "Faster connection with in-memory caching (>=0.6.2)"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Predis\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Till Krüss",
+                    "homepage": "https://till.im",
+                    "role": "Maintainer"
+                }
+            ],
+            "description": "A flexible and feature-complete Redis client for PHP.",
+            "homepage": "http://github.com/predis/predis",
+            "keywords": [
+                "nosql",
+                "predis",
+                "redis"
+            ],
+            "support": {
+                "issues": "https://github.com/predis/predis/issues",
+                "source": "https://github.com/predis/predis/tree/v2.2.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/tillkruss",
+                    "type": "github"
+                }
+            ],
+            "time": "2023-09-13T16:42:03+00:00"
+        },
+        {
             "name": "psr/cache",
             "version": "3.0.0",
             "source": {
@@ -11099,16 +11160,16 @@
         },
         {
             "name": "tomatophp/filament-tenancy",
-            "version": "v1.0.3",
+            "version": "v1.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tomatophp/filament-tenancy.git",
-                "reference": "f6b815b8d391ba442241c4ede866c60f9c84615b"
+                "reference": "370d08c4e7a9852aab1cceb06eb5104acea05f72"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tomatophp/filament-tenancy/zipball/f6b815b8d391ba442241c4ede866c60f9c84615b",
-                "reference": "f6b815b8d391ba442241c4ede866c60f9c84615b",
+                "url": "https://api.github.com/repos/tomatophp/filament-tenancy/zipball/370d08c4e7a9852aab1cceb06eb5104acea05f72",
+                "reference": "370d08c4e7a9852aab1cceb06eb5104acea05f72",
                 "shasum": ""
             },
             "require": {
@@ -11153,7 +11214,7 @@
             ],
             "support": {
                 "issues": "https://github.com/tomatophp/filament-tenancy/issues",
-                "source": "https://github.com/tomatophp/filament-tenancy/tree/v1.0.3"
+                "source": "https://github.com/tomatophp/filament-tenancy/tree/v1.0.4"
             },
             "funding": [
                 {
@@ -11161,7 +11222,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-09-08T11:24:23+00:00"
+            "time": "2024-09-18T09:22:16+00:00"
         },
         {
             "name": "tomatophp/filament-translation-component",

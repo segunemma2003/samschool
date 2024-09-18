@@ -22,6 +22,6 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@18.204.90.3 << 'EOF'
             cd /var/www/html/samschool
-            sudo git pull origin main --rebase
+            sudo git pull origin main
             sudo systemctl restart nginx
           EOF

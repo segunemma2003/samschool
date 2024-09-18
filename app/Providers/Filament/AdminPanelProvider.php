@@ -67,12 +67,12 @@ class AdminPanelProvider extends PanelProvider
             ->allowImpersonate(),
 
         )->plugins([
-        //     \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
-        // ->allowLocationSettings()
-        // ->allowSiteSettings()
-        // ->allowSocialMenuSettings(),
+            \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
+        ->allowLocationSettings()
+        ->allowSiteSettings()
+        ->allowSocialMenuSettings(),
             \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-            FilamentGeneralSettingsPlugin::make(),
+            // FilamentGeneralSettingsPlugin::make(),
             \TomatoPHP\FilamentSubscriptions\FilamentSubscriptionsPlugin::make(),
             \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
             \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),

@@ -20,6 +20,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use TomatoPHP\FilamentTenancy\FilamentTenancyPlugin;
 use App\Plugins\CustomFilamentTenancyPlugin;
+use Filament\Enums\ThemeMode;
 use Joaopaulolndev\FilamentGeneralSettings\FilamentGeneralSettingsPlugin;
 use TomatoPHP\FilamentSubscriptions\FilamentSubscriptionsProvider;
 
@@ -37,6 +38,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+            ->favicon(asset('latest/image/logo-head.png'))
+            ->defaultThemeMode(ThemeMode::Dark)
+            ->brandLogo(asset('latest/image/FSSLOGO1-1.png'))
             ->pages([
                 Pages\Dashboard::class,
                 Billing::class

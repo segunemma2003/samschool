@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources\TeacherResource\Pages;
 
 use App\Filament\App\Resources\TeacherResource;
+use App\Filament\Imports\TeacherImporter;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -14,6 +15,8 @@ class ListTeachers extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+            Actions\ImportAction::make()
+                ->importer(TeacherImporter::class),
         ];
     }
 }

@@ -20,7 +20,7 @@
         "tomatophp/filament-invoices": "^1.0",
         "tomatophp/filament-media-manager": "^1.1",
         "tomatophp/filament-pwa": "^1.0",
-        "tomatophp/filament-settings-hub": "^1.0",
+        "tomatophp/filament-settings-hub": "^1.0.2",
         "tomatophp/filament-subscriptions": "^1.0",
         "tomatophp/filament-tenancy": "^1.0",
         "yoelpc4/laravel-cloudinary": "^5.0"

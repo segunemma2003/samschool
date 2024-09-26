@@ -25,6 +25,7 @@ class StudentGroupResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                 ->label('Group Name')
+                ->unique(table: StudentGroup::class)
                 ->required()
                 ->maxLength(255),
             ]);

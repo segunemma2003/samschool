@@ -13,6 +13,7 @@
         "icetalker/filament-chatgpt-bot": "^1.1",
         "joaopaulolndev/filament-general-settings": "^1.0",
         "laravel/framework": "^11.9",
+        "laravel/horizon": "^5.29",
         "laravel/octane": "^2.5",
         "laravel/tinker": "^2.9",
         "predis/predis": "^2.2",

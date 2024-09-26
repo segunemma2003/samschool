@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources;
 
 use App\Filament\App\Resources\StudentResource\Pages;
 use App\Filament\App\Resources\StudentResource\RelationManagers;
+use App\Models\Guardians;
 use App\Models\SchoolClass;
 use App\Models\SchoolSection;
 use App\Models\Student;
@@ -36,11 +37,12 @@ class StudentResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('email')
-                    ->email()
-                    ->unique(table: Student::class)
-                    ->required()
-                    ->maxLength(255),
+                // Forms\Components\TextInput::make('email')
+                //     ->email()
+                //     ->unique(table: Student::class)
+                //     // ->default()
+                //     ->required()
+                //     ->maxLength(255),
                 Forms\Components\DatePicker::make('date_of_birth')
                     ->required()
                    ,
@@ -93,7 +95,7 @@ class StudentResource extends Resource
                     ->searchable(),
                 Forms\Components\Select::make('guardian_id')
                     ->label('Guardian')
-                    ->options(SchoolClass::all()->pluck('name', 'id'))
+                    ->options(Guardians::all()->pluck('name', 'id'))
                     ->searchable(),
                 Forms\Components\Select::make('section_id')
                     ->label('Section')

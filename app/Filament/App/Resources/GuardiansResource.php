@@ -54,8 +54,8 @@ class GuardiansResource extends Resource
                     ->required()
                     ->maxLength(255),
                 Forms\Components\FileUpload::make('photo')
-                    ->disk('cloudinary')
-                        ->required(),
+                    ->disk('cloudinary'),
+                        // ->required(),
                 Forms\Components\TextInput::make('password')
                     ->password()
                     ->required()

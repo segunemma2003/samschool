@@ -50,7 +50,7 @@ class TeacherResource extends Resource
                 Forms\Components\DatePicker::make('joining_date')->required(),
                 Forms\Components\FileUpload::make('avatar')
                     ->disk('cloudinary')
-                        ->required(),
+                      ,
                 Forms\Components\TextInput::make('address')
                         ->required()
                         ->maxLength(255),

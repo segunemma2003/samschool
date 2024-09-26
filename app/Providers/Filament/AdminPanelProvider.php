@@ -64,9 +64,8 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(CustomFilamentTenancyPlugin::make()->panel('app')
-            ->allowImpersonate(),
-
-        )->plugins([
+            ->allowImpersonate())->plugin(CustomFilamentTenancyPlugin::make()->panel('teacher')
+        ->allowImpersonate())->plugins([
             \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
         ->allowLocationSettings()
         ->allowSiteSettings()

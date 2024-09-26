@@ -27,7 +27,7 @@ class CreateStudent extends CreateRecord
 
 
         $this->getRecord()->update([
-            "email"=>$data['name'].$user->id.'@'.request()->getHost()
+            "email"=>$data['name'] = str_replace(' ', '.', $data['name']).$user->id.'@'.request()->getHost()
         ]);
 
     }

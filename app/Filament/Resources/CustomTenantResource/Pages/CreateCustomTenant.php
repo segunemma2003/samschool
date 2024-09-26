@@ -68,6 +68,8 @@ class CreateCustomTenant extends CreateTenant
                     "email" => $record->email,
                     "password" => $record->password,
                 ]);
+
+
         }
         else {
             DB::connection('dynamic')
@@ -76,6 +78,16 @@ class CreateCustomTenant extends CreateTenant
                     "name" => $record->name,
                     "email" => $record->email,
                     "password" => $record->password,
+                ]);
+
+            DB::connection('dynamic')
+                ->table('general_settings')
+                ->insert([
+
+                    "site_name" => $record->name,
+                    "site_logo" => $record->logo,
+                    "support_phone" => $record->phone,
+                    "support_email"=>$record->email
                 ]);
         }
 

@@ -34,6 +34,9 @@ jobs:
             # Restart Supervisor and all managed processes
             sudo systemctl restart supervisor
 
+            # Start all Supervisor-managed processes again
+            sudo supervisorctl start all
+
             # Restart Nginx to reload the updated application
             sudo systemctl restart nginx
           EOF

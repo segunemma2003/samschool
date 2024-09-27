@@ -23,5 +23,17 @@ jobs:
           ssh -o StrictHostKeyChecking=no ubuntu@18.204.90.3 << 'EOF'
             cd /var/www/html/samschool
             sudo git pull origin main
+            # Stop Supervisor-managed processes (including any loops)
+            sudo supervisorctl stop all
+
+            # Double-check to stop any potentially looping processes (e.g., custom loop-check logic)
+            for pid in $(ps -ef | grep 'your_loop_process' | grep -v grep | awk '{print $2}'); do
+              sudo kill -9 $pid
+            done
+
+            # Restart Supervisor and all managed processes
+            sudo systemctl restart supervisor
+
+            # Restart Nginx to reload the updated application
             sudo systemctl restart nginx
           EOF

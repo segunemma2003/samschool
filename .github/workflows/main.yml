@@ -27,18 +27,6 @@ jobs:
             cd /var/www/html/samschool
             sudo git pull origin main
             # Stop Supervisor-managed processes (including any loops)
-            sudo supervisorctl stop all
-
-            # Double-check to stop any potentially looping processes (e.g., custom loop-check logic)
-            for pid in $(ps -ef | grep 'your_loop_process' | grep -v grep | awk '{print $2}'); do
-              sudo kill -9 $pid
-            done
-
-            # Restart Supervisor and all managed processes
-            sudo systemctl restart supervisor
-
-            # Start all Supervisor-managed processes again
-            sudo supervisorctl start all
 
             # Restart Nginx to reload the updated application
             sudo systemctl restart nginx
@@ -50,4 +38,6 @@ jobs:
             sudo php artisan route:clear
             sudo php artisan config:clear
             sudo php artisan view:clear
+            sudo chmod +x start-queue.sh
+            sudo nohup ./start-queue.sh &
           EOF

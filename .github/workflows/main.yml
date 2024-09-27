@@ -9,6 +9,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      ACTIONS_RUNNER_DEBUG: true
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -20,7 +23,7 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@18.204.90.3 << 'EOF'
+          ssh -tt -o StrictHostKeyChecking=no ubuntu@18.204.90.3 << 'EOF'
             cd /var/www/html/samschool
             sudo git pull origin main
             # Stop Supervisor-managed processes (including any loops)
@@ -39,4 +42,12 @@ jobs:
 
             # Restart Nginx to reload the updated application
             sudo systemctl restart nginx
+
+            sudo php artisan optimize
+            sudo php artisan filament:optimize
+            sudo php artisan optimize:clear
+            sudo php artisan cache:clear
+            sudo php artisan route:clear
+            sudo php artisan config:clear
+            sudo php artisan view:clear
           EOF

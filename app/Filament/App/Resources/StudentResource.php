@@ -43,9 +43,9 @@ class StudentResource extends Resource
                 //     // ->default()
                 //     ->required()
                 //     ->maxLength(255),
-                Forms\Components\DatePicker::make('date_of_birth')
-                    ->required()
-                   ,
+                // Forms\Components\DatePicker::make('date_of_birth')
+                //     ->required()
+                //    ,
                 Forms\Components\Select::make('gender')
                     ->options([
                         'male' => 'Male',
@@ -74,8 +74,8 @@ class StudentResource extends Resource
                 Forms\Components\TextInput::make('country')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('username')->unique(table: Student::class)
-                            ->maxLength(255)->required(),
+                // Forms\Components\TextInput::make('username')->unique(table: Student::class)
+                //             ->maxLength(255)->required(),
                 Forms\Components\TextInput::make('optional_subject')
                             ->required()
                             ->maxLength(255),
@@ -99,7 +99,7 @@ class StudentResource extends Resource
                     ->searchable(),
                 Forms\Components\Select::make('section_id')
                     ->label('Section')
-                    ->options(SchoolSection::all()->pluck('name', 'id'))
+                    ->options(SchoolSection::all()->pluck('section', 'id'))
                     ->searchable(),
                 Forms\Components\Select::make('group_id')
                     ->label('Group')

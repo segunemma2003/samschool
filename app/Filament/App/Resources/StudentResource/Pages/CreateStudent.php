@@ -16,18 +16,22 @@ class CreateStudent extends CreateRecord
     {
         $data = $this->getRecord();
         Log::info($data);
-
+        $mindex = User::max('id')+1;
+        Log::info($mindex);
+        $email = str_replace(' ', '.', $data['name']). $mindex.'@'.request()->getHost();
+        $username = str_replace(' ', '.', $data['name']). $mindex;
         $user = User::create([
             "name"=> $data['name'],
-            "email"=> $data['email'],
+            "email"=>  $email,
             "password"=>Hash::make($data["password"]),
-            "username"=>$data["username"]
+            "username"=> $username
         ]);
 
 
 
         $this->getRecord()->update([
-            "email"=>$data['name'] = str_replace(' ', '.', $data['name']).$user->id.'@'.request()->getHost()
+            "email"=> $email,
+            "username"=> $username
         ]);
 
     }

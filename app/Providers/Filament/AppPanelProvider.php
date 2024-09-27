@@ -32,12 +32,7 @@ class AppPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        // $settings = Setting::where('name', 'site_logo')->first();
-        // $settings =  Setting::where('id', 1)->first();
-        // $logo = filament('filament-tenancy')->panel;
-        // dd($logo);
-        // dd(setting('site_logo'));
-        // dd(tenant_setting('site_logo'));
+
         return $panel
             ->id('app')
             ->path('app')
@@ -50,7 +45,7 @@ class AppPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            // ->brandLogo("https://res.cloudinary.com/iamdevmaniac/client_cat/".$logo)
+            // ->brandLogo("https://res.cloudinary.com/iamdevmaniac/client_cat/".setting('site_logo'))
             // ->favicon()
             // ->brandLogo(fn () =>
             //     Setting::where('name','site_logo')->first()
@@ -59,8 +54,8 @@ class AppPanelProvider extends PanelProvider
             // ->brandLogo(asset('latest/image/FSSLOGO1-1.png'))
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\AccountWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -77,22 +72,16 @@ class AppPanelProvider extends PanelProvider
                 Authenticate::class,
             ])->plugin(
                 FilamentTenancyAppPlugin::make())->plugins([
-        //             \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
-        // ->allowLocationSettings()
-        // ->allowSiteSettings()
-        // ->allowSocialMenuSettings(),
-                    \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(
-
-                    ),
                     FilamentGeneralSettingsPlugin::make(
                         SettingHold::make()
-                        ->order(2)
+                        ->order(1)
                         ->label('Site Settings')
                         ->icon('heroicon-o-globe-alt')
                         ->route('filament.app.pages.site-settings')
                         ->description('Name, Logo, Site Profile')
                         ->group('General'),
-                    ),
+                    )->setIcon('heroicon-o-cog'),
+                    \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
                     \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
                     \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()

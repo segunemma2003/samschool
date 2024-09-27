@@ -17,9 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             InitializeTenancyByDomain::class,
             InitializeTenancyBySubdomain::class,
         ]);
-        $middleware->trustProxies(at:
-        '*'
-     );
+        // $middleware->trustProxies(at:
+        // '*'
+    //  );
 
         //
     })

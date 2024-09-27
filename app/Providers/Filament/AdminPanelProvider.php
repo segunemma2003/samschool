@@ -21,13 +21,15 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use TomatoPHP\FilamentTenancy\FilamentTenancyPlugin;
 use App\Plugins\CustomFilamentTenancyPlugin;
 use Filament\Enums\ThemeMode;
-use Joaopaulolndev\FilamentGeneralSettings\FilamentGeneralSettingsPlugin;
 use TomatoPHP\FilamentSubscriptions\FilamentSubscriptionsProvider;
+use Joaopaulolndev\FilamentGeneralSettings\FilamentGeneralSettingsPlugin;
+
 
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+
         return $panel
             ->default()
             ->id('admin')
@@ -38,17 +40,17 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
-            ->favicon(asset('latest/image/logo-head.png'))
+            // ->favicon(asset('latest/image/logo-head.png'))
             ->defaultThemeMode(ThemeMode::Dark)
-            ->brandLogo(asset('latest/image/FSSLOGO1-1.png'))
+            // ->brandLogo("https://res.cloudinary.com/iamdevmaniac/client_cat/".setting('site_logo'))
             ->pages([
                 Pages\Dashboard::class,
                 Billing::class
             ])->tenantBillingProvider(new FilamentSubscriptionsProvider())
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\AccountWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -64,14 +66,10 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(CustomFilamentTenancyPlugin::make()->panel('app')
-            ->allowImpersonate())->plugin(CustomFilamentTenancyPlugin::make()->panel('teacher')
-        ->allowImpersonate())->plugins([
-            \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
-        ->allowLocationSettings()
-        ->allowSiteSettings()
-        ->allowSocialMenuSettings(),
+            ->allowImpersonate())
+        ->plugins([
+        FilamentGeneralSettingsPlugin::make()->setIcon('heroicon-o-cog'),
             \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-            FilamentGeneralSettingsPlugin::make(),
             \TomatoPHP\FilamentSubscriptions\FilamentSubscriptionsPlugin::make(),
             \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
             \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),

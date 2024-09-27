@@ -20,10 +20,17 @@ Route::middleware([
     'universal',
     \TomatoPHP\FilamentTenancy\FilamentTenancyServiceProvider::TENANCY_IDENTIFICATION,
 ])->group(function () {
+    // dd(tenant('id'));
+
     if(config('filament-tenancy.features.impersonation')) {
         Route::get('/login/url', [\TomatoPHP\FilamentTenancy\Http\Controllers\LoginUrl::class, 'index']);
     }
-
+    // dd(config('filament-tenancy.central_domain'));
+    if (config('filament-tenancy.central_domain') !== request()->getHost()) {
+    Route::get('/', function () {
+        return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
+    });
+}
     // Your Tenant routes here
 
 });

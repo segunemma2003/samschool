@@ -22,7 +22,8 @@ class CreateTeacher extends CreateRecord
             "name"=> $data['name'],
             "email"=> $data['email'],
             "password"=>Hash::make($data["password"]),
-            "username"=>$data["username"]
+            "username"=>$data["username"],
+             "user_type"=>"teacher"
         ]);
 
         // $this->getRecord()->update([

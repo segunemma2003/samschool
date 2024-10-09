@@ -67,6 +67,7 @@ class CreateCustomTenant extends CreateTenant
                     "name" => $record->name,
                     "email" => $record->email,
                     "password" => $record->password,
+                    "user_type"=>"admin"
                 ]);
 
 
@@ -78,6 +79,7 @@ class CreateCustomTenant extends CreateTenant
                     "name" => $record->name,
                     "email" => $record->email,
                     "password" => $record->password,
+                    "user_type"=>"admin"
                 ]);
 
             DB::connection('dynamic')

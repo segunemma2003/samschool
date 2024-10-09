@@ -24,7 +24,8 @@ class CreateStudent extends CreateRecord
             "name"=> $data['name'],
             "email"=>  $email,
             "password"=>Hash::make($data["password"]),
-            "username"=> $username
+            "username"=> $username,
+            "user_type"=>"student"
         ]);
 
 

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Filament\Ourstudent\Pages\ExamFinalSubmissionPage;
+use App\Filament\Ourstudent\Pages\ExamPage;
+use App\Filament\Ourstudent\Pages\ExamReviewPage;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +33,9 @@ Route::middleware([
     Route::get('/', function () {
         return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
     });
+    Route::get('/exam-page', ExamPage::class)->name('exam.page');
+    Route::get('/exam/review', ExamReviewPage::class)->name('exam.review');
+    Route::get('/exam/final-submission', ExamFinalSubmissionPage::class)->name('exam.final_submission');
 }
     // Your Tenant routes here
 

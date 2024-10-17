@@ -25,7 +25,7 @@ class CreateGuardians extends CreateRecord
             "email"=> $data['email'],
             "password"=>Hash::make($data["password"]),
             "username"=>$data["username"],
-             "user_type"=>"guardian"
+             "user_type"=>"parent"
         ]);
 
         // $this->getRecord()->update([

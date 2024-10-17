@@ -46,6 +46,13 @@ class UserResource extends Resource
                 Forms\Components\FileUpload::make('avatar')
                     ->disk('cloudinary')
                         ->required(),
+                Forms\Components\Select::make('user_type')
+                        ->options([
+                            'teacher' => 'teacher',
+                            'student' => 'student',
+                            'parent' => 'parent',
+                            'admin'=>'admin'
+                        ]),
                 Forms\Components\TextInput::make('username')
                     ->maxLength(255),
             ]);

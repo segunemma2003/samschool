@@ -51,6 +51,13 @@ class TeacherResource extends Resource
                 Forms\Components\FileUpload::make('avatar')
                     ->disk('cloudinary')
                       ,
+                Forms\Components\Select::make('user_type')
+                      ->options([
+                          'teacher' => 'teacher',
+                          'student' => 'student',
+                          'parent' => 'parent',
+                          'admin'=>'admin'
+                      ])->default('teacher'),
                 Forms\Components\TextInput::make('address')
                         ->required()
                         ->maxLength(255),

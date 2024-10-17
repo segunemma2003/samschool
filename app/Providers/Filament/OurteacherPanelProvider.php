@@ -24,8 +24,8 @@ class OurteacherPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->id('ourteacher')
-            ->path('ourteacher')
+            ->id('teacher')
+            ->path('teacher')
             ->colors([
                 'primary' => Color::Amber,
             ])

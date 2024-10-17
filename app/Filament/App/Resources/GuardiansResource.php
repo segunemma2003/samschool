@@ -66,6 +66,13 @@ class GuardiansResource extends Resource
                     ->unique(table: Guardians::class)
                     ->required()
                     ->required(),
+                Forms\Components\Select::make('user_type')
+                    ->options([
+                        'teacher' => 'teacher',
+                        'student' => 'student',
+                        'parent' => 'parent',
+                        'admin'=>'admin'
+                    ])->default('parent'),
 
                 Forms\Components\Select::make('roles')
                     ->relationship('roles', 'name')

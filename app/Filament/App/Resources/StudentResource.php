@@ -108,6 +108,13 @@ class StudentResource extends Resource
                 Forms\Components\FileUpload::make('avatar')
                     ->disk('cloudinary')
                         ->required(),
+                Forms\Components\Select::make('user_type')
+                        ->options([
+                            'teacher' => 'teacher',
+                            'student' => 'student',
+                            'parent' => 'parent',
+                            'admin'=>'admin'
+                        ])->default('student'),
                 Forms\Components\Select::make('roles')
                     ->relationship('roles', 'name')
                     ->multiple()

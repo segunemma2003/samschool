@@ -22,6 +22,7 @@
         "laravel/tinker": "^2.9",
         "predis/predis": "^2.2",
         "rickdbcn/filament-email": "^1.6",
+        "sevenspan/laravel-chat": "^1.5",
         "spatie/laravel-google-calendar": "^3.8",
         "tomatophp/filament-invoices": "^1.0",
         "tomatophp/filament-media-manager": "^1.1",

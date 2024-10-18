@@ -20,7 +20,7 @@ class CreateGuardians extends CreateRecord
         $data = $this->getRecord();
         Log::info($data);
 
-        $user = User::create([
+        $user = User::updateOrCreate([
             "name"=> $data['name'],
             "email"=> $data['email'],
             "password"=>Hash::make($data["password"]),

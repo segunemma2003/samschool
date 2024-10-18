@@ -13,6 +13,14 @@ return new class extends Migration
     {
         Schema::create('live_classes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('subject_id')->constrained('subjects')->onDelete('cascade');
+            $table->foreignId('teacher_id')->constrained('teachers')->onDelete('cascade');
+            $table->string('meeting_link')->nullable();
+            $table->string('title');
+            $table->text('description');
+            $table->date('date_of_meeting')->nullable();
+            $table->string('time_of_meeting')->nullable();
+            $table->string('total_attendance')->nullable();
             $table->timestamps();
         });
     }

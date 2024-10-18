@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('take_exams', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('question_id')->constrained('question_banks')->onDelete('cascade');
+            $table->string('status')->default("not_marked");
+            $table->string('approval')->default("true");
+            $table->text('answer');
+            $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->timestamps();
         });
     }

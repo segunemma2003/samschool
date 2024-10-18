@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('salary_templaes', function (Blueprint $table) {
             $table->id();
+            $table->decimal('basic',15,2)->default(0.00);
+            $table->decimal('bonus',15,2)->default(0.00);
+            $table->decimal('total',15,2)->default(0.00);
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('exam_schedules', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('exam_id')->constrained('exams')->onDelete('cascade');
+            $table->date('date_of_exam');
+            $table->string('time_of_exam');
+            $table->string('status')->default("pending");
+            $table->foreignId('teacher_id')->constrained('teachers')->onDelete('cascade');
             $table->timestamps();
         });
     }

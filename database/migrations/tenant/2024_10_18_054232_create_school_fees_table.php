@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('school_fees', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
+            $table->string('total_amount');
+            $table->foreignId('section_id')->constrained('school_sections')->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
+            $table->string('title');
+            $table->string('sub')->nullable();
+            $table->text('text')->nullable();
+            $table->string('file')->nullable();
+            $table->string('link')->nullable();
             $table->timestamps();
         });
     }

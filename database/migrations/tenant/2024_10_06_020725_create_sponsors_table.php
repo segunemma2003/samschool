@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('sponsors', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('amount')->nullable();
+            $table->string('purpose')->nullable();
+            $table->string('title')->nullable();
+            $table->string('date_time')->nullable();
+            $table->foreignId('teacher_id')->constrained('teachers')->onDelete('cascade');
             $table->timestamps();
         });
     }

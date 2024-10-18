@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('instructions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('exam_id')->constrained('exams')->onDelete('cascade');
+            $table->text('instructions');
+            $table->string('duration')->nullable();
             $table->timestamps();
         });
     }

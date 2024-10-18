@@ -13,6 +13,18 @@ return new class extends Migration
     {
         Schema::create('results', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
+            $table->foreignId('subject_id')->constrained('subjects')->onDelete('cascade');
+            $table->decimal('ca_one',3,2)->default(0.0);
+            $table->decimal('assignment_score',3,2)->default(0.0);
+            $table->decimal('ca_two',3,2)->default(0.0);
+            $table->decimal('ca_three',3,2)->default(0.0);
+            $table->decimal('exam',3,2)->default(0.0);
+            $table->decimal('total',3,2)->default(0.0);
+            $table->decimal('cummulative_score',3,2)->default(0.0);
+            $table->decimal('avg',3,2)->default(0.0);
+            $table->text('comment');
+            $table->foreignId('teacher_id')->constrained('teachers')->onDelete('cascade');
             $table->timestamps();
         });
     }

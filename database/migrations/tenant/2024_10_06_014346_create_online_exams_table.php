@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('online_exams', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
+            $table->foreignId('subject_id')->constrained('subjects')->onDelete('cascade');
+            $table->foreignId('exam_id')->constrained('exams')->onDelete('cascade');
+            $table->decimal('score',3,2)->default(0.0);
+            $table->string('date')->nullable();
+            $table->string('time')->nullable();
+            $table->string('camera_link')->nullable();
             $table->timestamps();
         });
     }

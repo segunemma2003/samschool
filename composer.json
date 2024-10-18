@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.2",
         "amidesfahani/filament-tinyeditor": "^2.0",
+        "aymanalhattami/filament-page-with-sidebar": "^2.5",
         "bezhansalleh/filament-shield": "^3.2",
         "daothanh/tinymce": "^1.0",
         "ercogx/filament-openai-assistant": "^1.0",

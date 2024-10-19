@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,7 +26,7 @@ class AnnouncementResource extends Resource
     {
         return $form
             ->schema([
-                //
+
             ]);
     }
 
@@ -41,6 +42,7 @@ class AnnouncementResource extends Resource
             ->columns([
                 // TextColumn::make('type_of_user_sent_to'),
                 TextColumn::make('owner.name')->label("Sender"),
+                // ImageColumn::make('file')->disk('cloudinary'),
                 TextColumn::make('title')->searchable()
                 ->description(fn (Announcement $record): string => $record->sub)->searchable(),
                 TextColumn::make('created_at')
@@ -51,6 +53,7 @@ class AnnouncementResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -72,6 +75,7 @@ class AnnouncementResource extends Resource
             'index' => Pages\ListAnnouncements::route('/'),
             'create' => Pages\CreateAnnouncement::route('/create'),
             'edit' => Pages\EditAnnouncement::route('/{record}/edit'),
+            'view' => Pages\Announcement::route('/{record}')
         ];
     }
 }

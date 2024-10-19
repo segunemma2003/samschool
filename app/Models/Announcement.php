@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Announcement extends Model
 {
     use HasFactory;
+    protected $guarded = ['id'];
+
+    public function owner(){
+        return $this->belongsTo(User::class, 'from_id');
+    }
 }

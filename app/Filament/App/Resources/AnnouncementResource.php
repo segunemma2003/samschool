@@ -1,11 +1,16 @@
 <?php
 
-namespace App\Filament\Teacher\Resources;
+namespace App\Filament\App\Resources;
 
-use App\Filament\Teacher\Resources\AnnouncementResource\Pages;
-use App\Filament\Teacher\Resources\AnnouncementResource\RelationManagers;
+use App\Filament\App\Resources\AnnouncementResource\Pages;
+use App\Filament\App\Resources\AnnouncementResource\RelationManagers;
 use App\Models\Announcement;
+use Daothanh\Tinymce\Forms\Components\TinymceField;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -13,7 +18,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class AnnouncementResource extends Resource
 {
@@ -23,24 +27,37 @@ class AnnouncementResource extends Resource
 
     public static function form(Form $form): Form
     {
+        // from_id
         return $form
             ->schema([
-                //
+                Select::make('type_of_user_sent_to')
+                ->label('Message for')
+                ->required()
+                ->options([
+                    'all' => 'All',
+                    'student' => 'Student',
+                    'parent' => 'Parent',
+                    'teacher' => 'Teacher',
+                ]),
+                TextInput::make('title'),
+                TextInput::make('sub')->label('Short Description')->minLength(2)
+                ->maxLength(255)->required(),
+                FileUpload::make('file')
+    ->disk('cloudinary'),
+                TextInput::make('link')->url()
+                ->suffixIcon('heroicon-m-globe-alt'),
+                RichEditor::make('text')
+                ->fileAttachmentsDisk('cloudinary')->columnSpanFull()
             ]);
+
     }
 
     public static function table(Table $table): Table
     {
         return $table
-        ->modifyQueryUsing(function (Builder $query) {
-            $userId = Auth::user()->id;
-            $query->where('type_of_user_sent_to', "teacher")
-            ->orWhere('from_id', $userId)
-            ->orWhere('type_of_user_sent_to', "all");
-        })
             ->columns([
-                // TextColumn::make('type_of_user_sent_to'),
-                TextColumn::make('owner.name')->label("Sender"),
+                TextColumn::make('type_of_user_sent_to'),
+                TextColumn::make('owner.name'),
                 TextColumn::make('title')->searchable()
                 ->description(fn (Announcement $record): string => $record->sub)->searchable(),
                 TextColumn::make('created_at')
@@ -50,6 +67,7 @@ class AnnouncementResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -71,6 +89,7 @@ class AnnouncementResource extends Resource
         return [
             'index' => Pages\ListAnnouncements::route('/'),
             'create' => Pages\CreateAnnouncement::route('/create'),
+            'view' => Pages\ViewAnnouncement::route('/{record}'),
             'edit' => Pages\EditAnnouncement::route('/{record}/edit'),
         ];
     }

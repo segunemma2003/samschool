@@ -9,15 +9,17 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class AnnouncementResource extends Resource
 {
     protected static ?string $model = Announcement::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
     public static function form(Form $form): Form
     {
@@ -30,19 +32,29 @@ class AnnouncementResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->modifyQueryUsing(function (Builder $query) {
+            $userId = Auth::user()->id;
+            $query->where('type_of_user_sent_to', "parent")
+            ->orWhere('from_id', $userId)
+            ->orWhere('type_of_user_sent_to', "all");
+        })
             ->columns([
-                //
+                TextColumn::make('owner.name'),
+                TextColumn::make('title')->searchable()
+                ->description(fn (Announcement $record): string => $record->sub)->searchable(),
+                TextColumn::make('created_at')
+    ->since()
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Tables\Actions\BulkActionGroup::make([
+                //     Tables\Actions\DeleteBulkAction::make(),
+                // ]),
             ]);
     }
 

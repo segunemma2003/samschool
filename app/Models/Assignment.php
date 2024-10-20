@@ -25,4 +25,21 @@ class Assignment extends Model
     {
         return $this->belongsTo(Subject::class, 'subject_id'); // Assuming your class model is SchoolClass
     }
+
+    public function students()
+    {
+        return $this->belongsToMany(Student::class, 'assignment_student')
+                    ->withPivot('file', 'status', 'total_score', 'answer', 'comments_score')
+                    ->withTimestamps();
+    }
+    public function getTotalStudentsAnsweredAttribute()
+    {
+        return $this->students()->wherePivot('status', 'submitted')->count();
+    }
+
+    public function answeredStudents()
+    {
+        return $this->students()->wherePivot('status', 'submitted');
+    }
+
 }

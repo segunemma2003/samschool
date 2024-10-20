@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Filament\Ourstudent\Pages\ExamFinalSubmissionPage;
 use App\Filament\Ourstudent\Pages\ExamPage;
 use App\Filament\Ourstudent\Pages\ExamReviewPage;
+use App\Filament\Teacher\Pages\AssignmentStudentView;
+use App\Filament\Teacher\Pages\SubmittedStudentsList;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -36,6 +38,8 @@ Route::middleware([
     Route::get('/exam-page', ExamPage::class)->name('exam.page');
     Route::get('/exam/review', ExamReviewPage::class)->name('exam.review');
     Route::get('/exam/final-submission', ExamFinalSubmissionPage::class)->name('exam.final_submission');
+    Route::get('/submitted-students/{assignment}', SubmittedStudentsList::class)->name('filament.pages.submitted-students-list');
+    Route::get('/assignment/{assignment}/student/{student}', AssignmentStudentView::class)->name('filament.pages.assignment-student-view');
 }
     // Your Tenant routes here
 

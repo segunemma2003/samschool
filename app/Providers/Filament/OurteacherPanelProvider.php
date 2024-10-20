@@ -35,6 +35,7 @@ class OurteacherPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Ourteacher/Widgets'), for: 'App\\Filament\\Ourteacher\\Widgets')
+            ->discoverClusters(in: app_path('Filament/Ourteacher/Clusters'), for: 'App\\Filament\\Ourteacher\\Clusters')
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,

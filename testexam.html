@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Choice Question Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex justify-center items-center h-screen">
+  <!-- Main Container -->
+  <div id="main-container" class="w-full max-w-4xl mx-auto p-4 bg-white shadow-lg rounded-lg relative">
+
+    <!-- Header Section -->
+    <div class="flex justify-between items-center p-4 border-b-2 border-gray-200">
+      <!-- User Info on Left -->
+      <div class="space-y-2">
+        <h2 class="text-xl font-bold text-gray-800">User: John Doe</h2>
+        <p class="text-sm text-gray-600">Subject: Mathematics</p>
+        <p class="text-sm text-gray-600">Quiz Details</p>
+        <p class="text-sm text-gray-600">Duration: <span id="timer" class="font-bold">29:59</span></p>
+      </div>
+      <!-- Camera Feed -->
+      <div class="w-24 h-24 bg-gray-300 rounded-lg overflow-hidden shadow-inner relative">
+        <video id="camera" class="w-full h-full object-cover" autoplay muted></video>
+      </div>
+    </div>
+
+    <!-- Question Section -->
+    <div id="question-section" class="p-6">
+      <div class="bg-blue-50 p-6 rounded-lg shadow-lg space-y-6">
+        <h3 id="question-text" class="text-lg font-semibold text-gray-800">Loading question...</h3>
+
+        <!-- Options Container -->
+        <div id="options-container" class="space-y-2"></div>
+
+        <!-- Navigation Buttons and Timer -->
+        <div class="flex justify-between items-center mt-6">
+          <button id="prev-btn" class="px-4 py-2 bg-gray-200 text-gray-600 font-semibold rounded-lg shadow hover:bg-gray-300 transition" onclick="prevQuestion()" disabled>
+            Previous
+          </button>
+          <button id="next-btn" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow hover:bg-blue-600 transition" onclick="nextOrSubmit()">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmation-modal" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 hidden">
+    <div class="bg-white p-6 rounded-lg w-1/3 space-y-4 shadow-lg">
+      <h2 class="text-xl font-bold">Are you sure you want to submit?</h2>
+      <div class="flex justify-end space-x-4">
+        <button onclick="closeConfirmationModal()" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300">Cancel</button>
+        <button onclick="endExam()" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    const questions = [
+      { text: "What is the capital of France?", options: ["A. Berlin", "B. Paris", "C. Madrid", "D. Rome"], type: "multichoice", answered: false },
+      { text: "The Earth is flat. True or False?", options: ["True", "False"], type: "truefalse", answered: false },
+      { text: "Explain the process of photosynthesis.", options: [], type: "open", answered: false }
+    ];
+
+    let currentQuestionIndex = 0;
+    let timerMinutes = 29;
+    let timerSeconds = 59;
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const confirmationModal = document.getElementById('confirmation-modal');
+
+    function loadQuestion(index) {
+      currentQuestionIndex = index;
+      const question = questions[index];
+      questionText.textContent = `Question ${index + 1}: ${question.text}`;
+      optionsContainer.innerHTML = '';
+
+      if (question.type === 'multichoice' || question.type === 'truefalse') {
+        question.options.forEach(option => {
+          const optionLabel = document.createElement('label');
+          optionLabel.classList.add('block', 'bg-white', 'p-3', 'rounded-lg', 'shadow-md');
+          optionLabel.innerHTML = `<input type="radio" name="question${index}" class="mr-2" onchange="markAnswered(${index})"> ${option}`;
+          optionsContainer.appendChild(optionLabel);
+        });
+      } else if (question.type === 'open') {
+        const openAnswer = document.createElement('textarea');
+        openAnswer.classList.add('w-full', 'p-3', 'rounded-lg', 'shadow-md');
+        openAnswer.placeholder = "Type your answer here...";
+        openAnswer.addEventListener("input", () => markAnswered(index));
+        optionsContainer.appendChild(openAnswer);
+      }
+
+      prevBtn.disabled = index === 0;
+      nextBtn.textContent = index === questions.length - 1 ? 'Review' : 'Next';
+    }
+
+    function markAnswered(index) {
+      questions[index].answered = true;
+    }
+
+    function prevQuestion() {
+      if (currentQuestionIndex > 0) {
+        loadQuestion(currentQuestionIndex - 1);
+      }
+    }
+
+    function nextOrSubmit() {
+      if (currentQuestionIndex === questions.length - 1) {
+        showReviewPage();
+      } else {
+        loadQuestion(currentQuestionIndex + 1);
+      }
+    }
+
+    function showReviewPage() {
+      let reviewPageHtml = `
+        <div class="p-6 bg-white rounded-lg shadow-lg space-y-4">
+          <h2 class="text-xl font-bold">Review Your Answers</h2>
+          <ul class="space-y-2">`;
+
+      questions.forEach((question, index) => {
+        reviewPageHtml += `
+          <li>
+            <a href="#" class="font-semibold ${question.answered ? 'text-green-500' : 'text-gray-500'}" onclick="loadQuestion(${index}); return false;">
+              Question ${index + 1}: ${question.text} - ${question.answered ? '✔ Answered' : '✖ Unanswered'}
+            </a>
+          </li>`;
+      });
+
+      reviewPageHtml += `
+          </ul>
+          <button onclick="showConfirmationModal()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600">Submit</button>
+        </div>`;
+
+      document.getElementById('main-container').innerHTML = reviewPageHtml;
+    }
+
+    function showConfirmationModal() {
+      confirmationModal.classList.remove('hidden');
+    }
+
+    function closeConfirmationModal() {
+      confirmationModal.classList.add('hidden');
+    }
+
+    function endExam() {
+      clearInterval(timerInterval);
+      const stream = document.getElementById('camera').srcObject;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      window.location.href = '/exam-submission-confirmation';
+    }
+
+    const timerDisplay = document.getElementById('timer');
+    const timerInterval = setInterval(() => {
+      if (timerSeconds === 0) {
+        if (timerMinutes === 0) {
+          clearInterval(timerInterval);
+          alert('Time is up!');
+          endExam();
+        } else {
+          timerMinutes--;
+          timerSeconds = 59;
+        }
+      } else {
+        timerSeconds--;
+      }
+      timerDisplay.textContent = `${timerMinutes.toString().padStart(2, '0')}:${timerSeconds.toString().padStart(2, '0')}`;
+    }, 1000);
+
+    const videoElement = document.getElementById('camera');
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoElement.srcObject = stream;
+      } catch (error) {
+        console.error("Error accessing camera:", error);
+      }
+    }
+    startCamera();
+
+    loadQuestion(0);
+  </script>
+</body>
+</html>

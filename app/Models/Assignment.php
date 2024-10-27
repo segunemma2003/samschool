@@ -29,7 +29,7 @@ class Assignment extends Model
     public function students()
     {
         return $this->belongsToMany(Student::class, 'assignment_student')
-                    ->withPivot('file', 'status', 'total_score', 'answer', 'comments_score')
+                    ->withPivot('file', 'status', 'total_score', 'answer', 'comments_score', 'updated_at')
                     ->withTimestamps();
     }
     public function getTotalStudentsAnsweredAttribute()

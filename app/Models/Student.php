@@ -10,4 +10,9 @@ class Student extends Model
 {
     use HasFactory, HasRoles;
     protected $guarded = ['id'];
+
+    public function class()
+    {
+        return $this->belongsTo(SchoolClass::class, 'class_id');
+    }
 }

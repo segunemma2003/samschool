@@ -6,6 +6,7 @@ namespace App\Filament\Teacher\Resources;
 use App\Filament\Teacher\Clusters\Assignment as TeacherClustersAssignment;
 use App\Filament\Teacher\Pages\SubmittedStudentsList;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages;
+use App\Filament\Teacher\Resources\AssignmentResource\Pages\SubmittedStudents;
 use App\Filament\Teacher\Resources\AssignmentResource\RelationManagers;
 use App\Models\Assignment;
 use App\Models\SchoolClass;
@@ -90,13 +91,16 @@ class AssignmentResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Action::make('view')->Label('view submissions')
-                ->url(fn ($record): string => route('filament.pages.submitted-students-list', ['assignment'=>$record]))
+                Tables\Actions\ViewAction::make()
+                // Action::make('view')->Label('view submissions')
+                // ->url(fn ($record): string => route('filament.pages.submitted-students-list', ['assignment'=>$record]))
+
 
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ViewAction::make()
                 ]),
             ]);
     }
@@ -114,7 +118,7 @@ class AssignmentResource extends Resource
             'index' => Pages\ListAssignments::route('/'),
             'create' => Pages\CreateAssignment::route('/create'),
             'edit' => Pages\EditAssignment::route('/{record}/edit'),
-            // 'view_students'=> SubmittedStudentsList::getUrl(panel: "teacher")
+            'view'=> SubmittedStudents::route('/{record}/assignments')
         ];
     }
 }

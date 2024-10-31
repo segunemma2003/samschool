@@ -15,4 +15,14 @@ class Exam extends Model
     {
         return $this->belongsTo(Subject::class, 'subject_id');
     }
+
+    public function academic()
+    {
+        return $this->belongsTo(AcademicYear::class, 'academic_year_id');
+    }
+
+    public function section()
+    {
+        return $this->belongsTo(SchoolSection::class, 'school_section_id');
+    }
 }

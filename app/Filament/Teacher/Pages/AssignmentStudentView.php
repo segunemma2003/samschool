@@ -10,5 +10,10 @@ class AssignmentStudentView extends Page
 
     protected static string $view = 'filament.teacher.pages.assignment-student-view';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
 
 }

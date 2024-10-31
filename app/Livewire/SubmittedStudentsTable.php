@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignment;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
 use App\Models\Assignment;
 use Filament\Actions\Action;
@@ -19,6 +20,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Filament\Tables;
 
 class SubmittedStudentsTable extends Component implements HasTable, HasForms, HasActions
 {
@@ -62,10 +64,16 @@ class SubmittedStudentsTable extends Component implements HasTable, HasForms, Ha
                 // ...
             ])
             ->actions([
-                ViewAction::make('view')->url(fn($record) => route('filament.pages.assignment-student-view', [
+
+                // ViewAction::make(),
+                Tables\Actions\Action::make('view')->url(function($record) {
+                    return route('filament.teacher.pages.view-submitted-assignment-teacher', [
                     'assignment' => $this->assignment,
                     'student' => $record,
-                ])),
+                ]);
+
+    })
+
             ])
             ->bulkActions([
                 // ...
@@ -73,62 +81,14 @@ class SubmittedStudentsTable extends Component implements HasTable, HasForms, Ha
     }
 
 
-
-    // public function viewAction(): Action
-    // {
-    //     return Action::make('view')
-    //         ->requiresConfirmation()
-    //         ->action(fn () => $this->post->delete());
-    // }
-
-
-    public function assignmentInfolist(Infolist $infolist): Infolist
+    public static function getPages(): array
     {
-        return $infolist
-            ->record($this->assignment)
-            ->schema([
-                Grid::make(2)
-    ->schema([
-        TextEntry::make('title'),
-
-                TextEntry::make('deadline')->dateTime(),
-                TextEntry::make('file')
-                ->label('Download File')
-                ->formatStateUsing(function ($state) {
-                    if ($state) {
-                        // Generate the download URL
-                        $fileUrl = Storage::disk('cloudinary')->url($state);
-
-                        // Return HTML for download icon and link
-                        return sprintf(
-                            '<a href="%s" target="_blank" download class="flex items-center space-x-1 text-blue-500 hover:underline">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v4h16v-4m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                </svg>
-                                <span>Download File</span>
-                            </a>',
-                            $fileUrl
-                        );
-                    }
-                    return 'No file available';
-                })
-                ->html(),
-
-
-            ]),
-    TextEntry::make('description')->html(),
-
-
-
-            ]);
+        return [
+            'view'=> ViewSubmittedAssignment::route('/{record}')
+        ];
     }
 
-    // public static function getPages(): array
-    // {
-    //     return [
-    //         'view' => ViewSubmittedAssignmentTeacher::route('/{record}'),
-    //     ];
-    // }
+
 
     public function render()
     {

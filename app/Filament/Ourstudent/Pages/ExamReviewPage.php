@@ -15,4 +15,10 @@ class ExamReviewPage extends Page
     {
         Filament::getPanel()->navigation(false);
     }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
 }
+

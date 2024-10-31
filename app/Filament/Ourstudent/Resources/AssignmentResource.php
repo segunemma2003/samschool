@@ -33,6 +33,8 @@ class AssignmentResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $user = User::find(Auth::id());
+$student = Student::whereEmail($user->email)->first();
         return $table
             ->modifyQueryUsing(function (Builder $query) {
                 $userId = Auth::id(); // Simplified way to get the authenticated user ID
@@ -54,6 +56,32 @@ class AssignmentResource extends Resource
                 TextColumn::make('class.name'),
                 TextColumn::make('section.section'),
                 TextColumn::make('deadline'),
+                TextColumn::make('student_status')
+                ->label('Total Score')
+                ->formatStateUsing(function ($record) use ($student) {
+                    $pivots = $record->students()->find($student->id);
+                    $pivot = $pivots->pivot ?? null;
+
+                    if (!$pivot) {
+                        return 'Not Answered';
+                    }
+
+                    return is_null($pivot->comments_score)
+                        ? ($pivot->status === 'draft' ? 'Draft' : 'Awaiting Score')
+                        : 'Marked';
+                })
+                ->sortable(),
+
+            TextColumn::make('score_only')
+                ->label('Score')
+                ->formatStateUsing(function ($record) use ($student) {
+                    $pivot = $record->students()->find($student->id)?->pivot ?? null;
+
+                    return $pivot && !is_null($pivot->comments_score)
+                        ? $pivot->total_score
+                        : '-';
+                }),
+
                 TextColumn::make('created_at')->since()
             ])
             ->filters([

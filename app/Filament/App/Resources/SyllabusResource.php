@@ -5,11 +5,14 @@ namespace App\Filament\App\Resources;
 use App\Filament\App\Resources\SyllabusResource\Pages;
 use App\Filament\App\Resources\SyllabusResource\RelationManagers;
 use App\Models\SchoolClass;
+use App\Models\Subject;
 use App\Models\Syllabus;
 use Filament\Forms;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -33,15 +36,22 @@ class SyllabusResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Textarea::make('description')
-                    ->label('Description')
-                    ->required(),
+
                 Forms\Components\Select::make('class_id')
-                    ->label('Teacher Name')
+                    ->label('Class Name')
                     ->options(SchoolClass::all()->pluck('name', 'id'))
+                    ->searchable(),
+
+                Forms\Components\Select::make('subject_id')
+                    ->label('Subject Name')
+                    ->options(Subject::all()->pluck('name', 'id'))
                     ->searchable(),
                 Forms\Components\FileUpload::make('file')
                     ->disk('cloudinary')
+                        ->required(),
+                RichEditor::make('description')
+                        ->label('Description')
+                        ->columnSpanFull()
                         ->required(),
             ]);
     }
@@ -52,8 +62,8 @@ class SyllabusResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),
-                Tables\Columns\TextColumn::make('description')
-                ->searchable(),
+                TextColumn::make('subject.name')->searchable(),
+                TextColumn::make('class.name')->searchable()
             ])
             ->filters([
                 //

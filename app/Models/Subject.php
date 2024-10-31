@@ -15,4 +15,6 @@ class Subject extends Model
     {
         return $this->belongsTo(SchoolClass::class, 'class_id');
     }
+
+
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\LectureResource\Pages;
+use App\Filament\Teacher\Resources\LectureResource\Pages\ViewLectures;
 use App\Filament\Teacher\Resources\LectureResource\RelationManagers;
 use App\Models\Lecture;
 use App\Models\Subject;
@@ -113,6 +114,7 @@ class LectureResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -134,6 +136,7 @@ class LectureResource extends Resource
             'index' => Pages\ListLectures::route('/'),
             'create' => Pages\CreateLecture::route('/create'),
             'edit' => Pages\EditLecture::route('/{record}/edit'),
+            'view' => ViewLectures::route('/{record}')
         ];
     }
 }

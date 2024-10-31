@@ -3,12 +3,17 @@
 namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\SyllabusResource\Pages;
+use App\Filament\Teacher\Resources\SyllabusResource\Pages\ViewSyllabus;
 use App\Filament\Teacher\Resources\SyllabusResource\RelationManagers;
+use App\Models\SchoolClass;
+use App\Models\Subject;
 use App\Models\Syllabus;
 use Filament\Forms;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -23,7 +28,26 @@ class SyllabusResource extends Resource
     {
         return $form
             ->schema([
-                //
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\Select::make('class_id')
+                    ->label('Class Name')
+                    ->options(SchoolClass::all()->pluck('name', 'id'))
+                    ->searchable(),
+
+                Forms\Components\Select::make('subject_id')
+                    ->label('Subject Name')
+                    ->options(Subject::all()->pluck('name', 'id'))
+                    ->searchable(),
+                Forms\Components\FileUpload::make('file')
+                    ->disk('cloudinary')
+                        ->required(),
+                RichEditor::make('description')
+                        ->label('Description')
+                        ->columnSpanFull()
+                        ->required(),
             ]);
     }
 
@@ -31,12 +55,16 @@ class SyllabusResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('name')
+                ->searchable(),
+                TextColumn::make('subject.name')->searchable(),
+                TextColumn::make('class.name')->searchable()
             ])
             ->filters([
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -59,6 +87,7 @@ class SyllabusResource extends Resource
             'index' => Pages\ListSyllabi::route('/'),
             'create' => Pages\CreateSyllabus::route('/create'),
             'edit' => Pages\EditSyllabus::route('/{record}/edit'),
+            'view' => ViewSyllabus::route('/{record}')
         ];
     }
 }

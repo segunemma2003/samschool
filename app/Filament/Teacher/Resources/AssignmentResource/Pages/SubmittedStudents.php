@@ -12,4 +12,13 @@ class SubmittedStudents extends ViewRecord
     protected static ?string $title = '';
     protected ?string $heading = '';
     protected static string $view = 'filament.teacher.resources.assignment.pages.submitted_students';
+
+
+
+     public static function getPages(): array
+    {
+        return [
+            'view' => ViewSubmittedAssignmentTeacher::route('/{record}'),
+        ];
+    }
 }

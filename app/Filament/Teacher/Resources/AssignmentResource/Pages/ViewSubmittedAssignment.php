@@ -10,4 +10,6 @@ class ViewSubmittedAssignment extends Page
     protected static string $resource = AssignmentResource::class;
 
     protected static string $view = 'filament.teacher.resources.assignment-resource.pages.view-submitted-assignment';
+
+
 }

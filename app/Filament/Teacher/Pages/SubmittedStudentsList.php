@@ -25,4 +25,11 @@ class SubmittedStudentsList extends Page
             ->wherePivot('status', 'submitted')
             ->getQuery(); // To ensure we get a builder instance
     }
+
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
 }

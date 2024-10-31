@@ -42,7 +42,7 @@ Route::middleware([
     Route::get('/exam/review', ExamReviewPage::class)->name('exam.review');
     Route::get('/exam/final-submission', ExamFinalSubmissionPage::class)->name('exam.final_submission');
     Route::get('/submitted-students/{assignment}', SubmittedStudentsList::class)->name('filament.pages.submitted-students-list');
-    Route::get('/assignment/{assignment}/student/{student}', ViewSubmittedAssignmentTeacher::class)->name('filament.pages.assignment-student-view');
+    // Route::get('/teacher/assignment/{assignment}/student/{student}', ViewSubmittedAssignmentTeacher::class)->name('filament.pages.assignment-student-view');
 }
     // Your Tenant routes here
 

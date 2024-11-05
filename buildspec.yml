@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      php: 8.0
+    commands:
+      - echo "Installing dependencies..."
+      - composer install --no-interaction --prefer-dist --optimize-autoloader
+      - npm install && npm run prod
+      - php artisan key:generate
+  pre_build:
+    commands:
+      - echo "Preparing environment..."
+      - cp .env.example .env
+      - php artisan config:cache
+      - php artisan migrate --force
+      - php artisan queue:table --force
+  build:
+    commands:
+      - echo "Running Tests..."
+      - php artisan test
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
+artifacts:
+  files:
+    - "**/*"

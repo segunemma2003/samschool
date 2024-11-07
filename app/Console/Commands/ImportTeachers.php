@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
@@ -30,17 +31,20 @@ class ImportTeachers extends Command
     public function handle()
     {
         // Specify the database connection
-        $databaseName = 'tomatophp_c5529b38-53a4-48fb-8fff-57674821e54b_db';
+        $databaseName = 'tomatophp_74337536-07e0-4590-8861-d0a37616ac8a_db';
         DB::purge('mysql'); // Reset any existing database connection
         config(['database.connections.mysql.database' => $databaseName]); // Set the new database name
         DB::reconnect('mysql'); // Reconnect with the new database configuration
 
         // Load XLSX file from public path
-        $filePath = public_path('schools/rol.xlsx');
+        $filePath = public_path('schools/viff.xlsx');
+
 
         if (!file_exists($filePath)) {
             $this->error("File not found: {$filePath}");
             return;
+        } else {
+            $this->info("File found: {$filePath}");
         }
 
         // Parse XLSX file using SimpleXLSX
@@ -51,22 +55,35 @@ class ImportTeachers extends Command
             return;
         }
 
-        // Assume the first row is the header
-        $header = $xlsx->rows()[0];
-        $rows = $xlsx->rows();
-
-        // Remove the header from the rows array
-        array_shift($rows);
-
+        // Get the second sheet (Sheet 2)
+        $rows = $xlsx->rows(2); // 1 corresponds to Sheet 2, as sheet indices are 0-based
+        // dd($rows);
         // Initialize a counter to track consecutive empty rows
         $consecutiveEmptyRows = 0;
 
-        foreach ($rows as $row) {
-            // Map XLSX data to header columns
-            $data = array_combine($header, $row);
+        foreach ($rows as $index => $row) {
+            if ($index == 0 && empty($row[0]) && empty($row[1])) {
+                continue; // Skip the header row if empty
+            }
 
-            // Check if both 'EMAIL' and 'NAME' are empty, then skip the row
-            if (empty($data['EMAIL']) && empty($data['NAME'])) {
+            // Map XLSX data to appropriate columns
+            $data = [
+                'Name' => $row[0] ?? null,
+                'Designation' => $row[1] ?? null,
+                'Dob' => $row[2] ?? null,
+                'Gender' => $row[3] ?? null,
+                'Religion' => $row[4] ?? null,
+                'Email' => $row[5] ?? null,
+                'Phone' => $row[6] ?? null,
+                'Address' => $row[7] ?? null,
+                'Jod' => $row[8] ?? null,
+            ];
+
+            // Log the data for verification
+            $this->info("Processing row: " . json_encode($data));
+
+            // Check if both 'Email' and 'Name' are empty, then skip the row
+            if (empty($data['Email']) && empty($data['Name'])) {
                 $consecutiveEmptyRows++;
                 // Stop the loop if 2 consecutive empty rows are encountered
                 if ($consecutiveEmptyRows >= 2) {
@@ -79,35 +96,35 @@ class ImportTeachers extends Command
             }
 
             // Prepare the email and username
-            $email = strtolower($data['EMAIL']);
+            $email = strtolower($data['Email']);
             $username = explode('@', $email)[0];
 
             // Capitalize the first letter of religion
-            $religion = ucfirst(strtolower($data['RELIGION']));
+            $religion = ucfirst(strtolower($data['Religion']));
 
             // Create or update User record
             $user = User::updateOrCreate([
                 'email' => $email,
             ], [
-                'name' => $data['NAME'],
+                'name' => $data['Name'],
                 'email' => $email,
                 'password' => Hash::make('Teacher@12345'),
                 'username' => $username,
                 'user_type' => 'teacher',
             ]);
 
-            // Handle 'DATE OF BIRTH' in d/m/y format, use current date if empty
-            $dateOfBirth = empty($data['DATE OF BIRTH']) ? Carbon::now()->toDateString() : explode(' ', $data['DATE OF BIRTH'])[0];
-            if ($dateOfBirth) {
+            // Handle 'Dob' in d/m/y format, use current date if empty
+            $dob = empty($data['Dob']) ? Carbon::now()->toDateString() : $data['Dob'];
+            if ($dob) {
                 try {
-                    $dateOfBirth = Carbon::createFromFormat('d/m/Y', $dateOfBirth)->toDateString();
+                    $dob = Carbon::createFromFormat('d/m/Y', $dob)->toDateString();
                 } catch (\Exception $e) {
-                    $dateOfBirth = Carbon::now()->toDateString(); // If the date format is invalid, use current date
+                    $dob = Carbon::now()->toDateString(); // If the date format is invalid, use current date
                 }
             }
 
-            // Handle 'JOINING DATE' in d/m/y format, use current date if empty
-            $joiningDate = empty($data['EMPLOYMENT DATE']) ? Carbon::now()->toDateString() : $data['EMPLOYMENT DATE'];
+            // Handle 'Jod' (Joining Date) in d/m/y format, use current date if empty
+            $joiningDate = empty($data['Jod']) ? Carbon::now()->toDateString() : $data['Jod'];
             if ($joiningDate) {
                 try {
                     $joiningDate = Carbon::createFromFormat('d/m/Y', $joiningDate)->toDateString();
@@ -116,20 +133,23 @@ class ImportTeachers extends Command
                 }
             }
 
+            // Log the processed values
+            $this->info("Processed Dob: {$dob}, Joining Date: {$joiningDate}");
+
             // Create Teacher record
             Teacher::updateOrCreate([
                 'email' => $email,
-            ],[
-                'name' => $data['NAME'],
+            ], [
+                'name' => $data['Name'],
                 'email' => $email,
-                'designation' => $data['DESIGNATION'],
-                'date_of_birth' => $dateOfBirth,
-                'gender' => strtolower($data['GENDER']), // Convert "MALE" to "male" and "FEMALE" to "female"
+                'designation' => $data['Designation'],
+                'date_of_birth' => $dob,
+                'gender' => strtolower($data['Gender']), // Convert "MALE" to "male" and "FEMALE" to "female"
                 'religion' => $religion,
                 'joining_date' => $joiningDate, // The validated joining date
                 'username' => $username,
-                'phone' => $data['PHONE NO'],
-                'address' => $data['ADDRESS'],
+                'phone' => $data['Phone'],
+                'address' => $data['Address'],
                 'password' => Hash::make('Teacher@12345'),
             ]);
         }

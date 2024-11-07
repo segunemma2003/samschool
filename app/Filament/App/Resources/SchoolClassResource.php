@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources;
 use App\Filament\App\Resources\SchoolClassResource\Pages;
 use App\Filament\App\Resources\SchoolClassResource\RelationManagers;
 use App\Models\SchoolClass;
+use App\Models\StudentGroup;
 use App\Models\Teacher;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -41,6 +42,10 @@ class SchoolClassResource extends Resource
                 ->label('Teacher Name')
                 ->options(Teacher::all()->pluck('name', 'id'))
                 ->searchable(),
+                Forms\Components\Select::make('group_id')
+                ->label('School Section')
+                ->options(StudentGroup::all()->pluck('name', 'id'))
+                ->searchable(),
                 Forms\Components\Textarea::make('note')
                 ->label('Notes')
                 ->required()
@@ -55,6 +60,8 @@ class SchoolClassResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('class_numeric')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('group.name')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('teacher.name')
                 ->searchable(),

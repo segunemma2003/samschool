@@ -14,4 +14,8 @@ class SchoolClass extends Model
     {
         return $this->belongsTo(Teacher::class, 'teacher_id');
     }
+
+    public function group(){
+        return $this->belongsTo(StudentGroup::class, 'group_id');
+    }
 }

@@ -6,9 +6,11 @@ use App\Filament\App\Resources\AcademicYearResource\Pages;
 use App\Filament\App\Resources\AcademicYearResource\RelationManagers;
 use App\Models\AcademicYear;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -30,6 +32,11 @@ class AcademicYearResource extends Resource
                 Forms\Components\TextInput::make('year'
                 ) ->integer()
                 ->required(),
+                Select::make('status')
+                ->options([
+                    'false'=>'False',
+                    'true'=>'True'
+                ])->default('true'),
                 Forms\Components\DatePicker::make('starting_date')->required(),
                 Forms\Components\DatePicker::make('ending_date')->required(),
             ]);
@@ -43,6 +50,13 @@ class AcademicYearResource extends Resource
                 ->searchable(),
                 Tables\Columns\TextColumn::make('year')
                 ->searchable(),
+                IconColumn::make('status')
+                ->color(fn (string $state): string => match ($state) {
+                    'false' => 'info',
+
+                    'true' => 'success',
+                    default => 'gray',
+                })->size(IconColumn\IconColumnSize::Medium),
                 Tables\Columns\TextColumn::make('starting_date')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('ending_date')

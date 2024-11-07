@@ -30,7 +30,7 @@ class ImportTeachers extends Command
     public function handle()
     {
         // Specify the database connection
-        $databaseName = 'tomatophp_efd3505c-3d38-4b13-9241-ca4d14962f0b_db';
+        $databaseName = 'tomatophp_c5529b38-53a4-48fb-8fff-57674821e54b_db';
         DB::purge('mysql'); // Reset any existing database connection
         config(['database.connections.mysql.database' => $databaseName]); // Set the new database name
         DB::reconnect('mysql'); // Reconnect with the new database configuration

@@ -34,11 +34,13 @@ class SubjectResource extends Resource
             Forms\Components\Select::make('class_id')
                 ->label('Class Name')
                 ->options(SchoolClass::all()->pluck('name', 'id'))
-                ->searchable(),
+                ->searchable()
+                ->required(),
             Forms\Components\Select::make('teacher_id')
                 ->label('Teacher Name')
                 ->options(Teacher::all()->pluck('name', 'id'))
-                ->searchable(),
+                ->searchable()
+                ->required(),
             Forms\Components\Select::make('type')
                 ->options([
                     'optional' => 'Optional',
@@ -56,7 +58,7 @@ class SubjectResource extends Resource
 
             Forms\Components\TextInput::make('author')
                 // ->integer()
-                // ->required()
+                ->required()
                 ->maxLength(255),
             Forms\Components\TextInput::make('code')
                 ->label('Subject Code')

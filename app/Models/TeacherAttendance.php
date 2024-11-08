@@ -8,4 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class TeacherAttendance extends Model
 {
     use HasFactory;
+    protected $guarded = ['id'];
 }

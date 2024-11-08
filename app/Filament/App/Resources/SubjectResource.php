@@ -6,8 +6,10 @@ use App\Filament\App\Resources\SubjectResource\Pages;
 use App\Filament\App\Resources\SubjectResource\RelationManagers;
 use App\Models\SchoolClass;
 use App\Models\Subject;
+use App\Models\SubjectDepot;
 use App\Models\Teacher;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -28,9 +30,16 @@ class SubjectResource extends Resource
         return $form
             ->schema([
 
-            Forms\Components\TextInput::make('name')
-                ->required()
-                ->maxLength(255),
+            // Forms\Components\TextInput::make('name')
+            //     ->required()
+            //     ->maxLength(255),
+
+            Select::make('subject_depot_id')
+            ->label('Subject')
+            ->options(SubjectDepot::all()->pluck('name', 'id'))
+            ->searchable()
+            ->preload()
+            ->required(),
             Forms\Components\Select::make('class_id')
                 ->label('Class Name')
                 ->options(SchoolClass::all()->pluck('name', 'id'))
@@ -73,7 +82,7 @@ class SubjectResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                Tables\Columns\TextColumn::make('subjectDepot.name')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('class.name')
                 ->searchable(),

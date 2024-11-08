@@ -7,9 +7,12 @@ use App\Filament\Teacher\Resources\QuestionBankResource\RelationManagers;
 use App\Models\Exam;
 use App\Models\QuestionBank;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -25,23 +28,23 @@ class QuestionBankResource extends Resource
     protected static ?string $navigationGroup = 'Exams';
 
     public static function form(Form $form): Form
-    {
-        $exams = Exam::all()->pluck('subject.name', 'id');
+{
+    $exams = Exam::all()->pluck('subject.subjectDepot.name', 'id');
 
-            return $form
-            ->schema([
-                Forms\Components\Select::make('exam_id') // Select field for exam_id
+    return $form
+        ->schema([
+            Forms\Components\Select::make('exam_id')
                 ->label('Select Exam')
-                ->options($exams) // Populate options from exams
+                ->options($exams)
                 ->required(),
 
-                Forms\Components\Repeater::make('questions') // Repeater for questions
+            Forms\Components\Repeater::make('questions')
                 ->schema([
-                    Forms\Components\Textarea::make('question') // Change to Textarea
+                    Forms\Components\Textarea::make('question')
                         ->required()
                         ->label('Question')
-                        ->rows(3) // Set initial number of rows
-                        ->columnSpan('full'), // Make it full width
+                        ->rows(3)
+                        ->columnSpan('full'),
 
                         Forms\Components\Select::make('type')
                         ->options([
@@ -51,75 +54,91 @@ class QuestionBankResource extends Resource
                         ])
                         ->required()
                         ->reactive()
+                        ->searchable()
                         ->afterStateUpdated(function (callable $get, callable $set) {
-                            // Reset options when the question type changes
-                            $set('options', []);
-                            // Reset answer when type changes to open-ended
-                            if ($get('type') === 'open_ended') {
-                                $set('answer', null); // Reset answer field if needed
+                            // Initialize options with A if multiple_choice type is selected
+                            if ($get('type') === 'multiple_choice') {
+                                // Set initial option with key A
+                                $set('options', [['key' => 'A', 'value' => 'Option 1']]); // Correctly setting initial values
+                            } else {
+                                $set('options', []); // Clear options if not multiple_choice
                             }
                         }),
-                        Forms\Components\Repeater::make('options')
-                        ->schema([
-                            Forms\Components\TextInput::make('option_text')
-                                ->required()
-                                ->label('Option')
-                                ->columnSpan('full'), // Make it full width
-                        ])
-                        ->createItemButtonLabel('Add Answer Option')
-                        ->hidden(fn (callable $get) => $get('type') !== 'multiple_choice'), // Show only for multiple choice
+                    // Use the KeyValue component for options
+                    KeyValue::make('options')
+                    ->keyLabel('Option Key')   // Label for the key
+                    ->valueLabel('Option Text') // Label for the value
+                    ->required()
+                    ->hidden(fn (callable $get) => $get('type') !== 'multiple_choice')
 
-                    // Conditional display for the answer based on type
-                    Forms\Components\Textarea::make('answer') // Change to Textarea for open-ended
+                    ->columnSpan('full'), // Optional: to control column span
+
+
+                    Forms\Components\Textarea::make('answer')
                         ->label('Answer')
-                        ->hidden(fn (callable $get) => $get('type') !== 'open_ended'), // Show only for open-ended
+                        ->hidden(fn (callable $get) => $get('type') !== 'open_ended'),
 
-                    Forms\Components\Select::make('correct_answer')
-                        ->options(function (callable $get) {
-                            $type = $get('type');
-                            if ($type === 'multiple_choice') {
-                                // Get options for multiple choice questions
-                                $options = $get('options');
-                                return collect($options)->pluck('option_text', 'option_text')->toArray();
-                            } elseif ($type === 'true_false') {
-                                // Provide options for true/false questions
-                                return [
-                                    'True' => 'True',
-                                    'False' => 'False',
-                                ];
-                            }
-                            return [];
-                        })
+                        Forms\Components\Textarea::make('correct_answer')
                         ->required()
                         ->label('Correct Answer')
-                        ->columnSpan('full'), // Make it full width
+                        ->hidden(fn (callable $get) => $get('type') === 'open_ended'),
+                        // Select::make('correct_answer')
+                        // ->options(function (callable $get) {
+                        //     $type = $get('type');
+                        //     if ($type === 'multiple_choice') {
+                        //         $options = $get('options');
+                        //         // Ensure correct answer is selected based on the key-value structure of options
+                        //         // Map the options array to get the values for the correct_answer dropdown
+                        //         return collect($options)->pluck('value', 'key')->toArray();
+                        //     } elseif ($type === 'true_false') {
+                        //         return [
+                        //             'True' => 'True',
+                        //             'False' => 'False',
+                        //         ];
+                        //     }
+                        //     return [];
+                        // })
+                        // ->required()
+                        // ->label('Correct Answer')
+                        // ->columnSpan('full')
+                        // ->hidden(fn (callable $get) => $get('type') === 'open_ended'),
                     Forms\Components\TextInput::make('mark')
                         ->numeric()
                         ->default(1)
                         ->label('Mark')
-                        ->columnSpan('full'), // Make it full width
+                        ->columnSpan('full'),
 
                     Forms\Components\Textarea::make('hint')
                         ->nullable()
                         ->label('Hint')
-                        ->columnSpan('full'), // Make it full width
+                        ->columnSpan('full'),
 
-                    Forms\Components\TextInput::make('image')
-                        ->nullable()
+                    FileUpload::make('image')
                         ->label('Image')
-                        ->columnSpan('full'), // Make it full width
+                        ->disk('cloudinary') // Specify Cloudinary as the storage disk
+                        ->nullable()
+                        ->image() // Restrict to image files
+                        ->directory('exam_images') // Optional: specify a directory in Cloudinary
+                        ->columnSpan('full'),
                 ])
-                ->minItems(1) // At least one question required
-                ->maxItems(10) // Adjust as necessary
+                ->columnSpanFull()
+                ->minItems(1)
+                ->collapsible()
+                ->maxItems(100)
                 ->required(),
         ]);
-    }
+}
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('exam.subject.subjectDepot.name')
+                ->label('Subject')
+                ->searchable(),
+                TextColumn::make('exam.class')
+                ->label('Class')
+                ->searchable(),
             ])
             ->filters([
                 //
@@ -149,4 +168,8 @@ class QuestionBankResource extends Resource
             'edit' => Pages\EditQuestionBank::route('/{record}/edit'),
         ];
     }
+
+    // Hook to handle saving questions and options
+
+
 }

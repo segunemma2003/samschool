@@ -2,35 +2,35 @@
 
 namespace App\Filament\App\Resources;
 
-use App\Filament\App\Resources\StudentGroupResource\Pages;
-use App\Filament\App\Resources\StudentGroupResource\RelationManagers;
-use App\Models\StudentGroup;
+use App\Filament\App\Resources\SujectDepotResource\Pages;
+use App\Filament\App\Resources\SujectDepotResource\RelationManagers;
+use App\Models\SubjectDepot;
+use App\Models\SujectDepot;
 use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class StudentGroupResource extends Resource
+class SujectDepotResource extends Resource
 {
-    protected static ?string $model = StudentGroup::class;
+    protected static ?string $model = SubjectDepot::class;
 
-    protected static ?string  $label = "Section";
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    // protected static ?string  $label = "Section";
     protected static ?string $navigationGroup = 'Academic';
-
-    protected static ?string $navigationIcon = 'heroicon-m-user-group';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                ->label('Group Name')
-                ->unique(table: StudentGroup::class)
-                ->required()
-                ->maxLength(255),
+                TextInput::make('name')->required(),
+                TextInput::make('code')->required(),
             ]);
     }
 
@@ -38,8 +38,8 @@ class StudentGroupResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('code')->searchable()->sortable(),
             ])
             ->filters([
                 //
@@ -65,10 +65,10 @@ class StudentGroupResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListStudentGroups::route('/'),
-            'create' => Pages\CreateStudentGroup::route('/create'),
-            'view' => Pages\ViewStudentGroup::route('/{record}'),
-            'edit' => Pages\EditStudentGroup::route('/{record}/edit'),
+            'index' => Pages\ListSujectDepots::route('/'),
+            'create' => Pages\CreateSujectDepot::route('/create'),
+            'view' => Pages\ViewSujectDepot::route('/{record}'),
+            'edit' => Pages\EditSujectDepot::route('/{record}/edit'),
         ];
     }
 }

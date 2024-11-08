@@ -9,7 +9,10 @@ use App\Models\Exam;
 use App\Models\SchoolSection;
 use App\Models\Subject;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -37,12 +40,44 @@ class ExamResource extends Resource
                 ->options(SchoolSection::all()->pluck('section', 'id'))
                 ->preload()
                 ->label("School Section")
+                ->required()
                 ->searchable(),
                 Select::make('subject_id')
-                ->options(Subject::all()->pluck('name', 'id'))
+                ->options(Subject::all()->pluck('subjectDepot.name', 'id'))
                 ->preload()
                 ->label("Subject")
                 ->searchable(),
+                DatePicker::make('exam_date')
+                ->required(),
+                TextInput::make('duration')
+                ->label('Duration (minutes)')
+                ->numeric()
+                ->minValue(0)
+                ->suffix('minutes')
+                ->required(),
+                Select::make('is_set')
+                ->options([
+                    true => 'Yes',    // Label "Yes" for true
+                    false => 'No',    // Label "No" for false
+                ])
+                ->preload()
+                ->default(false)
+                ->label('Exam is Set')
+                ->searchable(),
+                Select::make('assessment_type')
+                ->options([
+                    "test"=>"Test",
+                    "exam"=>"Exam"
+                ])
+                ->preload()
+                ->label("Subject")
+                ->searchable(),
+
+                TextInput::make('total_score')
+                ->required()
+                ->integer(),
+                RichEditor::make('instructions')
+                ->columnSpanFull()
 
             ]);
     }
@@ -51,9 +86,9 @@ class ExamResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('academic.title'),
-                TextColumn::make('section.section'),
-                TextColumn::make('subject.name')
+                TextColumn::make('academic.title')->searchable(),
+                TextColumn::make('section.section')->searchable(),
+                TextColumn::make('subject.subjectDepot.name')->searchable()
             ])
             ->filters([
 

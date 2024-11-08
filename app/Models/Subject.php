@@ -16,5 +16,9 @@ class Subject extends Model
         return $this->belongsTo(SchoolClass::class, 'class_id');
     }
 
+    public function subjectDepot()
+    {
+        return $this->belongsTo(SubjectDepot::class, 'subject_depot_id');
+    }
 
 }

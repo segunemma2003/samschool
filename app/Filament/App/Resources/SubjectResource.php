@@ -50,12 +50,12 @@ class SubjectResource extends Resource
                 ->options(Teacher::all()->pluck('name', 'id'))
                 ->searchable()
                 ->required(),
-            Forms\Components\Select::make('type')
-                ->options([
-                    'optional' => 'Optional',
-                    'mandatory' => 'Mandatory',
+            // Forms\Components\Select::make('type')
+            //     ->options([
+            //         'optional' => 'Optional',
+            //         'mandatory' => 'Mandatory',
 
-                ])->required(),
+            //     ])->required(),
             Forms\Components\TextInput::make('pass_mark')
                 ->integer()
                 ->required(),
@@ -65,13 +65,13 @@ class SubjectResource extends Resource
                 ->required(),
                 // ->maxLength(255),
 
-            Forms\Components\TextInput::make('author')
-                // ->integer()
-                ->required()
-                ->maxLength(255),
-            Forms\Components\TextInput::make('code')
-                ->label('Subject Code')
-                ->required()
+            // Forms\Components\TextInput::make('author')
+            //     // ->integer()
+            //     ->required()
+            //     ->maxLength(255),
+            // Forms\Components\TextInput::make('code')
+            //     ->label('Subject Code')
+            //     ->required()
 
 
 

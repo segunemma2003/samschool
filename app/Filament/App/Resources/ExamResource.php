@@ -43,7 +43,7 @@ class ExamResource extends Resource
                 ->required()
                 ->searchable(),
                 Select::make('subject_id')
-                ->options(Subject::all()->pluck('subjectDepot.name', 'id'))
+                ->options(Subject::all()->pluck('code', 'id'))
                 ->preload()
                 ->label("Subject")
                 ->searchable(),
@@ -88,7 +88,7 @@ class ExamResource extends Resource
             ->columns([
                 TextColumn::make('academic.title')->searchable(),
                 TextColumn::make('section.section')->searchable(),
-                TextColumn::make('subject.subjectDepot.name')->searchable()
+                TextColumn::make('subject.code')->searchable()
             ])
             ->filters([
 

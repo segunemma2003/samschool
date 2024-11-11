@@ -69,9 +69,9 @@ class SubjectResource extends Resource
             //     // ->integer()
             //     ->required()
             //     ->maxLength(255),
-            // Forms\Components\TextInput::make('code')
-            //     ->label('Subject Code')
-            //     ->required()
+            Forms\Components\TextInput::make('code')
+                ->label('Subject Code')
+                ->required()
 
 
 

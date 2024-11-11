@@ -133,7 +133,7 @@ class QuestionBankResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('exam.subject.subjectDepot.name')
+                TextColumn::make('exam.subject.code')
                 ->label('Subject')
                 ->searchable(),
                 TextColumn::make('exam.class')

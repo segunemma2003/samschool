@@ -45,7 +45,7 @@ class RoutineResource extends Resource
                     ->searchable(),
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject')
-                    ->options(Subject::all()->pluck('name', 'id'))
+                    ->options(Subject::all()->pluck('code', 'id'))
                     ->searchable(),
                 Forms\Components\Select::make('teacher_id')
                     ->label('Teacher')

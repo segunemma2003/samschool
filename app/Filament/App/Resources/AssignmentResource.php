@@ -47,7 +47,7 @@ class AssignmentResource extends Resource
                     ->searchable(),
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject')
-                    ->options(Subject::all()->pluck('name', 'id'))
+                    ->options(Subject::all()->pluck('code', 'id'))
                     ->searchable(),
                 Forms\Components\FileUpload::make('file')
                     ->disk('cloudinary')
@@ -67,7 +67,7 @@ class AssignmentResource extends Resource
                 Tables\Columns\TextColumn::make('section.section')
                 ->searchable(),
 
-                Tables\Columns\TextColumn::make('subject.name')
+                Tables\Columns\TextColumn::make('subject.code')
                 ->searchable(),
             ])
             ->filters([

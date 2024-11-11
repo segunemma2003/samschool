@@ -39,7 +39,7 @@ class SyllabusResource extends Resource
 
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject Name')
-                    ->options(Subject::all()->pluck('name', 'id'))
+                    ->options(Subject::all()->pluck('code', 'id'))
                     ->searchable(),
                 Forms\Components\FileUpload::make('file')
                     ->disk('cloudinary')
@@ -57,7 +57,7 @@ class SyllabusResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),
-                TextColumn::make('subject.name')->searchable(),
+                TextColumn::make('subject.code')->searchable(),
                 TextColumn::make('class.name')->searchable()
             ])
             ->filters([

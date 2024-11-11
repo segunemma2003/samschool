@@ -71,6 +71,7 @@ class SubjectResource extends Resource
             //     ->maxLength(255),
             Forms\Components\TextInput::make('code')
                 ->label('Subject Code')
+                ->unique()
                 ->required()
 
 

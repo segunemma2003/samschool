@@ -4,8 +4,12 @@ namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\SubjectResource\Pages;
 use App\Filament\Teacher\Resources\SubjectResource\RelationManagers;
+use App\Models\SchoolClass;
 use App\Models\Subject;
+use App\Models\SubjectDepot;
+use App\Models\Teacher;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -23,7 +27,46 @@ class SubjectResource extends Resource
     {
         return $form
             ->schema([
-                //
+                Select::make('subject_depot_id')
+                ->label('Subject')
+                ->options(SubjectDepot::all()->pluck('name', 'id'))
+                ->searchable()
+                ->preload()
+                ->required(),
+                Forms\Components\Select::make('class_id')
+                    ->label('Class Name')
+                    ->options(SchoolClass::all()->pluck('name', 'id'))
+                    ->searchable()
+                    ->required(),
+                Forms\Components\Select::make('teacher_id')
+                    ->label('Teacher Name')
+                    ->options(Teacher::all()->pluck('name', 'id'))
+                    ->searchable()
+                    ->required(),
+                // Forms\Components\Select::make('type')
+                //     ->options([
+                //         'optional' => 'Optional',
+                //         'mandatory' => 'Mandatory',
+
+                //     ])->required(),
+                Forms\Components\TextInput::make('pass_mark')
+                    ->integer()
+                    ->required(),
+                    // ->maxLength(255),
+                Forms\Components\TextInput::make('final_mark')
+                ->integer()
+                    ->required(),
+                    // ->maxLength(255),
+
+                // Forms\Components\TextInput::make('author')
+                //     // ->integer()
+                //     ->required()
+                //     ->maxLength(255),
+                Forms\Components\TextInput::make('code')
+                    ->label('Subject Code')
+                    ->unique()
+                    ->required()
+
             ]);
     }
 
@@ -31,7 +74,12 @@ class SubjectResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('subjectDepot.name')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('class.name')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('code')
+                ->searchable(),
             ])
             ->filters([
                 //

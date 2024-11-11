@@ -29,7 +29,7 @@ class QuestionBankResource extends Resource
 
     public static function form(Form $form): Form
 {
-    $exams = Exam::all()->pluck('subject.subjectDepot.name', 'id');
+    $exams = Exam::all()->pluck('subject.code', 'id');
 
     return $form
         ->schema([

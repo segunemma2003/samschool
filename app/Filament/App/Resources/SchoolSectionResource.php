@@ -20,7 +20,7 @@ class SchoolSectionResource extends Resource
     protected static ?string $model = SchoolSection::class;
     protected static ?string $navigationGroup = 'Academic';
 
-    protected static ?string $label = 'Section';
+    protected static ?string $label = 'School Section';
 
     protected static ?string $navigationIcon = 'heroicon-s-cog';
 

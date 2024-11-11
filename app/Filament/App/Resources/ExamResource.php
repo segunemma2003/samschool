@@ -8,6 +8,7 @@ use App\Models\AcademicYear;
 use App\Models\Exam;
 use App\Models\SchoolSection;
 use App\Models\Subject;
+use App\Models\Term;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
@@ -28,6 +29,7 @@ class ExamResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
+    // {dd(SchoolSection::all());
     {
         return $form
             ->schema([
@@ -36,6 +38,12 @@ class ExamResource extends Resource
                 ->options(SchoolSection::all()->pluck('section', 'id'))
                 ->preload()
                 ->label("School Section")
+                ->required()
+                ->searchable(),
+                Select::make('term_id')
+                ->options(Term::all()->pluck('name', 'id'))
+                ->preload()
+                ->label("Term")
                 ->required()
                 ->searchable(),
                 Select::make('subject_id')
@@ -66,7 +74,7 @@ class ExamResource extends Resource
                     "exam"=>"Exam"
                 ])
                 ->preload()
-                ->label("Subject")
+                ->label("Assessment Type")
                 ->searchable(),
 
                 TextInput::make('total_score')

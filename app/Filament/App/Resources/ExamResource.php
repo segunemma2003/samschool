@@ -31,11 +31,7 @@ class ExamResource extends Resource
     {
         return $form
             ->schema([
-                // Select::make('academic_year_id')
-                // ->options(AcademicYear::all()->pluck('title', 'id'))
-                // ->preload()
-                // ->label("Academic Year")
-                // ->searchable(),
+
                 Select::make('school_section_id')
                 ->options(SchoolSection::all()->pluck('section', 'id'))
                 ->preload()

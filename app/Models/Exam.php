@@ -21,8 +21,8 @@ class Exam extends Model
         return $this->belongsTo(AcademicYear::class, 'academic_year_id');
     }
 
-    public function section()
+    public function term()
     {
-        return $this->belongsTo(SchoolSection::class, 'school_section_id');
+        return $this->belongsTo(Term::class, 'term_id');
     }
 }

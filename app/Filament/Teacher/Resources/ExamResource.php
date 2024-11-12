@@ -30,12 +30,12 @@ class ExamResource extends Resource
     {
         return $form
             ->schema([
-                Select::make('school_section_id')
-                ->options(SchoolSection::all()->pluck('section', 'id'))
-                ->preload()
-                ->label("School Section")
-                ->required()
-                ->searchable(),
+                // Select::make('school_section_id')
+                // ->options(SchoolSection::all()->pluck('section', 'id'))
+                // ->preload()
+                // ->label("School Section")
+                // ->required()
+                // ->searchable(),
                 Select::make('subject_id')
                 ->options(Subject::all()->pluck('code', 'id'))
                 ->preload()
@@ -80,7 +80,7 @@ class ExamResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('academic.title')->searchable(),
-                TextColumn::make('section.section')->searchable(),
+                TextColumn::make('term.name')->searchable(),
                 TextColumn::make('subject.code')->searchable()
             ])
             ->filters([

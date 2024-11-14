@@ -177,7 +177,7 @@ class QuestionBankResource extends Resource
                     ->valueLabel('Option Text') // Label for the value
                     ->required()
                     ->reorderable()
-                    ->hidden(fn (callable $get) => $get('type') !== 'multiple_choice')
+                    // ->hidden(fn (callable $get) => $get('type') !== 'multiple_choice')
 
                     ->columnSpan('full'), // Optional: to control column span
 
@@ -188,8 +188,8 @@ class QuestionBankResource extends Resource
 
                         Forms\Components\Textarea::make('correct_answer')
                         ->required()
-                        ->label('Correct Answer')
-                        ->hidden(fn (callable $get) => $get('type') === 'open_ended'),
+                        ->label('Correct Answer'),
+                        // ->hidden(fn (callable $get) => $get('type') === 'open_ended'),
                         Forms\Components\TextInput::make('mark')
                         ->numeric()
                         ->default(1)

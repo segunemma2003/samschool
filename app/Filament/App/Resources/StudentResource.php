@@ -133,6 +133,8 @@ class StudentResource extends Resource
                 ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                 ->searchable(),
+                Tables\Columns\TextColumn::make('class.name')
+                ->searchable(),
             ])
             ->filters([
                 //

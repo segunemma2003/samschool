@@ -4,7 +4,11 @@ namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\StudentResource\Pages;
 use App\Filament\Teacher\Resources\StudentResource\RelationManagers;
+use App\Models\Guardians;
+use App\Models\SchoolClass;
+use App\Models\SchoolSection;
 use App\Models\Student;
+use App\Models\StudentGroup;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -23,7 +27,99 @@ class StudentResource extends Resource
     {
         return $form
             ->schema([
-                //
+                Forms\Components\TextInput::make('registration_number')
+                ->unique(ignoreRecord: true)
+                    ->disabled(fn(Student $student) => $student->exists)
+                    ->default(fn() => 'STD-' . random_int(100000000, 999999999))
+                    ->required()
+                    ->columnSpanFull()
+                    ->required(),
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                // Forms\Components\TextInput::make('email')
+                //     ->email()
+                //     ->unique(table: Student::class)
+                //     // ->default()
+                //     ->required()
+                //     ->maxLength(255),
+                // Forms\Components\DatePicker::make('date_of_birth')
+                //     ->required()
+                //    ,
+                Forms\Components\Select::make('gender')
+                    ->options([
+                        'male' => 'Male',
+                        'female' => 'Female',
+                    ])->required(),
+                Forms\Components\TextInput::make('blood_group')
+                    ->maxLength(255),
+                Forms\Components\Select::make('religion')
+                    ->options([
+                        'christianity' => 'Christianity',
+                        'muslim' => 'Muslim',
+                        'others' => 'Others',
+                    ])->required(),
+                Forms\Components\DatePicker::make('joining_date')->required(),
+                Forms\Components\DatePicker::make('date_of_birth'),
+                Forms\Components\TextInput::make('phone')
+                    ->label('Phone number')
+                    ->tel()
+                    ,
+                Forms\Components\TextInput::make('address')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('state')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('country')
+                    ->required()
+                    ->maxLength(255),
+                // Forms\Components\TextInput::make('username')->unique(table: Student::class)
+                //             ->maxLength(255)->required(),
+                Forms\Components\TextInput::make('optional_subject')
+                            ->required()
+                            ->maxLength(255),
+                Forms\Components\TextInput::make('password')
+                    ->password()
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('roll')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\Textarea::make('remarks')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\Select::make('class_id')
+                    ->label('Class Name')
+                    ->options(SchoolClass::all()->pluck('name', 'id'))
+                    ->searchable(),
+                Forms\Components\Select::make('guardian_id')
+                    ->label('Guardian')
+                    ->options(Guardians::all()->pluck('name', 'id'))
+                    ->searchable(),
+                Forms\Components\Select::make('section_id')
+                    ->label('Section')
+                    ->options(SchoolSection::all()->pluck('section', 'id'))
+                    ->searchable(),
+                Forms\Components\Select::make('group_id')
+                    ->label('Group')
+                    ->options(StudentGroup::all()->pluck('name', 'id'))
+                    ->searchable(),
+                Forms\Components\FileUpload::make('avatar')
+                    ->disk('cloudinary')
+                        ->required(),
+                Forms\Components\Select::make('user_type')
+                        ->options([
+                            'teacher' => 'teacher',
+                            'student' => 'student',
+                            'parent' => 'parent',
+                            'admin'=>'admin'
+                        ])->default('student'),
+                Forms\Components\Select::make('roles')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
             ]);
     }
 
@@ -31,7 +127,12 @@ class StudentResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('name')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('username')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('email')
+                ->searchable(),
             ])
             ->filters([
                 //

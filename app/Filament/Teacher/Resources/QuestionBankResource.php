@@ -59,7 +59,7 @@ class QuestionBankResource extends Resource
                             // Initialize options with A if multiple_choice type is selected
                             if ($get('type') === 'multiple_choice') {
                                 // Set initial option with key A
-                                $set('options', [['key' => 'A', 'value' => 'Option 1']]); // Correctly setting initial values
+                                $set('options', ['' => '']); // Correctly setting initial values
                             } else {
                                 $set('options', []); // Clear options if not multiple_choice
                             }
@@ -69,6 +69,7 @@ class QuestionBankResource extends Resource
                     ->keyLabel('Option Key')   // Label for the key
                     ->valueLabel('Option Text') // Label for the value
                     ->required()
+                    ->reorderable()
                     ->hidden(fn (callable $get) => $get('type') !== 'multiple_choice')
 
                     ->columnSpan('full'), // Optional: to control column span
@@ -136,7 +137,7 @@ class QuestionBankResource extends Resource
                 TextColumn::make('exam.subject.code')
                 ->label('Subject')
                 ->searchable(),
-                TextColumn::make('exam.class')
+                TextColumn::make('exam.subject.class.name')
                 ->label('Class')
                 ->searchable(),
             ])

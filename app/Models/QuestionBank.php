@@ -15,4 +15,8 @@ class QuestionBank extends Model
     {
         return $this->belongsTo(Exam::class, 'exam_id');
     }
+    // public function class()
+    // {
+    //     return $this->belongsTo(SchoolClass::class, 'class_id');
+    // }
 }

@@ -140,10 +140,15 @@ class QuestionBankResource extends Resource
         return $table
         ->modifyQueryUsing(function (Builder $query) {
             $userId = Auth::user()->id;
-            $user = User::whereId($userId)->first();
+            $user = User::find($userId); // Fetch authenticated user
             $teacher = Teacher::whereEmail($user->email)->first();
-            // $query->where('exam.subject.teacher.id', $teacher->id);
 
+            // Ensure the teacher record exists before applying filter
+            if ($teacher) {
+                $query->whereHas('exam.subject.teacher', function (Builder $subQuery) use ($teacher) {
+                    $subQuery->where('id', $teacher->id); // Correct column filtering
+                });
+            }
         })
             ->columns([
                 TextColumn::make('exam.subject.code')

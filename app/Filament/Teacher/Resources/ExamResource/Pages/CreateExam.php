@@ -15,6 +15,7 @@ class CreateExam extends CreateRecord
         $academy = AcademicYear::whereStatus('true')->first();
         $data['academic_year_id'] = $academy->id ?? 1;
 
+
         return $data;
     }
 }

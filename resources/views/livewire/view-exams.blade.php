@@ -31,7 +31,7 @@
                         <div>
                             <strong class="text-sm">Options:</strong>
                             @if(!is_null($question->options))
-                                <ul class="mt-2 text-gray-100 list-disc list-inside dark:text-gray-300">
+                                <ul class="mt-2 text-gray-500 list-disc list-inside dark:text-gray-300">
                                     @foreach(json_decode($question->options, true) as $key => $option)
                                         <li>{{ $key }}: {{ $option }}</li>
                                     @endforeach

@@ -83,7 +83,7 @@ class QuestionBankResource extends Resource
 
 
                     Forms\Components\Textarea::make('answer')
-                        ->label('Answer'),
+                        ->label('Answer')->required(),
                         // ->hidden(fn (callable $get) => $get('type') !== 'open_ended'),
 
                         // Forms\Components\Textarea::make('correct_answer')

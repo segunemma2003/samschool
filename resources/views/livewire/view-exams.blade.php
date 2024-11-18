@@ -51,10 +51,10 @@
                             <p class="text-gray-500 dark:text-gray-400">{{ $question->hint ?? 'No hint available' }}</p>
                         </div>
 
-                        @if($question->image_url)
+                        @if($question->image)
                             <div class="mt-4">
                                 <strong class="text-sm">Image:</strong><br>
-                                <img src="{{ $question->image_url }}" alt="Question Image" class="h-auto max-w-full rounded-lg shadow-lg">
+                                <img src="{{ $question->image }}" alt="Question Image" class="h-auto max-w-full rounded-lg shadow-lg">
                             </div>
                         @endif
                     </div>

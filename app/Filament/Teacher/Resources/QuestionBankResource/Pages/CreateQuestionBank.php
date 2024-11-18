@@ -46,7 +46,7 @@ protected function processQuestion(array $questionData, int $examId): array
     $questionBankData = [
         'exam_id' => $examId,
         'question' => $questionData['question'],
-        'question_type' => $questionData['type'],
+        'question_type' => $questionData['question_type'],
         'answer' => $questionData['answer'] ?? null,
         'marks' => $questionData['mark'],
         'options'=>json_encode($questionData['options']??[]),

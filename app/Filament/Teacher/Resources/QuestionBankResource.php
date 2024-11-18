@@ -39,6 +39,8 @@ class QuestionBankResource extends Resource
             Forms\Components\Select::make('exam_id')
                 ->label('Select Exam')
                 ->options($exams)
+                ->preload()
+                ->searchable()
                 ->required(),
 
             Forms\Components\Repeater::make('questions')

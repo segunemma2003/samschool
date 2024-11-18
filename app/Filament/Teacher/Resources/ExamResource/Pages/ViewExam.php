@@ -10,6 +10,8 @@ class ViewExam extends ViewRecord
 {
     protected static string $resource = ExamResource::class;
 
+    protected static string $view = "filament.teacher.resources.pages.exam";
+
     protected function getHeaderActions(): array
     {
         return [

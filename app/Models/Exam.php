@@ -25,4 +25,9 @@ class Exam extends Model
     {
         return $this->belongsTo(Term::class, 'term_id');
     }
+
+    public function questions()
+    {
+        return $this->hasMany(QuestionBank::class, 'exam_id');
+    }
 }

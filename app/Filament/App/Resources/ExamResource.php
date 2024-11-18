@@ -33,19 +33,6 @@ class ExamResource extends Resource
     {
         return $form
             ->schema([
-
-                // Select::make('school_section_id')
-                // ->options(SchoolSection::all()->pluck('section', 'id'))
-                // ->preload()
-                // ->label("School Section")
-                // ->required()
-                // ->searchable(),
-                Select::make('term_id')
-                ->options(Term::all()->pluck('name', 'id'))
-                ->preload()
-                ->label("Term")
-                ->required()
-                ->searchable(),
                 Select::make('subject_id')
                 ->options(Subject::all()->pluck('code', 'id'))
                 ->preload()
@@ -68,6 +55,12 @@ class ExamResource extends Resource
                 ->default(false)
                 ->label('Exam is Set')
                 ->searchable(),
+                Select::make('term_id')
+                ->options(Term::all()->pluck('name', 'id'))
+                ->preload()
+                ->searchable()
+                ->label("Term")
+                ->required(),
                 Select::make('assessment_type')
                 ->options([
                     "test"=>"Test",
@@ -91,8 +84,9 @@ class ExamResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('academic.title')->searchable(),
-                TextColumn::make('term.name')->searchable(),
-                TextColumn::make('subject.code')->searchable()
+                TextColumn::make('term.name')->searchable()->default('Term 1'),
+                TextColumn::make('subject.code')->searchable(),
+                TextColumn::make('subject.class.name')->searchable()
             ])
             ->filters([
 

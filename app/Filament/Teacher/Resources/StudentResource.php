@@ -4,6 +4,7 @@ namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\StudentResource\Pages;
 use App\Filament\Teacher\Resources\StudentResource\RelationManagers;
+use App\Models\Arm;
 use App\Models\Guardians;
 use App\Models\SchoolClass;
 use App\Models\SchoolSection;
@@ -28,6 +29,7 @@ class StudentResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('registration_number')
+                ->label('Admission Number')
                 ->unique(ignoreRecord: true)
                     ->disabled(fn(Student $student) => $student->exists)
                     ->default(fn() => 'STD-' . random_int(100000000, 999999999))
@@ -53,13 +55,17 @@ class StudentResource extends Resource
                     ])->required(),
                 Forms\Components\TextInput::make('blood_group')
                     ->maxLength(255),
+                Forms\Components\TextInput::make('height')
+                ->maxLength(255),
+                Forms\Components\TextInput::make('weight')
+                ->maxLength(255),
                 Forms\Components\Select::make('religion')
                     ->options([
                         'christianity' => 'Christianity',
                         'muslim' => 'Muslim',
                         'others' => 'Others',
                     ])->required(),
-                Forms\Components\DatePicker::make('joining_date')->required(),
+                // Forms\Components\DatePicker::make('joining_date')->required(),
                 Forms\Components\DatePicker::make('date_of_birth'),
                 Forms\Components\TextInput::make('phone')
                     ->label('Phone number')
@@ -70,15 +76,16 @@ class StudentResource extends Resource
                     ->maxLength(255),
                 Forms\Components\TextInput::make('state')
                     ->required()
+                    ->label('State of Origin')
                     ->maxLength(255),
-                Forms\Components\TextInput::make('country')
-                    ->required()
-                    ->maxLength(255),
+                // Forms\Components\TextInput::make('country')
+                //     ->required()
+                //     ->maxLength(255),
                 // Forms\Components\TextInput::make('username')->unique(table: Student::class)
                 //             ->maxLength(255)->required(),
-                Forms\Components\TextInput::make('optional_subject')
-                            ->required()
-                            ->maxLength(255),
+                // Forms\Components\TextInput::make('optional_subject')
+                //             ->required()
+                //             ->maxLength(255),
                 Forms\Components\TextInput::make('password')
                     ->password()
                     ->required()
@@ -97,15 +104,20 @@ class StudentResource extends Resource
                     ->label('Guardian')
                     ->options(Guardians::all()->pluck('name', 'id'))
                     ->searchable(),
-                Forms\Components\Select::make('section_id')
-                    ->label('Section')
-                    ->options(SchoolSection::all()->pluck('section', 'id'))
+                // Forms\Components\Select::make('section_id')
+                //     ->label('Section')
+                //     ->options(SchoolSection::all()->pluck('section', 'id'))
+                //     ->searchable(),
+                Forms\Components\Select::make('arm_id')
+                    ->label('Arms')
+                    ->options(Arm::all()->pluck('name', 'id'))
                     ->searchable(),
                 Forms\Components\Select::make('group_id')
                     ->label('Group')
                     ->options(StudentGroup::all()->pluck('name', 'id'))
                     ->searchable(),
                 Forms\Components\FileUpload::make('avatar')
+                ->label('passport')
                     ->disk('cloudinary')
                         ->required(),
                 Forms\Components\Select::make('user_type')
@@ -115,11 +127,7 @@ class StudentResource extends Resource
                             'parent' => 'parent',
                             'admin'=>'admin'
                         ])->default('student'),
-                Forms\Components\Select::make('roles')
-                    ->relationship('roles', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->searchable()
+
             ]);
     }
 
@@ -132,6 +140,8 @@ class StudentResource extends Resource
                 Tables\Columns\TextColumn::make('username')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('email')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('class.name')
                 ->searchable(),
             ])
             ->filters([

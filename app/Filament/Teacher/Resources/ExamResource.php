@@ -7,6 +7,7 @@ use App\Filament\Teacher\Resources\ExamResource\RelationManagers;
 use App\Models\Exam;
 use App\Models\SchoolSection;
 use App\Models\Subject;
+use App\Models\Term;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
@@ -58,13 +59,19 @@ class ExamResource extends Resource
                 ->default(false)
                 ->label('Exam is Set')
                 ->searchable(),
+                Select::make('term_id')
+                ->options(Term::all()->pluck('name', 'id'))
+                ->preload()
+                ->searchable()
+                ->label("Term")
+                ->required(),
                 Select::make('assessment_type')
                 ->options([
                     "test"=>"Test",
                     "exam"=>"Exam"
                 ])
                 ->preload()
-                ->label("Subject")
+                ->label("Assessment Type")
                 ->searchable(),
 
                 TextInput::make('total_score')
@@ -80,8 +87,9 @@ class ExamResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('academic.title')->searchable(),
-                TextColumn::make('term.name')->searchable(),
-                TextColumn::make('subject.code')->searchable()
+                TextColumn::make('term.name')->searchable()->default('Term 1'),
+                TextColumn::make('subject.code')->searchable(),
+                TextColumn::make('subject.class.name')->searchable()
             ])
             ->filters([
                 //

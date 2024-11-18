@@ -54,7 +54,7 @@ protected function processQuestion(array $questionData, int $examId): array
         'image' => $questionData['image'] ?? null,
     ];
 
-    if ($questionData['type'] === 'multiple_choice') {
+    if ($questionData['question_type'] === 'multiple_choice') {
         $questionBankData['options'] = json_encode($questionData['options']);
     }
 

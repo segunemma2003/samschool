@@ -73,11 +73,11 @@ class TeacherResource extends Resource
                 ->label('Phone number')
                 ->tel()
                 ->required(),
-            Forms\Components\Select::make('roles')
-                ->relationship('roles', 'name')
-                ->multiple()
-                ->preload()
-                ->searchable()
+            // Forms\Components\Select::make('roles')
+            //     ->relationship('roles', 'name')
+            //     ->multiple()
+            //     ->preload()
+            //     ->searchable()
             ]);
     }
 

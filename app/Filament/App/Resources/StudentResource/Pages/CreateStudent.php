@@ -32,7 +32,8 @@ class CreateStudent extends CreateRecord
 
         $this->getRecord()->update([
             "email"=> $email,
-            "username"=> $username
+            "username"=> $username,
+            "roll" => $mindex
         ]);
 
     }

@@ -90,9 +90,9 @@ class StudentResource extends Resource
                     ->password()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('roll')
-                    ->required()
-                    ->maxLength(255),
+                // Forms\Components\TextInput::make('roll')
+                //     ->required()
+                //     ->maxLength(255),
                 Forms\Components\Textarea::make('remarks')
                     ->required()
                     ->maxLength(255),

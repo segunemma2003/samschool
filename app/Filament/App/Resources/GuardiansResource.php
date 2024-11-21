@@ -43,7 +43,7 @@ class GuardiansResource extends Resource
                     ->maxLength(255),
                 Forms\Components\TextInput::make('email')
                     ->email()
-                    ->unique(table: Guardians::class)
+                    ->unique(table: Guardians::class, ignoreRecord: true)
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('phone')
@@ -61,9 +61,9 @@ class GuardiansResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('username')->unique(table: User::class)
+                Forms\Components\TextInput::make('username')->unique(table: User::class, ignoreRecord: true)
                     ->maxLength(255)
-                    ->unique(table: Guardians::class)
+                    ->unique(table: Guardians::class, ignoreRecord: true)
                     ->required()
                     ->required(),
                 Forms\Components\Select::make('user_type')

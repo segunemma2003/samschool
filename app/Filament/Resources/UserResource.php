@@ -57,7 +57,7 @@ class UserResource extends Resource
                 Forms\Components\FileUpload::make('avatar')
                     ->disk('cloudinary')
                         ,
-                Forms\Components\TextInput::make('username')->unique(table: User::class)
+                Forms\Components\TextInput::make('username')->unique(table: User::class, ignoreRecord: true)
                     ->maxLength(255),
 
                 Forms\Components\Select::make('roles')

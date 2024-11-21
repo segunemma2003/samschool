@@ -120,7 +120,7 @@ class StudentResource extends Resource
                     ->options(StudentGroup::all()->pluck('name', 'id'))
                     ->searchable(),
                 Forms\Components\FileUpload::make('avatar')
-                ->label('passport')
+                ->label('Passport')
                     ->disk('cloudinary')
                         ->required(),
                 Forms\Components\Select::make('user_type')

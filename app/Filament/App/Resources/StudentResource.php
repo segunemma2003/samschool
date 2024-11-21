@@ -10,13 +10,16 @@ use App\Models\SchoolClass;
 use App\Models\SchoolSection;
 use App\Models\Student;
 use App\Models\StudentGroup;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Hash;
 
 class StudentResource extends Resource
 {
@@ -150,6 +153,42 @@ class StudentResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('changePassword')
+                ->label('Change Password')
+                ->action(function (array $data, $record) {
+                    // Update the teacher's password
+                    $record->update([
+                        'password' => Hash::make($data['password']),
+                    ]);
+
+                    // Find and update the associated user
+                    $user = User::where('email', $record->email)->first();
+                    if ($user) {
+                        $user->update([
+                            'password' => Hash::make($data['password']),
+                        ]);
+
+                        Notification::make()
+                            ->title('Password changed successfully for  Teacher !')
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('User record not found for the associated email!')
+                            ->danger()
+                            ->send();
+                    }
+                })
+                ->form([
+                    Forms\Components\TextInput::make('password')
+                        ->label('New Password')
+                        ->password()
+                        ->required()
+                        ->minLength(8),
+                ])
+                ->modalHeading('Change Password')
+                ->modalSubmitActionLabel('Save')
+                ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

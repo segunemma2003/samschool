@@ -31,12 +31,6 @@ class ExamResource extends Resource
     {
         return $form
             ->schema([
-                // Select::make('school_section_id')
-                // ->options(SchoolSection::all()->pluck('section', 'id'))
-                // ->preload()
-                // ->label("School Section")
-                // ->required()
-                // ->searchable(),
                 Select::make('subject_id')
                 ->options(Subject::all()->pluck('code', 'id'))
                 ->preload()

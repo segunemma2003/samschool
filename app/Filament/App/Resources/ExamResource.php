@@ -111,7 +111,10 @@ class ExamResource extends Resource
 
     public static function getPages(): array
     {
+        // $canCreate = Auth::user()->hasRole('admin');
+        // 'create' => $canCreate ? Pages\CreateExam::route('/create') : null,
         return [
+
             'index' => Pages\ListExams::route('/'),
             'create' => Pages\CreateExam::route('/create'),
             'view' => Pages\ViewExam::route('/{record}'),

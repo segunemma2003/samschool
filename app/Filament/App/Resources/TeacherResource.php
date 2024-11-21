@@ -31,7 +31,7 @@ class TeacherResource extends Resource
                     ->maxLength(255),
                 Forms\Components\TextInput::make('email')
                     ->email()
-                    ->unique(table: User::class)
+                    ->unique(table: Teacher::class, ignoreRecord: true)
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('designation')
@@ -46,7 +46,7 @@ class TeacherResource extends Resource
                 Forms\Components\Select::make('religion')
                 ->options([
                     'christianity' => 'Christianity',
-                    'muslim' => 'Muslim',
+                    'islam' => 'Islam',
                     'others' => 'Others',
                 ])->required(),
                 Forms\Components\DatePicker::make('joining_date')->required(),
@@ -63,7 +63,7 @@ class TeacherResource extends Resource
                 Forms\Components\TextInput::make('address')
                         ->required()
                         ->maxLength(255),
-                Forms\Components\TextInput::make('username')->unique(table: User::class)
+                Forms\Components\TextInput::make('username')->unique(table: Teacher::class, ignoreRecord: true)
                         ->maxLength(255)->required(),
                 Forms\Components\TextInput::make('password')
                     ->password()
@@ -73,11 +73,7 @@ class TeacherResource extends Resource
                     ->label('Phone number')
                     ->tel()
                     ->required(),
-                // Forms\Components\Select::make('roles')
-                //     ->relationship('roles', 'name')
-                //     ->multiple()
-                //     ->preload()
-                //     ->searchable()
+
             ]);
     }
 

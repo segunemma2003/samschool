@@ -48,7 +48,7 @@ class SchoolClassResource extends Resource
                 ->searchable(),
                 Forms\Components\Textarea::make('note')
                 ->label('Notes')
-                ->required()
+                // ->required()
     ,
             ]);
     }

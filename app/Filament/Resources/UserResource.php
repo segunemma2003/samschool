@@ -45,7 +45,7 @@ class UserResource extends Resource
                 Forms\Components\Select::make('religion')
                 ->options([
                     'christianity' => 'Christianity',
-                    'muslim' => 'Muslim',
+                    'islam' => 'Islam',
                     'others' => 'Others',
                 ]),
                 Forms\Components\Select::make('gender')

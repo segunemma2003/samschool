@@ -65,7 +65,7 @@ class StudentResource extends Resource
                 Forms\Components\Select::make('religion')
                     ->options([
                         'christianity' => 'Christianity',
-                        'muslim' => 'Muslim',
+                        'islam' => 'Islam',
                         'others' => 'Others',
                     ])->required(),
                 // Forms\Components\DatePicker::make('joining_date')->required(),

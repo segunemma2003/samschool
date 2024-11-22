@@ -94,7 +94,8 @@ class StudentResource extends Resource
                 //     ->required()
                 //     ->maxLength(255),
                 Forms\Components\Textarea::make('remarks')
-                    ->required()
+                ->label('Medical/Allergies')
+                    // ->required()
                     ->maxLength(255),
                 Forms\Components\Select::make('class_id')
                     ->label('Class Name')

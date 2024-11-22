@@ -61,10 +61,8 @@ class GuardianResource extends Resource
                 ->required()
                 ->maxLength(255),
 
-            Forms\Components\TextInput::make('username')->unique(table: User::class, ignoreRecord: true)
+            Forms\Components\TextInput::make('username')->unique(table: Guardians::class, ignoreRecord: true)
                 ->maxLength(255)
-                ->unique(table: Guardians::class, ignoreRecord: true)
-                ->required()
                 ->required(),
             Forms\Components\Select::make('user_type')
                 ->options([

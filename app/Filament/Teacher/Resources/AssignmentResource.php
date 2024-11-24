@@ -60,7 +60,7 @@ class AssignmentResource extends Resource
                     ->searchable(),
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject')
-                    ->options(Subject::where('teacher_id',$teacherId->id)->pluck('name', 'id'))
+                    ->options(Subject::where('teacher_id',$teacherId->id)->pluck('code', 'id'))
                     ->searchable(),
                 FileUpload::make('file')->disk('cloudinary'),
                 RichEditor::make('description')->required()

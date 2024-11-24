@@ -15,4 +15,21 @@ class Student extends Model
     {
         return $this->belongsTo(SchoolClass::class, 'class_id');
     }
+
+    public function courseForms()
+    {
+        return $this->hasMany(CourseForm::class, 'student_id');
+    }
+
+    public function subjects()
+{
+    return $this->hasManyThrough(
+        Subject::class,
+        CourseForm::class,
+        'student_id',    // Foreign key on CourseForm table
+        'id',            // Foreign key on Subject table
+        'id',            // Local key on Student table
+        'subject_id'     // Local key on CourseForm table
+    );
+}
 }

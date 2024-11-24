@@ -26,4 +26,8 @@ class Subject extends Model
         return $this->belongsTo(Teacher::class, 'teacher_id');
     }
 
+    public function courseOffer(){
+        return $this->hasMany(CourseForm::class, 'subject_id');
+    }
+
 }

@@ -4,6 +4,7 @@ namespace App\Filament\Ourstudent\Resources;
 
 use App\Filament\Ourstudent\Resources\AssignmentResource\Pages;
 use App\Filament\Ourstudent\Resources\AssignmentResource\RelationManagers;
+use App\Models\AcademicYear;
 use App\Models\Assignment;
 use App\Models\Student;
 use App\Models\User;
@@ -32,35 +33,35 @@ class AssignmentResource extends Resource
     }
 
     public static function table(Table $table): Table
-    {
-        $user = User::find(Auth::id());
-$student = Student::whereEmail($user->email)->first();
-        return $table
-            ->modifyQueryUsing(function (Builder $query) {
-                $userId = Auth::id(); // Simplified way to get the authenticated user ID
-            $user = User::find($userId);
+{
+    $user = Auth::user();
+    $academicYear = AcademicYear::whereStatus('true')->first();
+    $academicYearId = $academicYear->id ?? null;
+// dd($user);
+    if (!$user) {
+        return $table;
+    }
 
-            if ($user) {
-                $student = Student::whereEmail($user->email)->first();
+    $student = Student::whereEmail($user->email)->first();
 
-                if ($student && $student->class) {
-                    // Filter records where subject's class_id matches the student's class_id
-                    $query->whereHas('subject.class', function ($query) use ($student) {
-                        $query->where('id', $student->class->id);
-                    });
-                }
-            }
-            })
-            ->columns([
-                TextColumn::make('title'),
-                TextColumn::make('class.name'),
-                TextColumn::make('section.section'),
-                TextColumn::make('deadline'),
-                TextColumn::make('student_status')
+    return $table
+    ->modifyQueryUsing(function (Builder $query) use ($student, $academicYearId) {
+        if ($student && $academicYearId) {
+            $query->whereHas('subject.courseOffer', function ($subQuery) use ($student, $academicYearId) {
+                $subQuery->where('student_id', $student->id)
+                         ->where('academic_year_id', $academicYearId);
+            })->with(['subject', 'class', 'section', 'students']);
+        }
+    })
+        ->columns([
+            TextColumn::make('title'),
+            TextColumn::make('class.name'),
+            TextColumn::make('section.section'),
+            TextColumn::make('deadline'),
+            TextColumn::make('student_status')
                 ->label('Total Score')
                 ->formatStateUsing(function ($record) use ($student) {
-                    $pivots = $record->students()->find($student->id);
-                    $pivot = $pivots->pivot ?? null;
+                    $pivot = $record->students()->find($student->id)?->pivot;
 
                     if (!$pivot) {
                         return 'Not Answered';
@@ -71,33 +72,30 @@ $student = Student::whereEmail($user->email)->first();
                         : 'Marked';
                 })
                 ->sortable(),
-
             TextColumn::make('score_only')
                 ->label('Score')
                 ->formatStateUsing(function ($record) use ($student) {
-                    $pivot = $record->students()->find($student->id)?->pivot ?? null;
+                    $pivot = $record->students()->find($student->id)?->pivot;
 
                     return $pivot && !is_null($pivot->comments_score)
                         ? $pivot->total_score
                         : '-';
                 }),
-
-                TextColumn::make('created_at')->since()
-            ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
-    }
-
+            TextColumn::make('created_at')->since(),
+        ])
+        ->filters([
+            // Add filters if needed
+        ])
+        ->actions([
+            Tables\Actions\ViewAction::make(),
+            Tables\Actions\EditAction::make(),
+        ])
+        ->bulkActions([
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\DeleteBulkAction::make(),
+            ]),
+        ]);
+}
     public static function getRelations(): array
     {
         return [

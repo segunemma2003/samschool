@@ -16,7 +16,7 @@ class CreateTeacher extends CreateRecord
     public function afterCreate()
     {
         $teacher = $this->getRecord();
-        Log::info($teacher);
+        // Log::info($teacher);
 
         // $user = User::firstOrCreate(
         //     ['email' => $teacher['email']], // Match condition

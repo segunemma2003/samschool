@@ -66,6 +66,11 @@ public $timeLeft;
         }
     }
 
+    public function updateTimer($remainingTime)
+    {
+        $this->timer = $remainingTime;
+    }
+
     public function updatedDuration()
     {
         // You can implement any additional logic when duration updates

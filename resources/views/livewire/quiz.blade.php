@@ -11,10 +11,10 @@
                     Time Remaining: <span id="timer">{{ gmdate('H:i:s', $timeRemaining) }}</span>
                 </div>
             </div>
-            <div class="relative w-24 h-24 overflow-hidden bg-gray-300 rounded-lg shadow-inner dark:bg-gray-700">
+            {{-- <div class="relative w-24 h-24 overflow-hidden bg-gray-300 rounded-lg shadow-inner dark:bg-gray-700">
                 <video id="videoFeed" class="object-cover w-full h-full" autoplay muted></video>
                 <div class="absolute inset-0 bg-black rounded-lg opacity-25"></div>
-            </div>
+            </div> --}}
         </div>
 
         <!-- Conditional Rendering Based on State -->
@@ -47,6 +47,7 @@
             </div>
 
         @else
+
             <!-- Question Section -->
             <div class="p-6 space-y-6 rounded-lg shadow-lg bg-blue-50 dark:bg-blue-900">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
@@ -54,17 +55,17 @@
                 </h3>
 
                 <div class="space-y-2">
-                    @if($questions[$currentQuestion]['type'] === 'true_false')
+                    @if($questions[$currentQuestion]['question_type'] === 'true_false')
                         <label class="block p-3 bg-white rounded-lg shadow-md dark:bg-gray-700">
                             <input type="radio" name="question{{ $currentQuestion }}" value="true" wire:model="selectedAnswer" class="mr-2"> True
                         </label>
                         <label class="block p-3 bg-white rounded-lg shadow-md dark:bg-gray-700">
                             <input type="radio" name="question{{ $currentQuestion }}" value="false" wire:model="selectedAnswer" class="mr-2"> False
                         </label>
-                    @elseif($questions[$currentQuestion]['type'] === 'open_ended')
+                    @elseif($questions[$currentQuestion]['question_type'] === 'open_ended')
                         <textarea wire:model="selectedAnswer" rows="4" class="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-200" placeholder="Type your answer here..."></textarea>
-                    @else
-                        @foreach($questions[$currentQuestion]['options'] as $key => $option)
+                    @elseif($questions[$currentQuestion]['question_type']==="multiple_choice")
+                        @foreach(json_decode($questions[$currentQuestion]['options'], true) as $key => $option)
                             <label class="block p-3 bg-white rounded-lg shadow-md dark:bg-gray-700">
                                 <input type="radio" name="question{{ $currentQuestion }}" value="{{ $key }}" wire:model="selectedAnswer" class="mr-2"> {{ $key }}. {{ $option }}
                             </label>
@@ -122,31 +123,31 @@
         startTimer();
 
         // Start video feed
-        async function startCamera() {
-    const video = document.getElementById('videoFeed');
-    try {
+//         async function startCamera() {
+//     const video = document.getElementById('videoFeed');
+//     try {
 
-        // Request access to the camera
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        video.srcObject = stream;
-    } catch (error) {
-        console.error("Error accessing camera: ", error.name, error.message);
+//         // Request access to the camera
+//         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+//         video.srcObject = stream;
+//     } catch (error) {
+//         console.error("Error accessing camera: ", error.name, error.message);
 
-        // alert("Unable to access the camera. You will be redirected to the exam instruction page.");
-        // Redirect to the exam instruction page using the Laravel route
-        // window.location.href = examInstructionsRoute;
-    }
-}
+//         // alert("Unable to access the camera. You will be redirected to the exam instruction page.");
+//         // Redirect to the exam instruction page using the Laravel route
+//         // window.location.href = examInstructionsRoute;
+//     }
+// }
 
-        startCamera();
+        // startCamera();
 
         // Stop video feed and timer on quiz submission
         Livewire.on('quiz-submitted', () => {
             clearInterval(timerInterval);
-            let video = document.getElementById('videoFeed');
-            let stream = video.srcObject;
-            let tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
+            // let video = document.getElementById('videoFeed');
+            // let stream = video.srcObject;
+            // let tracks = stream.getTracks();
+            // tracks.forEach(track => track.stop());
         });
 
         // Update the timer display when navigating to the next question

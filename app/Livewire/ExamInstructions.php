@@ -11,11 +11,16 @@ class ExamInstructions extends Component
     // Define your instructions as an array
     public $instructions = [];
 
+    public $records;
+
     // Introduction text
     public $introduction = "Welcome to the online exam! Please read the instructions carefully before you begin. Make sure you are ready to take the exam in a quiet environment.";
 
-    public function mount()
+    public function mount($records)
     {
+
+        $this->records = $records;
+
         // Initialize the instructions array
         $this->instructions = [
             "Ensure you have a stable internet connection before starting the exam.",
@@ -48,7 +53,7 @@ class ExamInstructions extends Component
 
     public function confirmStart()
     {
-        return redirect()->route('exam.page'); // Change this to your exam page URL
+        return redirect()->route('exam.page', ['records'=> $this->records]); // Change this to your exam page URL
     }
 
     public function cancelStart()

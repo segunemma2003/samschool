@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('subject_id')->constrained('subjects')->onDelete('cascade');
             $table->date('exam_date')->nullable();  // Date of the exam
             $table->boolean('is_set')->default(false);
+            $table->string('duration')->default(0);
             $table->timestamps();
         });
     }

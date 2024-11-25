@@ -58,7 +58,7 @@ class TeacherImporter extends Importer
     {
 
          // Log::info($this->getColumns());
-         Log::info($this->data);
+        //  Log::info($this->data);
          // dd($this->data);
          $user = User::create([
              "name"=> $this->data['name'],

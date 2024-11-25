@@ -18,8 +18,8 @@ class CreateGuardians extends CreateRecord
     public function afterCreate()
     {
         $data = $this->getRecord();
-        Log::info($data);
-
+        // Log::info($data);
+//
         $user = User::updateOrCreate([
             "name"=> $data['name'],
             "email"=> $data['email'],

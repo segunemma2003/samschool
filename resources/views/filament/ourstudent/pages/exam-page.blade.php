@@ -1,4 +1,4 @@
 @vite('resources/css/app.css')
 <x-filament-panels::page>
-    <livewire:quiz>
+    <livewire:quiz :record="$record">
 </x-filament-panels::page>

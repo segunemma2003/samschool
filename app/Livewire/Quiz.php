@@ -2,16 +2,20 @@
 
 namespace App\Livewire;
 
+use App\Models\Exam;
+use App\Models\Student;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Quiz extends Component
 {
 
-    public $userName = 'John Doe';
-    public $subject = 'Mathematics';
-    public $quizTitle = 'Quiz 1';
-    public $duration = 30; // duration in minutes
+    public $userName = '';
+    public $subject = '';
+    public $quizTitle = '';
+    public $duration = 0; // duration in minutes
     public $currentQuestion = 0;
     public $questions = [];
     public $selectedAnswer = null;
@@ -22,10 +26,19 @@ class Quiz extends Component
     public $isReviewing = false;
 
     protected $listeners = ['submit' => 'submit'];
-    public function mount()
+    public function mount($record)
     {
+        $exam = Exam::where('id', $record)->first();
+        $userId = Auth::id();
+        $user= User::whereId($userId)->first();
+        $student = Student::whereEmail($user->email)->first();
+    $this->userName = $student->name;
+    $this->subject = $exam->subject->subjectDepot->name;
+    $this->quizTitle = $exam->details;
+        // dd($exam);
+        $this->duration = $exam->duration;
         $this->timeRemaining = $this->duration * 60; // Convert to seconds
-        $this->generateQuestions();
+        $this->generateQuestions($exam);
         $this->startTimer(); // Start the timer on mount
     }
 
@@ -36,130 +49,135 @@ class Quiz extends Component
         $this->isReviewing = true; // Set to true when quiz is submitted
     }
 
-    public function generateQuestions()
+    public function generateQuestions($exam)
     {
+        // dd($exam);
         // Sample questions with different types
-        $this->questions = [
-            [
-                'question' => 'What is the capital of France?',
-                'type' => 'mcq',
-                'options' => ['A' => 'Berlin', 'B' => 'Paris', 'C' => 'Madrid', 'D' => 'Rome'],
-                'correct' => 'B'
-            ],
-            [
-                'question' => 'The Earth is flat. ',
-                'type' => 'true_false',
-                'options' => [],
-                'correct' => 'False'
-            ],
-            [
-                'question' => 'What is the largest mammal in the world?',
-                'type' => 'open_ended',
-                'options' => [],
-                'correct' => 'Blue Whale'
-            ],
-            [
-                'question' => 'What is 2 + 2?',
-                'type' => 'mcq',
-                'options' => ['A' => '3', 'B' => '4', 'C' => '5', 'D' => '6'],
-                'correct' => 'B'
-            ],
-            [
-                'question' => 'The sun rises in the east. ',
-                'type' => 'true_false',
-                'options' => [],
-                'correct' => 'True'
-            ],
-            [
-                'question' => 'What is the chemical symbol for water?',
-                'type' => 'mcq',
-                'options' => ['A' => 'H2O', 'B' => 'O2', 'C' => 'CO2', 'D' => 'He'],
-                'correct' => 'A'
-            ],
-            [
-                'question' => 'Is the sky blue? ',
-                'type' => 'true_false',
-                'options' => [],
-                'correct' => 'True'
-            ],
-            [
-                'question' => 'Name the first planet in our solar system.',
-                'type' => 'open_ended',
-                'options' => [],
-                'correct' => 'Mercury'
-            ],
-            [
-                'question' => 'Which gas do plants absorb from the atmosphere?',
-                'type' => 'mcq',
-                'options' => ['A' => 'Oxygen', 'B' => 'Carbon Dioxide', 'C' => 'Nitrogen', 'D' => 'Hydrogen'],
-                'correct' => 'B'
-            ],
-            [
-                'question' => 'The Great Wall of China is visible from space. ',
-                'type' => 'true_false',
-                'options' => [],
-                'correct' => 'False'
-            ],
-            [
-                'question' => 'What is the hardest natural substance on Earth?',
-                'type' => 'open_ended',
-                'options' => [],
-                'correct' => 'Diamond'
-            ],
-            [
-                'question' => 'How many continents are there?',
-                'type' => 'mcq',
-                'options' => ['A' => '5', 'B' => '6', 'C' => '7', 'D' => '8'],
-                'correct' => 'C'
-            ],
-            [
-                'question' => 'Water boils at 100 degrees Celsius. ',
-                'type' => 'true_false',
-                'options' => [],
-                'correct' => 'True'
-            ],
-            [
-                'question' => 'Who wrote "Romeo and Juliet"?',
-                'type' => 'open_ended',
-                'options' => [],
-                'correct' => 'William Shakespeare'
-            ],
-            [
-                'question' => 'What is the main ingredient in guacamole?',
-                'type' => 'mcq',
-                'options' => ['A' => 'Tomato', 'B' => 'Avocado', 'C' => 'Pepper', 'D' => 'Onion'],
-                'correct' => 'B'
-            ],
-            [
-                'question' => 'Do humans have more than two legs? ',
-                'type' => 'true_false',
-                'options' => [],
-                'correct' => 'False'
-            ],
-            [
-                'question' => 'What is the speed of light in vacuum?',
-                'type' => 'open_ended',
-                'options' => [],
-                'correct' => '299,792 km/s'
-            ],
-            [
-                'question' => 'Which element has the atomic number 1?',
-                'type' => 'mcq',
-                'options' => ['A' => 'Helium', 'B' => 'Hydrogen', 'C' => 'Lithium', 'D' => 'Oxygen'],
-                'correct' => 'B'
-            ],
-            [
-                'question' => 'The heart is a muscle. ',
-                'type' => 'true_false',
-                'options' => [],
-                'correct' => 'True'
-            ],
-        ];
+
+        // dd($exam->questions);
+        $this->questions = $exam->questions->toArray();
+        // dd($this->questions);
+        // $this->questions = [
+        //     [
+        //         'question' => 'What is the capital of France?',
+        //         'type' => 'mcq',
+        //         'options' => ['A' => 'Berlin', 'B' => 'Paris', 'C' => 'Madrid', 'D' => 'Rome'],
+        //         'correct' => 'B'
+        //     ],
+        //     [
+        //         'question' => 'The Earth is flat. ',
+        //         'type' => 'true_false',
+        //         'options' => [],
+        //         'correct' => 'False'
+        //     ],
+        //     [
+        //         'question' => 'What is the largest mammal in the world?',
+        //         'type' => 'open_ended',
+        //         'options' => [],
+        //         'correct' => 'Blue Whale'
+        //     ],
+        //     [
+        //         'question' => 'What is 2 + 2?',
+        //         'type' => 'mcq',
+        //         'options' => ['A' => '3', 'B' => '4', 'C' => '5', 'D' => '6'],
+        //         'correct' => 'B'
+        //     ],
+        //     [
+        //         'question' => 'The sun rises in the east. ',
+        //         'type' => 'true_false',
+        //         'options' => [],
+        //         'correct' => 'True'
+        //     ],
+        //     [
+        //         'question' => 'What is the chemical symbol for water?',
+        //         'type' => 'mcq',
+        //         'options' => ['A' => 'H2O', 'B' => 'O2', 'C' => 'CO2', 'D' => 'He'],
+        //         'correct' => 'A'
+        //     ],
+        //     [
+        //         'question' => 'Is the sky blue? ',
+        //         'type' => 'true_false',
+        //         'options' => [],
+        //         'correct' => 'True'
+        //     ],
+        //     [
+        //         'question' => 'Name the first planet in our solar system.',
+        //         'type' => 'open_ended',
+        //         'options' => [],
+        //         'correct' => 'Mercury'
+        //     ],
+        //     [
+        //         'question' => 'Which gas do plants absorb from the atmosphere?',
+        //         'type' => 'mcq',
+        //         'options' => ['A' => 'Oxygen', 'B' => 'Carbon Dioxide', 'C' => 'Nitrogen', 'D' => 'Hydrogen'],
+        //         'correct' => 'B'
+        //     ],
+        //     [
+        //         'question' => 'The Great Wall of China is visible from space. ',
+        //         'type' => 'true_false',
+        //         'options' => [],
+        //         'correct' => 'False'
+        //     ],
+        //     [
+        //         'question' => 'What is the hardest natural substance on Earth?',
+        //         'type' => 'open_ended',
+        //         'options' => [],
+        //         'correct' => 'Diamond'
+        //     ],
+        //     [
+        //         'question' => 'How many continents are there?',
+        //         'type' => 'mcq',
+        //         'options' => ['A' => '5', 'B' => '6', 'C' => '7', 'D' => '8'],
+        //         'correct' => 'C'
+        //     ],
+        //     [
+        //         'question' => 'Water boils at 100 degrees Celsius. ',
+        //         'type' => 'true_false',
+        //         'options' => [],
+        //         'correct' => 'True'
+        //     ],
+        //     [
+        //         'question' => 'Who wrote "Romeo and Juliet"?',
+        //         'type' => 'open_ended',
+        //         'options' => [],
+        //         'correct' => 'William Shakespeare'
+        //     ],
+        //     [
+        //         'question' => 'What is the main ingredient in guacamole?',
+        //         'type' => 'mcq',
+        //         'options' => ['A' => 'Tomato', 'B' => 'Avocado', 'C' => 'Pepper', 'D' => 'Onion'],
+        //         'correct' => 'B'
+        //     ],
+        //     [
+        //         'question' => 'Do humans have more than two legs? ',
+        //         'type' => 'true_false',
+        //         'options' => [],
+        //         'correct' => 'False'
+        //     ],
+        //     [
+        //         'question' => 'What is the speed of light in vacuum?',
+        //         'type' => 'open_ended',
+        //         'options' => [],
+        //         'correct' => '299,792 km/s'
+        //     ],
+        //     [
+        //         'question' => 'Which element has the atomic number 1?',
+        //         'type' => 'mcq',
+        //         'options' => ['A' => 'Helium', 'B' => 'Hydrogen', 'C' => 'Lithium', 'D' => 'Oxygen'],
+        //         'correct' => 'B'
+        //     ],
+        //     [
+        //         'question' => 'The heart is a muscle. ',
+        //         'type' => 'true_false',
+        //         'options' => [],
+        //         'correct' => 'True'
+        //     ],
+        // ];
 
         // Shuffle questions randomly
         shuffle($this->questions);
         // Limit to 20 questions
-        $this->questions = array_slice($this->questions, 0, 20);
+        // $this->questions = array_slice($this->questions, 0, 20);
     }
     public function startTimer()
     {
@@ -222,8 +240,10 @@ class Quiz extends Component
        $this->isSubmitted = true; // Set the submission state
        $this->saveCurrentAnswer();
        $this->dispatch('done');
-       $this->dispatch('stop-recording');
+    //    $this->dispatch('stop-recording');
        $this->dispatch('quiz-submitted');
+
+       dd($this->userAnswers);
         // Handle submission logic here (e.g., save to database)
     }
 

@@ -13,16 +13,15 @@ class ExamPage extends Page
 
     protected static string $view = 'filament.ourstudent.pages.exam-page';
 
-
-
-
     use WithPagination;
 
     protected static ?string $navigationLabel = null;
     protected static ?string $title = 'Exam';
 
-    public function mount()
+    public $record;
+    public function mount($records)
     {
+        $this->record = $records;
         Filament::getPanel()->navigation(false);
     }
 

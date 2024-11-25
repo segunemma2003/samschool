@@ -67,7 +67,7 @@ public function getJobRetryUntil(): ?CarbonInterface
     public function resolveRecord(): ?Guardians
     {
         // Log::info($this->getColumns());
-        Log::info($this->data);
+        // Log::info($this->data);
         // dd($this->data);
         $user = User::create([
             "name"=> $this->data['name'],

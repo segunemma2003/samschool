@@ -37,7 +37,7 @@ Route::middleware([
     Route::get('/', function () {
         return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
     });
-    Route::get('/exam-page', ExamPage::class)->name('exam.page');
+    Route::get('/exam-page/{records}', ExamPage::class)->name('exam.page');
     Route::get('/exam-instructions', ExamInstructions::class)->name('exam.instructions');
     Route::get('/exam/review', ExamReviewPage::class)->name('exam.review');
     Route::get('/exam/final-submission', ExamFinalSubmissionPage::class)->name('exam.final_submission');

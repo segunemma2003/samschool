@@ -16,9 +16,9 @@ class CreateStudent extends CreateRecord
     public function afterCreate()
     {
         $data = $this->getRecord();
-        Log::info($data);
+        // Log::info($data);
         $mindex = User::max('id')+1;
-        Log::info($mindex);
+        // Log::info($mindex);
         $email = str_replace(' ', '.', $data['name']). $mindex.'@'.request()->getHost();
         $username = str_replace(' ', '.', $data['name']). $mindex;
         $user = User::updateOrCreate([

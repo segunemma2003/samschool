@@ -2,42 +2,61 @@
 
 namespace App\Livewire;
 
+use App\Models\CourseForm;
 use App\Models\Exam;
+use App\Models\QuizScore;
+use App\Models\QuizSubmission;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
+
 class Quiz extends Component
 {
 
+    public $showSuccessMessage = false;
+    public $isLoading = false;
     public $userName = '';
     public $subject = '';
+    public $studentId = null;
     public $quizTitle = '';
     public $duration = 0; // duration in minutes
     public $currentQuestion = 0;
     public $questions = [];
+    public $examId = null;
     public $selectedAnswer = null;
     public $userAnswers = [];
     public $timeRemaining; // Total time remaining in seconds
     public $timerActive = false; // To track if the timer is active
     public $isSubmitted = false; // To track if the quiz has been submitted
     public $isReviewing = false;
+    public $courseFormId = null;
 
     protected $listeners = ['submit' => 'submit'];
+    protected $refresh = ['isLoading','showSuccessMessage'];
     public function mount($record)
     {
         $exam = Exam::where('id', $record)->first();
+        $this->examId = $exam->id;
+        // dd($exam);
         $userId = Auth::id();
         $user= User::whereId($userId)->first();
         $student = Student::whereEmail($user->email)->first();
-    $this->userName = $student->name;
-    $this->subject = $exam->subject->subjectDepot->name;
-    $this->quizTitle = $exam->details;
+        $this->studentId =  $student->id;
+        $course = CourseForm::where('subject_id', $exam->subject_id)
+        ->where('student_id', $student->id)
+        ->where('academic_year_id', $exam->academic_year_id)
+        ->first();
+        // dd($course);
+        $this->courseFormId = $course->id;
+        $this->userName = $student->name;
+        $this->subject = $exam->subject->subjectDepot->name;
+        $this->quizTitle = $exam->details;
         // dd($exam);
         $this->duration = $exam->duration;
-        $this->timeRemaining = $this->duration * 60; // Convert to seconds
+        $this->timeRemaining = $exam->duration * 60; // Convert to seconds
         $this->generateQuestions($exam);
         $this->startTimer(); // Start the timer on mount
     }
@@ -56,129 +75,16 @@ class Quiz extends Component
 
         // dd($exam->questions);
         $this->questions = $exam->questions->toArray();
+
         // dd($this->questions);
-        // $this->questions = [
-        //     [
-        //         'question' => 'What is the capital of France?',
-        //         'type' => 'mcq',
-        //         'options' => ['A' => 'Berlin', 'B' => 'Paris', 'C' => 'Madrid', 'D' => 'Rome'],
-        //         'correct' => 'B'
-        //     ],
-        //     [
-        //         'question' => 'The Earth is flat. ',
-        //         'type' => 'true_false',
-        //         'options' => [],
-        //         'correct' => 'False'
-        //     ],
-        //     [
-        //         'question' => 'What is the largest mammal in the world?',
-        //         'type' => 'open_ended',
-        //         'options' => [],
-        //         'correct' => 'Blue Whale'
-        //     ],
-        //     [
-        //         'question' => 'What is 2 + 2?',
-        //         'type' => 'mcq',
-        //         'options' => ['A' => '3', 'B' => '4', 'C' => '5', 'D' => '6'],
-        //         'correct' => 'B'
-        //     ],
-        //     [
-        //         'question' => 'The sun rises in the east. ',
-        //         'type' => 'true_false',
-        //         'options' => [],
-        //         'correct' => 'True'
-        //     ],
-        //     [
-        //         'question' => 'What is the chemical symbol for water?',
-        //         'type' => 'mcq',
-        //         'options' => ['A' => 'H2O', 'B' => 'O2', 'C' => 'CO2', 'D' => 'He'],
-        //         'correct' => 'A'
-        //     ],
-        //     [
-        //         'question' => 'Is the sky blue? ',
-        //         'type' => 'true_false',
-        //         'options' => [],
-        //         'correct' => 'True'
-        //     ],
-        //     [
-        //         'question' => 'Name the first planet in our solar system.',
-        //         'type' => 'open_ended',
-        //         'options' => [],
-        //         'correct' => 'Mercury'
-        //     ],
-        //     [
-        //         'question' => 'Which gas do plants absorb from the atmosphere?',
-        //         'type' => 'mcq',
-        //         'options' => ['A' => 'Oxygen', 'B' => 'Carbon Dioxide', 'C' => 'Nitrogen', 'D' => 'Hydrogen'],
-        //         'correct' => 'B'
-        //     ],
-        //     [
-        //         'question' => 'The Great Wall of China is visible from space. ',
-        //         'type' => 'true_false',
-        //         'options' => [],
-        //         'correct' => 'False'
-        //     ],
-        //     [
-        //         'question' => 'What is the hardest natural substance on Earth?',
-        //         'type' => 'open_ended',
-        //         'options' => [],
-        //         'correct' => 'Diamond'
-        //     ],
-        //     [
-        //         'question' => 'How many continents are there?',
-        //         'type' => 'mcq',
-        //         'options' => ['A' => '5', 'B' => '6', 'C' => '7', 'D' => '8'],
-        //         'correct' => 'C'
-        //     ],
-        //     [
-        //         'question' => 'Water boils at 100 degrees Celsius. ',
-        //         'type' => 'true_false',
-        //         'options' => [],
-        //         'correct' => 'True'
-        //     ],
-        //     [
-        //         'question' => 'Who wrote "Romeo and Juliet"?',
-        //         'type' => 'open_ended',
-        //         'options' => [],
-        //         'correct' => 'William Shakespeare'
-        //     ],
-        //     [
-        //         'question' => 'What is the main ingredient in guacamole?',
-        //         'type' => 'mcq',
-        //         'options' => ['A' => 'Tomato', 'B' => 'Avocado', 'C' => 'Pepper', 'D' => 'Onion'],
-        //         'correct' => 'B'
-        //     ],
-        //     [
-        //         'question' => 'Do humans have more than two legs? ',
-        //         'type' => 'true_false',
-        //         'options' => [],
-        //         'correct' => 'False'
-        //     ],
-        //     [
-        //         'question' => 'What is the speed of light in vacuum?',
-        //         'type' => 'open_ended',
-        //         'options' => [],
-        //         'correct' => '299,792 km/s'
-        //     ],
-        //     [
-        //         'question' => 'Which element has the atomic number 1?',
-        //         'type' => 'mcq',
-        //         'options' => ['A' => 'Helium', 'B' => 'Hydrogen', 'C' => 'Lithium', 'D' => 'Oxygen'],
-        //         'correct' => 'B'
-        //     ],
-        //     [
-        //         'question' => 'The heart is a muscle. ',
-        //         'type' => 'true_false',
-        //         'options' => [],
-        //         'correct' => 'True'
-        //     ],
-        // ];
+
 
         // Shuffle questions randomly
         shuffle($this->questions);
         // Limit to 20 questions
         // $this->questions = array_slice($this->questions, 0, 20);
     }
+
     public function startTimer()
     {
         $this->timerActive = true;
@@ -191,6 +97,9 @@ class Quiz extends Component
     public function updateTimer($timer)
     {
         $this->timeRemaining = $timer; // Ensure $timer is being passed correctly
+        if ($this->timeRemaining <= 0 && !$this->isSubmitted) {
+            $this->submit();
+        }
     }
 
 
@@ -235,17 +144,61 @@ class Quiz extends Component
         $this->currentQuestion = 0; // Reset to first question or manage as needed
     }
 
-    public function submit()
-    {
-       $this->isSubmitted = true; // Set the submission state
-       $this->saveCurrentAnswer();
-       $this->dispatch('done');
-    //    $this->dispatch('stop-recording');
-       $this->dispatch('quiz-submitted');
+    public function submitResult()
+{
+    $this->isLoading = true; // Start loading
 
-       dd($this->userAnswers);
-        // Handle submission logic here (e.g., save to database)
+    try {
+        // Your existing submission logic
+        $this->isSubmitted = true;
+        $this->saveCurrentAnswer();
+        $this->dispatch('done');
+        $this->dispatch('quiz-submitted');
+        $totalScore = 0;
+
+        foreach ($this->questions as $index => $question) {
+            if ($this->userAnswers[$index] == $question['answer']) {
+                $totalScore += $question['marks'];
+            }
+        }
+
+        $quizScore = QuizScore::firstOrNew(
+            ['course_form_id' => $this->courseFormId, 'student_id' => $this->studentId, 'exam_id'=>$this->examId],
+            ['comments' => '']
+        );
+
+        $quizScore->total_score = $totalScore;
+        $quizScore->save();
+
+        foreach ($this->questions as $index => $question) {
+            $quizSubmission = QuizSubmission::firstOrNew(
+                [
+                    'course_form_id' => $this->courseFormId,
+                    'student_id' => $this->studentId,
+                    'quiz_score_id' => $quizScore->id,
+                    'question_id' => $question['id'],
+                    'exam_id'=>$this->examId
+                ],
+                ['comments' => '']
+            );
+
+            $quizSubmission->correct = $this->userAnswers[$index] == $question['answer'];
+            $quizSubmission->answer = $this->userAnswers[$index] ?? ' ';
+            $quizSubmission->score = $this->userAnswers[$index] == $question['answer'] ? $question['marks'] : 0;
+            $quizSubmission->save();
+        }
+
+        $this->isLoading = false;
+        $this->isReviewing= false;
+        $this->showSuccessMessage = true;
+        // $this->dispatch('refresh');
+        // dd($this->showSuccessMessage);
+    } finally {
+        $this->isLoading = false; // Stop loading
     }
+}
+
+
 
     public function review()
     {
@@ -263,6 +216,7 @@ class Quiz extends Component
         return view('livewire.quiz', [
             'isSubmitted' => $this->isSubmitted, // Pass submission state to view
             'timeRemaining' => $this->timeRemaining, // Pass time remaining to view
+            // 'isLoading' => $this->isLoading
         ]);
     }
 }

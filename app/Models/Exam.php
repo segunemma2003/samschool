@@ -30,4 +30,10 @@ class Exam extends Model
     {
         return $this->hasMany(QuestionBank::class, 'exam_id');
     }
+
+    public function examScore($studentId)
+    {
+        return $this->hasOne(QuizScore::class, 'exam_id')
+        ->where('student_id', $studentId);
+    }
 }

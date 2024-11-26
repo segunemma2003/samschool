@@ -55,7 +55,27 @@ class ExamResource extends Resource
                 TextColumn::make('academic.title')->searchable(),
                 TextColumn::make('term.name')->searchable()->default('Term 1'),
                 TextColumn::make('subject.code')->searchable(),
-                TextColumn::make('subject.class.name')->searchable()
+                TextColumn::make('subject.class.name')->searchable(),
+                TextColumn::make('subject.class.name')->searchable(),
+                TextColumn::make('score') // You can display specific attributes of examScore
+                ->label('Exam Score') // Label the column
+                ->formatStateUsing(function ($record) use ($student) {
+                    // Pass student ID to the examScore method
+                    $examScore = $record->examScore($student->id); // Call the relationship with the student ID
+
+                    // Check if there's an examScore relationship
+                    if (!$examScore) {
+                        return 'Not Submitted'; // If no exam score exists
+                    }
+
+                    // If the examScore exists but is not graded
+                    if ($examScore->approved !== 'yes') {
+                        return 'Not Graded'; // If it's done but not graded yet
+                    }
+
+                    // If the examScore exists and is graded, return the total score
+                    return $examScore->total_score ?? 'No Score'; // Return the total score or a fallback
+                }),
             ])
             ->filters([
                 //
@@ -63,6 +83,9 @@ class ExamResource extends Resource
             ->actions([
                 // Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make()
+                ->visible(function ($record) use ($student) {
+                    return $record->status === true && !$record->examScore($student->id)->exists();
+                }),
             ])
             ->bulkActions([
                 // Tables\Actions\BulkActionGroup::make([

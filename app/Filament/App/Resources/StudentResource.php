@@ -2,8 +2,10 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Exports\StudentExport;
 use App\Filament\App\Resources\StudentResource\Pages;
 use App\Filament\App\Resources\StudentResource\RelationManagers;
+use App\Filament\Exports\StudentExporter;
 use App\Models\Arm;
 use App\Models\Guardians;
 use App\Models\SchoolClass;
@@ -16,10 +18,12 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StudentResource extends Resource
 {
@@ -190,6 +194,27 @@ class StudentResource extends Resource
                 ->modalHeading('Change Password')
                 ->modalSubmitActionLabel('Save')
                 ->requiresConfirmation(),
+
+
+                // ExportAction::make()
+                //      ->exporter(StudentExporter::class)
+                //      ->modifyQueryUsing(function (Builder $query, array $data) {
+                //         if (!empty($data['search'] ?? null)) {
+                //             $search = $data['search'];
+
+                //             // Filter across multiple fields
+                //             $query->where(function ($q) use ($search) {
+                //                 $q->where('name', 'like', '%' . $search . '%')
+                //                   ->orWhere('username', 'like', '%' . $search . '%')
+                //                   ->orWhereHas('class', function ($classQuery) use ($search) {
+                //                       $classQuery->where('name', 'like', '%' . $search . '%');
+                //                   });
+                //             });
+                //         }
+
+                //         return $query;
+                //     })
+                //      ->fileDisk('cloudinary')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

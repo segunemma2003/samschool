@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Exports\StudentExport;
 use App\Filament\Teacher\Resources\StudentResource\Pages;
 use App\Filament\Teacher\Resources\StudentResource\RelationManagers;
 use App\Models\Arm;
@@ -14,9 +15,11 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StudentResource extends Resource
 {
@@ -150,6 +153,7 @@ class StudentResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

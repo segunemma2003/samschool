@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\AdminLogin;
+use App\Filament\Auth\CustomLogin;
 use Filament\Enums\ThemeMode;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
@@ -36,6 +38,7 @@ class AppPanelProvider extends PanelProvider
         return $panel
             ->id('app')
             ->path('app')
+            ->login(AdminLogin::class)
             ->colors([
                 'primary' => Color::Amber,
             ])

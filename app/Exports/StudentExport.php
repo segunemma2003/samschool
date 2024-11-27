@@ -25,6 +25,7 @@ class StudentExport implements FromCollection , WithHeadings
                 'Name' => $student->name,
                 'Username' => $student->username,
                 'Class' => $student->class->name ?? 'N/A',
+                'Email' => $student->email
             ];
         });
     }
@@ -37,6 +38,6 @@ class StudentExport implements FromCollection , WithHeadings
 
     public function headings(): array
     {
-        return ['Name', 'Username', 'Class'];
+        return ['Name', 'Username', 'Class', 'Email'];
     }
 }

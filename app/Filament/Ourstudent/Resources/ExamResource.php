@@ -43,7 +43,8 @@ class ExamResource extends Resource
 
     $student = Student::whereEmail($user->email)->first();
         return $table
-        ->recordAction(null)
+        ->recordUrl(null)
+->recordAction(null)
         ->modifyQueryUsing(function (Builder $query) use ($student, $academicYearId) {
             if ($student && $academicYearId) {
                 $query->whereHas('subject.courseOffer', function ($subQuery) use ($student, $academicYearId) {

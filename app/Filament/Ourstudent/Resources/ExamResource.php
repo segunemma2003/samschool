@@ -86,7 +86,7 @@ class ExamResource extends Resource
                 // Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make()
                 ->visible(function ($record) use ($student) {
-                    return ($record->is_set === "yes"||$record->is_set === true);
+                    return !$record->examScore($student->id)->exists();
                 }),
             ])
             ->bulkActions([

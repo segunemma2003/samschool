@@ -52,11 +52,11 @@ class ExamResource extends Resource
             }
         })
             ->columns([
-                TextColumn::make('academic.title')->searchable(),
-                TextColumn::make('term.name')->searchable()->default('Term 1'),
-                TextColumn::make('subject.code')->searchable(),
-                TextColumn::make('subject.class.name')->searchable(),
-                TextColumn::make('subject.class.name')->searchable(),
+                TextColumn::make('academic.title')->searchable()->clickable(false),
+                TextColumn::make('term.name')->searchable()->default('Term 1')->clickable(false),
+                TextColumn::make('subject.code')->searchable()->clickable(false),
+                TextColumn::make('subject.class.name')->searchable()->clickable(false),
+                TextColumn::make('subject.class.name')->searchable()->clickable(false),
                 TextColumn::make('score') // You can display specific attributes of examScore
                 ->label('Exam Score') // Label the column
                 ->formatStateUsing(function ($record) use ($student) {
@@ -75,7 +75,7 @@ class ExamResource extends Resource
 
                     // If the examScore exists and is graded, return the total score
                     return $examScore->total_score ?? 'No Score'; // Return the total score or a fallback
-                }),
+                })->clickable(false),
             ])
             ->filters([
                 //
@@ -84,7 +84,7 @@ class ExamResource extends Resource
                 // Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make()
                 ->visible(function ($record) use ($student) {
-                    return $record->status === true && !$record->examScore($student->id)->exists();
+                    return $record->is_set === true && !$record->examScore($student->id)->exists();
                 }),
             ])
             ->bulkActions([

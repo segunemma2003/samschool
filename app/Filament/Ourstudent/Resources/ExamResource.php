@@ -59,6 +59,7 @@ class ExamResource extends Resource
                 TextColumn::make('subject.code')->searchable(),
                 TextColumn::make('subject.class.name')->searchable(),
                 TextColumn::make('subject.class.name')->searchable(),
+                TextColumn::make('is_set')->searchable(),
                 TextColumn::make('score') // You can display specific attributes of examScore
                 ->label('Exam Score') // Label the column
                 ->formatStateUsing(function ($record) use ($student) {
@@ -86,7 +87,7 @@ class ExamResource extends Resource
                 // Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make()
                 ->visible(function ($record) use ($student) {
-                    return !$record->examScore($student->id)->exists();
+                    return (!$record->examScore($student->id)->exists()) &&  ($record->is_set == "yes"||$record->is_set == true) ;
                 }),
             ])
             ->bulkActions([

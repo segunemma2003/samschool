@@ -43,6 +43,7 @@ class ExamResource extends Resource
 
     $student = Student::whereEmail($user->email)->first();
         return $table
+        ->recordAction(null)
         ->modifyQueryUsing(function (Builder $query) use ($student, $academicYearId) {
             if ($student && $academicYearId) {
                 $query->whereHas('subject.courseOffer', function ($subQuery) use ($student, $academicYearId) {
@@ -52,11 +53,11 @@ class ExamResource extends Resource
             }
         })
             ->columns([
-                TextColumn::make('academic.title')->searchable()->clickable(false),
-                TextColumn::make('term.name')->searchable()->default('Term 1')->clickable(false),
-                TextColumn::make('subject.code')->searchable()->clickable(false),
-                TextColumn::make('subject.class.name')->searchable()->clickable(false),
-                TextColumn::make('subject.class.name')->searchable()->clickable(false),
+                TextColumn::make('academic.title')->searchable(),
+                TextColumn::make('term.name')->searchable()->default('Term 1'),
+                TextColumn::make('subject.code')->searchable(),
+                TextColumn::make('subject.class.name')->searchable(),
+                TextColumn::make('subject.class.name')->searchable(),
                 TextColumn::make('score') // You can display specific attributes of examScore
                 ->label('Exam Score') // Label the column
                 ->formatStateUsing(function ($record) use ($student) {
@@ -75,7 +76,7 @@ class ExamResource extends Resource
 
                     // If the examScore exists and is graded, return the total score
                     return $examScore->total_score ?? 'No Score'; // Return the total score or a fallback
-                })->clickable(false),
+                }),
             ])
             ->filters([
                 //

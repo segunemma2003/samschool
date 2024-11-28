@@ -59,7 +59,7 @@ class ExamResource extends Resource
                 TextColumn::make('subject.code')->searchable(),
                 TextColumn::make('subject.class.name')->searchable(),
                 TextColumn::make('subject.class.name')->searchable(),
-                TextColumn::make('is_set')->searchable(),
+                // TextColumn::make('is_set')->searchable(),
                 TextColumn::make('score') // You can display specific attributes of examScore
                 ->label('Exam Score') // Label the column
                 ->formatStateUsing(function ($record) use ($student) {

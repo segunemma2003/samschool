@@ -91,6 +91,10 @@ class ExamResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('view-students')
+                ->label('View Students') // Custom label for the action
+                ->url(fn ($record) => static::getUrl('view-students', ['record' => $record->getKey()])) // Correctly generates the URL
+                ->icon('heroicon-o-user-group') // Optional: Add an icon
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -113,6 +117,8 @@ class ExamResource extends Resource
             'create' => Pages\CreateExam::route('/create'),
             'view' => Pages\ViewExam::route('/{record}'),
             'edit' => Pages\EditExam::route('/{record}/edit'),
+            'view-students'=>  Pages\ViewExamStudent::route('/students/{record}'),
+            'exam-student-details' => Pages\ExamStudentDetails::route('/exam-student-details/{quizScoreId}'),
         ];
     }
 }

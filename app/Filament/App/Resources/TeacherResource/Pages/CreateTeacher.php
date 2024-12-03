@@ -18,15 +18,15 @@ class CreateTeacher extends CreateRecord
         $teacher = $this->getRecord();
         // Log::info($teacher);
 
-        // $user = User::firstOrCreate(
-        //     ['email' => $teacher['email']], // Match condition
-        //     [
-        //         'name' => $teacher['name'],
-        //         'password' => Hash::make($teacher['password']),
-        //         'username' => $teacher['username'],
-        //         'user_type' => 'teacher',
-        //     ]
-        // );
+        $user = User::firstOrCreate(
+            ['email' => $teacher['email']], // Match condition
+            [
+                'name' => $teacher['name'],
+                'password' => Hash::make($teacher['password']),
+                'username' => $teacher['username'],
+                'user_type' => 'teacher',
+            ]
+        );
 
         // $this->getRecord()->update([
         //     "user_id"=>$user->id

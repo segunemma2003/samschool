@@ -20,6 +20,9 @@ class CreateStudent extends CreateRecord
         // Log::info($mindex);
         $email = str_replace(' ', '.', $data['name']). $mindex.'@'.request()->getHost();
         $username = str_replace(' ', '.', $data['name']). $mindex;
+
+        $email = str_replace('..', '.', $email);
+$username = str_replace('..', '.', $username);
         $user = User::updateOrCreate([
             "name"=> $data['name'],
             "email"=>  $email,

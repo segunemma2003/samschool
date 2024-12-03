@@ -42,6 +42,7 @@ class ExamResource extends Resource
     }
 
     $student = Student::whereEmail($user->email)->first();
+    // dd($student);
         return $table
         ->recordUrl(null)
 ->recordAction(null)
@@ -65,7 +66,7 @@ class ExamResource extends Resource
                 ->formatStateUsing(function ($record) use ($student) {
                     // Pass student ID to the examScore method
                     $examScore = $record->examScore($student->id); // Call the relationship with the student ID
-
+                    dd($examScore);
                     // Check if there's an examScore relationship
                     if (!$examScore) {
                         return 'Not Submitted'; // If no exam score exists
@@ -87,7 +88,15 @@ class ExamResource extends Resource
                 // Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make()
                 ->visible(function ($record) use ($student) {
-                    return (!$record->examScore($student->id)->exists()) &&  ($record->is_set == "yes"||$record->is_set == true) ;
+                    // Ensure $student is not null
+                    // if (!$student) {
+                    //     return false; // Return false to hide the action
+                    // }
+
+                    // Check conditions
+                    return  (!$record->examScore($student->id)->exists())
+
+                        && ($record->is_set == "yes" || $record->is_set == true);
                 }),
             ])
             ->bulkActions([

@@ -36,4 +36,14 @@ class Exam extends Model
         return $this->hasOne(QuizScore::class, 'exam_id')
         ->where('student_id', $studentId);
     }
+
+    public function allStudentsScore()
+    {
+        return $this->hasMany(QuizScore::class, 'exam_id');
+    }
+
+    public function studentsWithScores()
+    {
+        return $this->hasMany(QuizScore::class, 'exam_id')->with('student');
+    }
 }

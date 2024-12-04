@@ -51,9 +51,11 @@ class ExamResource extends Resource
                 $query->whereHas('subject.courseOffer', function ($subQuery) use ($student, $academicYearId) {
                     $subQuery->where('student_id', $student->id)
                              ->where('academic_year_id', $academicYearId);
-                })->with(['subject', 'term', 'examScore' => function ($query) use ($student) {
-                    $query->where('student_id', $student->id); // Filter by the current student
-                }]);
+                })->with(['subject', 'term']);
+                // , 'examScore' => function ($query) use ($student) {
+                //     $query->where('student_id', $student->id); // Filter by the current student
+                // }]
+            // );
             }
         })
             ->columns([

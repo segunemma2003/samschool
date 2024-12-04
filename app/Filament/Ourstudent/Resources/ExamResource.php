@@ -45,13 +45,15 @@ class ExamResource extends Resource
     // dd($student);
         return $table
         ->recordUrl(null)
-->recordAction(null)
+        ->recordAction(null)
         ->modifyQueryUsing(function (Builder $query) use ($student, $academicYearId) {
             if ($student && $academicYearId) {
                 $query->whereHas('subject.courseOffer', function ($subQuery) use ($student, $academicYearId) {
                     $subQuery->where('student_id', $student->id)
                              ->where('academic_year_id', $academicYearId);
-                })->with(['subject', 'term']);
+                })->with(['subject', 'term', 'examScore' => function ($query) use ($student) {
+                    $query->where('student_id', $student->id); // Filter by the current student
+                }]);
             }
         })
             ->columns([
@@ -61,24 +63,22 @@ class ExamResource extends Resource
                 TextColumn::make('subject.class.name')->searchable(),
                 TextColumn::make('subject.class.name')->searchable(),
                 // TextColumn::make('is_set')->searchable(),
-                TextColumn::make('score') // You can display specific attributes of examScore
-                ->label('Exam Score') // Label the column
+                TextColumn::make('score') // Display the exam score
+                ->label('Exam Score')
                 ->formatStateUsing(function ($record) use ($student) {
-                    // Pass student ID to the examScore method
-                    $examScore = $record->examScore($student->id); // Call the relationship with the student ID
-                    dd($examScore);
-                    // Check if there's an examScore relationship
+                    // Retrieve the student's examScore
+                    $examScore = $record->examScore($student->id)->first();
+
+                    // Determine the score state
                     if (!$examScore) {
-                        return 'Not Submitted'; // If no exam score exists
+                        return 'Not Submitted'; // No examScore exists
                     }
 
-                    // If the examScore exists but is not graded
                     if ($examScore->approved !== 'yes') {
-                        return 'Not Graded'; // If it's done but not graded yet
+                        return 'Not Graded'; // Submitted but not yet graded
                     }
 
-                    // If the examScore exists and is graded, return the total score
-                    return $examScore->total_score ?? 'No Score'; // Return the total score or a fallback
+                    return $examScore->total_score ?? 'No Score'; // Display the total score
                 }),
             ])
             ->filters([

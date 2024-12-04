@@ -13,7 +13,9 @@ class ListResults extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // Actions\CreateAction::make(),
         ];
     }
+
+    protected static string $view = "filament.teacher.resources.result.view";
 }

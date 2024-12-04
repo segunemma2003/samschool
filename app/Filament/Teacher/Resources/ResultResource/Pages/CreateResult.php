@@ -9,4 +9,6 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateResult extends CreateRecord
 {
     protected static string $resource = ResultResource::class;
+
+    protected static string $view = "filament.teacher.resources.result.create";
 }

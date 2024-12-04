@@ -14,4 +14,9 @@ class ResultSection extends Model
     {
         return $this->belongsTo(StudentGroup::class, 'group_id');
     }
+
+    public function resultDetails()
+    {
+        return $this->hasMany(ResultSectionType::class, 'result_section_id');
+    }
 }

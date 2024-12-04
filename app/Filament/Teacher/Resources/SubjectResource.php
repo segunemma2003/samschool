@@ -8,6 +8,7 @@ use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Models\SubjectDepot;
 use App\Models\Teacher;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -16,6 +17,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class SubjectResource extends Resource
 {
@@ -73,6 +75,12 @@ class SubjectResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->modifyQueryUsing(function (Builder $query) {
+            $userId = Auth::user()->id;
+            $user = User::whereId($userId)->first();
+            $teacher = Teacher::where('email', $user->email)->first();
+            $query->where('teacher_id', $teacher->id);
+        })
             ->columns([
                 Tables\Columns\TextColumn::make('subjectDepot.name')
                 ->searchable(),
@@ -86,6 +94,7 @@ class SubjectResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -107,6 +116,7 @@ class SubjectResource extends Resource
             'index' => Pages\ListSubjects::route('/'),
             'create' => Pages\CreateSubject::route('/create'),
             'edit' => Pages\EditSubject::route('/{record}/edit'),
+
         ];
     }
 }

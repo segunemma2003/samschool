@@ -59,6 +59,7 @@ class ResultResource extends Resource
             'index' => Pages\ListResults::route('/'),
             'create' => Pages\CreateResult::route('/create'),
             'edit' => Pages\EditResult::route('/{record}/edit'),
+            'view-student-results' => Pages\StudentSubjectResult::route('/{record}/students')
         ];
     }
 }

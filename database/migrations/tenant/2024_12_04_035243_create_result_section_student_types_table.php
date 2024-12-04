@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('result_section_student_types', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('result_section_type_id')->nullable()->constrained('result_section_types')->onDelete('cascade');
+            $table->foreignId('course_form_id')->constrained('course_forms')->onDelete('cascade');
+            $table->decimal('score',3,2)->default(0.0);
             $table->timestamps();
         });
     }

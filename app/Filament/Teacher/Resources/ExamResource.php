@@ -5,6 +5,7 @@ namespace App\Filament\Teacher\Resources;
 use App\Filament\Teacher\Resources\ExamResource\Pages;
 use App\Filament\Teacher\Resources\ExamResource\RelationManagers;
 use App\Models\Exam;
+use App\Models\ResultSectionType;
 use App\Models\SchoolSection;
 use App\Models\Subject;
 use App\Models\Term;
@@ -29,11 +30,13 @@ class ExamResource extends Resource
 
     public static function form(Form $form): Form
     {
+
         return $form
             ->schema([
                 Select::make('subject_id')
                 ->options(Subject::all()->pluck('code', 'id'))
                 ->preload()
+                ->live()
                 ->label("Subject")
                 ->searchable(),
                 DatePicker::make('exam_date')
@@ -67,6 +70,32 @@ class ExamResource extends Resource
                 ->preload()
                 ->label("Assessment Type")
                 ->searchable(),
+
+                Select::make('result_section_type_id')
+                ->options(function (callable $get) {
+                    $subjectId = $get('subject_id');
+
+                    if (!$subjectId) {
+                        return [];
+                    }
+
+                    // Fetch the subject and its associated class group
+                    $subject = Subject::with('class.group')->find($subjectId);
+
+                    if (!$subject || !$subject->class || !$subject->class->group) {
+                        return [];
+                    }
+
+                    // Fetch result section types matching the class group
+                    return ResultSectionType::whereHas('resultSection.group', function ($query) use ($subject) {
+                        $query->where('name', $subject->class->group->name);
+                    })->pluck('code', 'id');
+                })
+                ->preload()
+                ->label("Assessment Type Details")
+                ->searchable()
+                ->live()
+                ->required(),
 
                 TextInput::make('total_score')
                 ->required()

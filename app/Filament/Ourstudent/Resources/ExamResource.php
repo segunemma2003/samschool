@@ -51,7 +51,12 @@ class ExamResource extends Resource
                 $query->whereHas('subject.courseOffer', function ($subQuery) use ($student, $academicYearId) {
                     $subQuery->where('student_id', $student->id)
                              ->where('academic_year_id', $academicYearId);
-                })->with(['subject', 'term']);
+                })->with(['subject', 'term','examScore' => function ($scoreQuery) use ($student) {
+                $scoreQuery->where('student_id', $student->id); // Filter by the current student
+            },
+        ]);
+
+            // ]);
                 // , 'examScore' => function ($query) use ($student) {
                 //     $query->where('student_id', $student->id); // Filter by the current student
                 // }]
@@ -68,20 +73,27 @@ class ExamResource extends Resource
                 TextColumn::make('score') // Display the exam score
                 ->label('Exam Score')
                 ->formatStateUsing(function ($record) use ($student) {
-                    // Retrieve the student's examScore
-                    $examScore = $record->examScore($student->id)->first();
+                    // Access the loaded examScore directly
+                    if (!$record->examScore->isEmpty()) {
+                        return 'Not Submitted';
+                    }
 
-                    // Determine the score state
+                    $examScore = $record->examScore; // This accesses the loaded relationship
+
+                    // If examScore doesn't exist, return 'Not Submitted'
                     if (!$examScore) {
-                        return 'Not Submitted'; // No examScore exists
+                        return 'Not Submitted';
                     }
 
+                    // If the examScore is not approved, return 'Not Graded'
                     if ($examScore->approved !== 'yes') {
-                        return 'Not Graded'; // Submitted but not yet graded
+                        return 'Not Graded';
                     }
 
-                    return $examScore->total_score ?? 'No Score'; // Display the total score
+                    // Otherwise, return the total score
+                    return $examScore->total_score ?? 'No Score';
                 }),
+
             ])
             ->filters([
                 //

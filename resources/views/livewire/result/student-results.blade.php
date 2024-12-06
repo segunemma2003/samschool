@@ -1,37 +1,7 @@
 <div class="p-4 space-y-6">
     <!-- Upper Form Panel -->
     <div class="p-4 bg-white rounded shadow dark:bg-gray-800">
-        {{-- <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">Result Sections</h3> --}}
-        <form wire:submit.prevent="saveResults" class="space-y-4">
-            @foreach($resultSections as $section)
-                <div class="space-y-2">
-                    <h4 class="font-semibold text-gray-700 text-md dark:text-gray-300">{{ $section->name }}</h4>
-                    @foreach($section->resultDetails as $detail)
-                        <div class="flex items-center gap-3 space-x-4">
-                            <label class="w-1/3 font-medium text-gray-700 dark:text-gray-300">
-                                {{ $detail->name }}
-                            </label>
-                            <input
-                                type="text"
-                                wire:model.defer="sectionValues.{{ $section->id }}.{{ $detail->id }}"
-                                class="w-2/3 px-2 py-1 text-gray-800 border border-gray-300 rounded bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                                placeholder="Enter value for {{ $detail->name }}"
-                            />
-                        </div>
-                    @endforeach
-                </div>
-            @endforeach
 
-        </form>
-
-        <div class="flex justify-end">
-            <button
-                {{-- wire:click="" --}}
-                class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-            >
-                Generate Result
-            </button>
-        </div>
     </div>
 
     <!-- Students Table -->
@@ -42,13 +12,13 @@
                 <tr>
                     <th class="px-4 py-2 text-gray-800 border border-gray-200 dark:border-gray-600 dark:text-gray-200">No.</th>
                     <th class="px-4 py-2 text-gray-800 border border-gray-200 dark:border-gray-600 dark:text-gray-200">Student</th>
-                    @foreach($resultSections as $section)
-                        @foreach($section->resultDetails as $detail)
+                    {{-- @foreach($resultSections as $section) --}}
+                        @foreach($resultSections->resultDetails as $detail)
                             <th class="px-4 py-2 text-gray-800 border border-gray-200 dark:border-gray-600 dark:text-gray-200">
                                {{ $detail->name }}
                             </th>
                         @endforeach
-                    @endforeach
+                    {{-- @endforeach --}}
                 </tr>
             </thead>
             <tbody>
@@ -56,18 +26,39 @@
                     <tr>
                         <td class="px-4 py-2 text-center text-gray-800 border border-gray-200 dark:border-gray-600 dark:text-gray-200">{{ $index + 1 }}</td>
                         <td class="px-4 py-2 text-gray-800 border border-gray-200 dark:border-gray-600 dark:text-gray-200">{{ $student->student->name }}</td>
-                        @foreach($resultSections as $section)
-                            @foreach($section->resultDetails as $detail)
+
+                            @foreach($resultSections->resultDetails as $detail)
                                 <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
+                                    @if ($detail->calc_pattern == 'total')
+                                    <input
+                                        type="number"
+                                        wire:model="studentValues.{{ $student->id }}.{{ $detail->id }}"
+                                        class="w-full px-2 py-1 text-gray-800 bg-gray-100 border border-gray-300 rounded dark:bg-gray-800 dark:text-gray-300"
+                                        readonly
+                                    />
+                                    @elseif($detail->calc_pattern == 'grade_level')
                                     <input
                                         type="text"
-                                        wire:model.defer="studentValues.{{ $student->id }}.{{ $section->id }}.{{ $detail->id }}"
-                                        class="w-full px-2 py-1 text-gray-800 border border-gray-300 rounded bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                                        placeholder="Value for {{ $detail->name }}"
+                                        wire:model="studentValues.{{ $student->id }}.{{ $detail->id }}"
+                                        class="w-full px-2 py-1 text-gray-800 bg-gray-100 border border-gray-300 rounded dark:bg-gray-800 dark:text-gray-300"
+                                        readonly
                                     />
+                                    @else
+                                        <input
+                                            type="{{ $detail->type == 'numeric' ? 'number' : 'text' }}"
+                                            wire:model.lazy="studentValues.{{ $student->id }}.{{ $detail->id }}"
+                                            class="w-full px-2 py-1 text-gray-800 border border-gray-300 rounded bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                                            placeholder="Value for {{ $detail->name }}"
+                                            {{ $detail->type == 'numeric' ? 'max='.$detail->score_weight : '' }}
+                                            wire:change="calculateTotal({{$student->id}})"
+                                          oninput="{{ $detail->type == 'numeric' ? 'this.value = Math.min(this.value, this.max)' : '' }}"
+                                            pattern="{{ $detail->type == 'text' ? '[A-Za-z0-9 ]*' : '' }}"
+                                            {{ $detail->calc_pattern != 'input' ? 'disabled' : '' }}
+                                        />
+                                    @endif
                                 </td>
                             @endforeach
-                        @endforeach
+
                     </tr>
                 @endforeach
             </tbody>
@@ -80,7 +71,31 @@
             wire:click="saveResults"
             class="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
         >
-            Save Results
+        <span wire:loading.remove>Save Results</span>
+        <span wire:loading class="flex items-center">
+            <svg
+                class="w-5 h-5 mr-2 text-white animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+                <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                ></circle>
+                <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 118 8 8 8 0 01-8-8z"
+                ></path>
+            </svg>
+            <span>Saving...</span>
+        </span>
         </button>
     </div>
 </div>

@@ -46,6 +46,21 @@ class ResultSectionTypeResource extends Resource
                 ])->searchable()
                 ->live(),
 
+                Select::make('calc_pattern')->label('Calculation Pattern')
+                ->options([
+                    "input"=> "Input",
+                    "total"=>"Total",
+                    "class_average"=> "Class Average",
+                    "class_highest_score"=> "Class Highest Score",
+                    "class_lowest_score"=> "Class Lowest Score",
+                    "grade_level" => "Grade Level",
+                    "remarks"=> "Remarks",
+                    "position"=> "Position"
+
+                ])->searchable(),
+                // ->required(fn (callable $get) => $get('type') === 'numeric')
+                // ->visible(fn (callable $get) => $get('type') === 'numeric'),
+
                 TextInput::make('score_weight')
                 ->label('Weighted Score')
                 ->default(0)
@@ -76,6 +91,11 @@ class ResultSectionTypeResource extends Resource
         TextColumn::make('type')
             ->label('Type')
             ->sortable(),
+
+            TextColumn::make('calc_pattern')
+            ->label('Calculation Pattern')
+            ->sortable(),
+
 
         TextColumn::make('score_weight')
             ->label('Weighted Score')

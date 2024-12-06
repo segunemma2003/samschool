@@ -73,27 +73,20 @@ class ExamResource extends Resource
                 TextColumn::make('score') // Display the exam score
                 ->label('Exam Score')
                 ->formatStateUsing(function ($record) use ($student) {
-                    // Access the loaded examScore directly
-                    if (!$record->examScore->isEmpty()) {
-                        return 'Not Submitted';
-                    }
+                    // Retrieve the student's examScore
+                    $examScore = $record->examScore($student->id)->first();
 
-                    $examScore = $record->examScore; // This accesses the loaded relationship
-
-                    // If examScore doesn't exist, return 'Not Submitted'
+                    // Determine the score state
                     if (!$examScore) {
-                        return 'Not Submitted';
+                        return 'Not Submitted'; // No examScore exists
                     }
 
-                    // If the examScore is not approved, return 'Not Graded'
                     if ($examScore->approved !== 'yes') {
-                        return 'Not Graded';
+                        return 'Not Graded'; // Submitted but not yet graded
                     }
 
-                    // Otherwise, return the total score
-                    return $examScore->total_score ?? 'No Score';
+                    return $examScore->total_score ?? 'No Score'; // Display the total score
                 }),
-
             ])
             ->filters([
                 //

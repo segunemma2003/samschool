@@ -4,8 +4,11 @@ namespace App\Filament\App\Resources;
 
 use App\Filament\App\Resources\PsychomotorResource\Pages;
 use App\Filament\App\Resources\PsychomotorResource\RelationManagers;
+use App\Models\AcademicYear;
 use App\Models\Psychomotor;
 use App\Models\SchoolClass;
+use App\Models\StudentGroup;
+use App\Models\Term;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -27,9 +30,20 @@ class PsychomotorResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('class_id')
-                    ->label('Class Name')
-                    ->options(SchoolClass::all()->pluck('name', 'id'))
+                Forms\Components\Select::make('group_id')
+                    ->label('Section')
+                    ->options(StudentGroup::all()->pluck('name', 'id'))
+                    ->preload()
+                    ->searchable(),
+                Forms\Components\Select::make('term_id')
+                    ->label('Term')
+                    ->options(Term::all()->pluck('name', 'id'))
+                    ->preload()
+                    ->searchable(),
+                Forms\Components\Select::make('academic_id')
+                    ->label('Academy Year')
+                    ->options(AcademicYear::all()->pluck('title', 'id'))
+                    ->preload()
                     ->searchable(),
                 Forms\Components\TextInput::make('skill')
                     ->required()
@@ -41,6 +55,12 @@ class PsychomotorResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('group.name')
+                ->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('academy.title')
+                ->searchable(),
+                Tables\Columns\TextColumn::make('term.name')
+                ->searchable(),
                 Tables\Columns\TextColumn::make('skill')
                 ->searchable(),
             ])
@@ -72,6 +92,7 @@ class PsychomotorResource extends Resource
             'create' => Pages\CreatePsychomotor::route('/create'),
             'view' => Pages\ViewPsychomotor::route('/{record}'),
             'edit' => Pages\EditPsychomotor::route('/{record}/edit'),
+
         ];
     }
 }

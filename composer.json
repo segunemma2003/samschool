@@ -25,6 +25,7 @@
         "mohsenabrishami/stethoscope": "^2.7",
         "predis/predis": "^2.2",
         "rickdbcn/filament-email": "^1.6",
+        "savannabits/filament-signature-pad": "^2.0",
         "sevenspan/laravel-chat": "^1.5",
         "shuchkin/simplexlsx": "^1.1",
         "spatie/laravel-google-calendar": "^3.8",

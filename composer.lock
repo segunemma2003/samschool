@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d3920594d2e16dd24d30f605ff6126dd",
+    "content-hash": "33ee8b1703f7612acbcac066b1b30d02",
     "packages": [
         {
             "name": "amidesfahani/filament-tinyeditor",
@@ -8343,6 +8343,88 @@
                 }
             ],
             "time": "2024-02-26T18:08:49+00:00"
+        },
+        {
+            "name": "savannabits/filament-signature-pad",
+            "version": "v2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/savannabits/filament-signature-pad.git",
+                "reference": "07875ac957437f2a78665f6e5e4c04c944f18a2d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/savannabits/filament-signature-pad/zipball/07875ac957437f2a78665f6e5e4c04c944f18a2d",
+                "reference": "07875ac957437f2a78665f6e5e4c04c944f18a2d",
+                "shasum": ""
+            },
+            "require": {
+                "filament/forms": "^3.0",
+                "illuminate/contracts": "^10.0|^11.0",
+                "php": "^8.3",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "filament/filament": "^3.0",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^8.0",
+                "nunomaduro/larastan": "^2.0.1",
+                "orchestra/testbench": "^9.0",
+                "pestphp/pest": "^3.0",
+                "pestphp/pest-plugin-arch": "^3.0",
+                "pestphp/pest-plugin-laravel": "^3.0",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "roave/security-advisories": "dev-latest",
+                "spatie/laravel-ray": "^1.26"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Coolsam\\SignaturePad\\SignaturePadServiceProvider"
+                    ],
+                    "aliases": {
+                        "SignaturePad": "Coolsam\\SignaturePad\\Facades\\SignaturePad"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Coolsam\\SignaturePad\\": "src/",
+                    "Coolsam\\SignaturePad\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sam Maosa",
+                    "email": "smaosa@savannabits.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Signature Pad for FilamentPHP",
+            "homepage": "https://github.com/bradwarwick/signature-pad",
+            "keywords": [
+                "coolsam",
+                "laravel",
+                "signature-pad"
+            ],
+            "support": {
+                "issues": "https://github.com/bradwarwick/signature-pad/issues",
+                "source": "https://github.com/bradwarwick/signature-pad"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/coolsam",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-10-02T04:20:09+00:00"
         },
         {
             "name": "sevenspan/laravel-chat",

@@ -61,24 +61,26 @@ class StudentResults extends Component
         return 'F9';
     }
 
+
+    public function remarksStatement($total)
+    {
+        if ($total >= 80) return 'EXCELLENT';
+        if ($total >= 70) return 'VERY GOOD';
+        if ($total >= 65) return 'GOOD';
+        if ($total >= 61) return 'CREDIT';
+        if ($total >= 55) return 'CREDIT';
+        if ($total >= 50) return 'CREDIT';
+        if ($total >= 45) return 'PASS';
+        if ($total >= 40) return 'FAIL';
+        return 'FAIL';
+    }
+
     #[On('calculateTotal')]
     public function calculateTotal($studentId)
     {
         Log::info('Calculating total for student ID: ' . $studentId);
 
-        // Initialize the total
-        $total = 0;
-
-        // Calculate the total for the student
-        foreach ($this->resultSections->resultDetails as $section) {
-            if($section->type == "numeric"){
-            if ($section->calc_pattern == 'input' && isset($this->studentValues[$studentId][$section->id])) {
-                $total += (float) $this->studentValues[$studentId][$section->id];
-            }
-        }
-        }
-
-        // Get all student totals for this subject
+        // Step 1: Recalculate totals for all students
         $studentTotals = [];
         foreach ($this->students as $student) {
             $studentTotal = 0;
@@ -90,14 +92,19 @@ class StudentResults extends Component
             $studentTotals[$student->id] = $studentTotal;
         }
 
-        // Sort totals in descending order and assign positions
-        arsort($studentTotals); // Sort scores in descending order while preserving keys
+        // Step 2: Filter totals to include only students with a total value
+        $validTotals = array_filter($studentTotals, function ($total) {
+            return $total > 0; // Consider only students with a total greater than zero
+        });
+
+        // Step 3: Sort valid totals in descending order and assign positions
+        arsort($validTotals); // Sort scores in descending order while preserving keys
         $positions = [];
         $rank = 1;
         $previousScore = null;
-        $tieCount = 0; // To handle ties properly
+        $tieCount = 0;
 
-        foreach ($studentTotals as $studentIdKey => $score) {
+        foreach ($validTotals as $studentIdKey => $score) {
             if ($score !== $previousScore) {
                 $rank += $tieCount; // Skip ranks for ties
                 $tieCount = 0; // Reset tie count
@@ -108,30 +115,43 @@ class StudentResults extends Component
             $previousScore = $score;
         }
 
-        // Assign positions and update result details
-        foreach ($this->resultSections->resultDetails as $section) {
-            if ($section->calc_pattern == 'position') {
-                foreach ($positions as $studentIdKey => $position) {
-                    $this->studentValues[$studentIdKey][$section->id] = $position;
+        // Step 4: Calculate class metrics for students with valid totals
+        $classAverage = count($validTotals) > 0 ? array_sum($validTotals) / count($validTotals) : 0;
+        $classHighestScore = count($validTotals) > 0 ? max($validTotals) : 0;
+        $classLowestScore = count($validTotals) > 0 ? min($validTotals) : 0;
+
+        // Step 5: Update student values for all relevant metrics
+        foreach ($this->students as $student) {
+            foreach ($this->resultSections->resultDetails as $section) {
+                if ($section->calc_pattern == 'position') {
+                    $this->studentValues[$student->id][$section->id] = $positions[$student->id] ?? null;
+                }
+                if ($section->calc_pattern == 'total') {
+                    $this->studentValues[$student->id][$section->id] = $studentTotals[$student->id];
+                }
+                if ($section->calc_pattern == 'class_average') {
+                    $this->studentValues[$student->id][$section->id] = $classAverage;
+                }
+                if ($section->calc_pattern == 'class_highest_score') {
+                    $this->studentValues[$student->id][$section->id] = $classHighestScore;
+                }
+                if ($section->calc_pattern == 'class_lowest_score') {
+                    $this->studentValues[$student->id][$section->id] = $classLowestScore;
+                }
+                if ($section->calc_pattern == 'grade_level') {
+                    $this->studentValues[$student->id][$section->id] = $this->calculateGradeLevel($studentTotals[$student->id]);
+                }
+
+                if ($section->calc_pattern == 'remarks') {
+                    $this->studentValues[$student->id][$section->id] = $this->remarksStatement($studentTotals[$student->id]);
                 }
             }
-            if ($section->calc_pattern == 'total') {
-                $this->studentValues[$studentId][$section->id] = $total;
-            }
-            if ($section->calc_pattern == 'class_average') {
-                $this->studentValues[$studentId][$section->id] = array_sum($studentTotals) / count($studentTotals);
-            }
-            if ($section->calc_pattern == 'class_highest_score') {
-                $this->studentValues[$studentId][$section->id] = max($studentTotals);
-            }
-            if ($section->calc_pattern == 'class_lowest_score') {
-                $this->studentValues[$studentId][$section->id] = min($studentTotals);
-            }
-            if ($section->calc_pattern == 'grade_level') {
-                $this->studentValues[$studentId][$section->id] = $this->calculateGradeLevel($total);
-            }
         }
+
+        Log::info('Metrics updated for all students with valid totals');
     }
+
+
 
 
     public function saveResults()

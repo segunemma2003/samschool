@@ -30,6 +30,7 @@ class TeacherPanelProvider extends PanelProvider
             ->id('teacher')
             ->path('teacher')
             ->login(TeacherLogin::class)
+            // ->profile()
             ->colors([
                 'primary' => Color::Amber,
             ])

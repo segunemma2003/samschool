@@ -6,6 +6,7 @@ use App\Filament\Teacher\Resources\TeacherResource\Pages;
 use App\Filament\Teacher\Resources\TeacherResource\RelationManagers;
 use App\Models\Teacher;
 use App\Models\User;
+use Coolsam\SignaturePad\Facades\SignaturePad;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -134,6 +135,41 @@ class TeacherResource extends Resource
                 ->modalHeading('Change Password')
                 ->modalSubmitActionLabel('Save')
                 ->requiresConfirmation(),
+
+
+                // Tables\Actions\Action::make('sign')
+                // ->label('Sign')
+                // ->action(function (array $data, $record) {
+                //     // Handle the signature action logic
+                //     // You can save the signature to the database or perform any other action
+
+                //     $signatureData = $data['signature']; // This will be the signature image data
+
+                //     // Example: Save signature as base64 string in the record
+                //     $record->update([
+                //         'signature' => $signatureData, // Ensure your model has a signature column
+                //     ]);
+
+                //     Notification::make()
+                //         ->title('Signature saved successfully!')
+                //         ->success()
+                //         ->send();
+                // })
+                // ->form([
+                //     // Add the Signature Pad field
+                //     SignaturePad::make('signature')
+                //         ->backgroundColor('white') // Set the background color if necessary
+                //         ->penColor('blue') // Set the pen color
+                //         ->strokeMinDistance(2.0) // Set the minimum stroke distance
+                //         ->strokeMaxWidth(2.5) // Set the max width of the pen stroke
+                //         ->strokeMinWidth(1.0) // Set the minimum width of the pen stroke
+                //         ->strokeDotSize(2.0) // Set the stroke dot size
+                //         ->hideDownloadButtons() // Optionally hide the download buttons
+                //         ->required() // Make the signature field required
+                // ])
+                // ->modalHeading('Sign the Document')
+                // ->modalSubmitActionLabel('Save Signature')
+                // ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

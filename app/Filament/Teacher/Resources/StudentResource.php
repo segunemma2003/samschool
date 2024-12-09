@@ -4,6 +4,7 @@ namespace App\Filament\Teacher\Resources;
 
 use App\Exports\StudentExport;
 use App\Filament\Teacher\Resources\StudentResource\Pages;
+use App\Filament\Teacher\Resources\StudentResource\Pages\CourseFormStudent;
 use App\Filament\Teacher\Resources\StudentResource\RelationManagers;
 use App\Models\Arm;
 use App\Models\Guardians;
@@ -142,7 +143,7 @@ class StudentResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('username')
-                ->searchable(),
+               ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('class.name')
@@ -153,6 +154,9 @@ class StudentResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                \Filament\Tables\Actions\Action::make('view')
+                ->label('View CourseForm')
+                ->url(fn ($record) => CourseFormStudent::generateRoute($record->id))
 
             ])
             ->bulkActions([
@@ -175,6 +179,7 @@ class StudentResource extends Resource
             'index' => Pages\ListStudents::route('/'),
             'create' => Pages\CreateStudent::route('/create'),
             'edit' => Pages\EditStudent::route('/{record}/edit'),
+            'course-form'=> Pages\CourseFormStudent::route('/{record}/course-form')
         ];
     }
 }

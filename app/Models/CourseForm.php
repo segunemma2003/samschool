@@ -26,4 +26,8 @@ class CourseForm extends Model
     public function student(){
         return $this->belongsTo(Student::class, 'student_id');
     }
+
+    public function scoreBoard(){
+        return $this->hasMany(ResultSectionStudentType::class, 'course_form_id');
+    }
 }

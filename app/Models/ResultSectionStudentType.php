@@ -9,4 +9,9 @@ class ResultSectionStudentType extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+
+    public function resultSection()
+    {
+        return $this->belongsTo(ResultSection::class, 'result_section_id');
+    }
 }

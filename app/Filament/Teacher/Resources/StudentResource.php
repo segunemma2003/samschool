@@ -5,21 +5,35 @@ namespace App\Filament\Teacher\Resources;
 use App\Exports\StudentExport;
 use App\Filament\Teacher\Resources\StudentResource\Pages;
 use App\Filament\Teacher\Resources\StudentResource\Pages\CourseFormStudent;
+use App\Filament\Teacher\Resources\StudentResource\Pages\StudentResultDetailsPage;
 use App\Filament\Teacher\Resources\StudentResource\RelationManagers;
+use App\Models\AcademicYear;
 use App\Models\Arm;
+use App\Models\CourseForm;
 use App\Models\Guardians;
 use App\Models\SchoolClass;
 use App\Models\SchoolSection;
 use App\Models\Student;
+use App\Models\StudentComment;
 use App\Models\StudentGroup;
+use App\Models\Term;
+use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\ViewField;
+use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
 
 class StudentResource extends Resource
@@ -156,7 +170,63 @@ class StudentResource extends Resource
                 Tables\Actions\EditAction::make(),
                 \Filament\Tables\Actions\Action::make('view')
                 ->label('View CourseForm')
-                ->url(fn ($record) => CourseFormStudent::generateRoute($record->id))
+                ->url(fn ($record) => CourseFormStudent::generateRoute($record->id)),
+
+
+                Tables\Actions\Action::make('viewresult')
+    ->label('View Result')
+    ->url(fn ($record) => StudentResultDetailsPage::generateRoute($record->id)),
+
+    //             Tables\Actions\Action::make('addComments')
+    // ->label('Add Comments')
+
+    // ->steps([
+    //     Step::make('Academic Year')
+    //         ->description('Academic Year of the Student')
+    //         ->schema([
+    //             Forms\Components\Select::make('academic_year_id')
+    //                 ->label('Academic Year')
+    //                 ->options(AcademicYear::all()->pluck('title', 'id'))
+    //                 ->required(),
+    //             Forms\Components\Select::make('term_id')
+    //                 ->label('Term')
+    //                 ->options(Term::all()->pluck('name', 'id'))
+    //                 ->required(),
+    //         ])
+    //         ->columns(2),
+    //             Step::make('Student Details')
+    //                 ->description('Details Of Student Score Board')
+    //                 // ->modalContent(view('livewire.teaacher.student-result-details'))
+    //                 ->schema([
+    //                     ViewField::make('livewireComponent')
+    //                     ->view('livewire.teaacher.custom')
+    //                     ->label('Student Details')
+    //                     ->viewData([ // Pass additional data to the view
+    //                         'record' => $record, // Pass the current record
+    //                         'academic_year_id' => $this->getState('academic_year_id'), // Pass form state for academic_year_id
+    //                         'term_id' => $this->getState('term_id'), // Pass form state for term_id
+    //                     ]),
+
+
+
+    //                     Forms\Components\Textarea::make('comment')
+    //                     ->label('Teacher Comment')
+    //                     ->placeholder('Enter your comment here...')
+    //                     ->required(),
+    //             //         Forms\Components\Field::make('livewireComponent')
+    //             //     ->view('livewire.teaacher.student-result-details')
+    //             //      ->statePath('state')
+    //             //     ->label('Student Details'),
+    //             //         Forms\Components\Textarea::make('comment')
+    //             //             ->label('Teacher Comment')
+    //             //             ->placeholder('Enter your comment here...')
+    //             //             ->required(),
+    //                 ]),
+    //         ])
+    //         ->action(function (array $data, $record): void {
+    //             // Handle form submission here
+    //         })
+
 
             ])
             ->bulkActions([
@@ -179,7 +249,8 @@ class StudentResource extends Resource
             'index' => Pages\ListStudents::route('/'),
             'create' => Pages\CreateStudent::route('/create'),
             'edit' => Pages\EditStudent::route('/{record}/edit'),
-            'course-form'=> Pages\CourseFormStudent::route('/{record}/course-form')
+            'course-form'=> Pages\CourseFormStudent::route('/{record}/course-form'),
+            'view-student-result-details'=> Pages\StudentResultDetailsPage::route('/{record}/student/result')
         ];
     }
 }

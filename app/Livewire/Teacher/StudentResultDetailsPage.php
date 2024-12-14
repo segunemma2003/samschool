@@ -6,15 +6,20 @@ use App\Models\AcademicYear;
 use App\Models\CourseForm;
 use App\Models\ResultSectionType;
 use App\Models\Student;
+use App\Models\StudentComment;
 use App\Models\Term;
+use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Livewire\Component;
+
 
 class StudentResultDetailsPage extends Component implements HasForms, HasTable
 {
@@ -32,6 +37,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     public $total;
     public $totalSubject;
     public $average;
+    public $comment;
+    public ?array $data = [];
 
     public function mount($record)
     {
@@ -40,10 +47,64 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         $this->academicYears = AcademicYear::all();
         $this->termId = Term::query()->first()?->id; // Default to the first term
         $this->academic = AcademicYear::query()->where('status', "true")->first()?->id; // Default to active academic year
-        $student = Student::where('id', $record)->first();
-        $this->classId = $student->class->group->id;
+        $this->student = Student::where('id', $record)->first();
+        $this->classId = $this->student->class->group->id;
+
+       $this->loadComment();
     }
 
+    public function loadComment()
+    {
+        $studentComment = StudentComment::query()
+            ->where('student_id', $this->student->id)
+            ->where('term_id', $this->termId)
+            ->where('academic_id', $this->academic)
+            ->first();
+
+        $this->comment =$studentComment?->comment ?? '';
+        $this->form->fill([
+            'comment' => $studentComment?->comment ?? '', // Load the comment or set empty
+        ]);
+    }
+
+
+    public function form(Form $form): Form
+    {
+
+        return $form
+        ->schema([
+            MarkdownEditor::make('comment'),
+
+        ])
+        ->statePath('data');
+    }
+    public function saveComment()
+    {
+
+        $validatedData = $this->form->getState();
+        // dd($validatedData);
+        // Check if a comment already exists
+        $studentComment = StudentComment::query()
+            ->where('student_id', $this->student->id)
+            ->where('term_id', $this->termId)
+            ->where('academic_id', $this->academic)
+            ->first();
+
+            StudentComment::updateOrCreate(
+                [
+                    'student_id' => $this->student->id,
+                    'term_id' => $this->termId, // Replace with your term ID logic
+                    'academic_id' => $this->academic, // Replace with your academic ID logic
+                ],
+                [
+                    'comment' => $validatedData['comment'],
+                ]
+            );
+
+
+        Notification::make()->title('Comment saved successfully!')->success()->send();
+
+    }
     public function table(Table $table): Table
     {
         // dd($this->record);
@@ -51,6 +112,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->query(
                 CourseForm::query()
                     ->where('student_id', $this->record)
+
             )
             ->columns([
                 TextColumn::make('subject.subjectDepot.name')->label('Course Name'),
@@ -116,32 +178,29 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     }
 
     protected function getDynamicScoreBoardColumns(): array
-{
-    // Get the dynamic fields from the related ResultSectionTypeModel
+    {
         $dynamicFields = ResultSectionType::query()
-        ->whereHas('resultSection', function ($query) {
-            $query->where('group_id', $this->classId);
-        })
-        ->get(['id', 'name']);
+            ->whereHas('resultSection', function ($query) {
+                $query->where('group_id', $this->classId);
+            })
+            ->get(['id', 'name']);
 
+        return $dynamicFields->map(function ($field) {
+            return TextColumn::make("scoreBoard.{$field->id}")
+                ->label($field->name)
+                ->state(function ($record) use ($field) {
+                    // Retrieve the score for the current field
 
-// dd(count($dynamicFields));
-    // Return mapped columns
-    return $dynamicFields->map(function ($field) {
-        return TextColumn::make("scoreBoard.{$field->id}")
-            ->label($field->name)
-            ->formatStateUsing(function ($record) use ($field) {
-                // Extract score for the field
-                $score = $record->scoreBoard
-                    ->where('result_section_type_id', $field->id)
-                    ->pluck('score')
-                    ->join(', ');
-                // $score = $field->id;
-                return $score;
-            });
-    })->toArray();
+                    $score = $record->scoreBoard
+                        ->where('result_section_type_id', $field->id)
+                        ->pluck('score') // Fetch the scores
+                        ->first();      // Get the first score or adjust as needed
 
-}
+                    return $score ?? 'N/A'; // Default if no score found
+                });
+        })->toArray();
+    }
+
     public function render()
     {
         return view('livewire.teacher.student-result-details-page');

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1c0f087e37409485cf27c2528d933649",
+    "content-hash": "78e8cd37bc395bbc7fd98fc22b4ac8e0",
     "packages": [
         {
             "name": "amidesfahani/filament-tinyeditor",
@@ -371,12 +371,12 @@
             "type": "library",
             "extra": {
                 "laravel": {
-                    "providers": [
-                        "BezhanSalleh\\FilamentShield\\FilamentShieldServiceProvider"
-                    ],
                     "aliases": {
                         "FilamentShield": "BezhanSalleh\\FilamentShield\\Facades\\FilamentShield"
-                    }
+                    },
+                    "providers": [
+                        "BezhanSalleh\\FilamentShield\\FilamentShieldServiceProvider"
+                    ]
                 }
             },
             "autoload": {
@@ -2844,16 +2844,16 @@
         },
         {
             "name": "google/apiclient-services",
-            "version": "v0.385.0",
+            "version": "v0.386.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-api-php-client-services.git",
-                "reference": "d6a89ec1883ecd1de145179d44cb274cf4927da9"
+                "reference": "cd08601dd729977f7198c72cd10d05901833bec0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/d6a89ec1883ecd1de145179d44cb274cf4927da9",
-                "reference": "d6a89ec1883ecd1de145179d44cb274cf4927da9",
+                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/cd08601dd729977f7198c72cd10d05901833bec0",
+                "reference": "cd08601dd729977f7198c72cd10d05901833bec0",
                 "shasum": ""
             },
             "require": {
@@ -2882,9 +2882,9 @@
             ],
             "support": {
                 "issues": "https://github.com/googleapis/google-api-php-client-services/issues",
-                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.385.0"
+                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.386.0"
             },
-            "time": "2024-12-09T01:08:31+00:00"
+            "time": "2024-12-16T01:04:20+00:00"
         },
         {
             "name": "google/auth",
@@ -3672,12 +3672,12 @@
             "type": "library",
             "extra": {
                 "laravel": {
-                    "providers": [
-                        "Joaopaulolndev\\FilamentGeneralSettings\\FilamentGeneralSettingsServiceProvider"
-                    ],
                     "aliases": {
                         "FilamentGeneralSettings": "Joaopaulolndev\\FilamentGeneralSettings\\Facades\\FilamentGeneralSettings"
-                    }
+                    },
+                    "providers": [
+                        "Joaopaulolndev\\FilamentGeneralSettings\\FilamentGeneralSettingsServiceProvider"
+                    ]
                 }
             },
             "autoload": {
@@ -7224,16 +7224,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "3.0.42",
+            "version": "3.0.43",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "db92f1b1987b12b13f248fe76c3a52cadb67bb98"
+                "reference": "709ec107af3cb2f385b9617be72af8cf62441d02"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/db92f1b1987b12b13f248fe76c3a52cadb67bb98",
-                "reference": "db92f1b1987b12b13f248fe76c3a52cadb67bb98",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/709ec107af3cb2f385b9617be72af8cf62441d02",
+                "reference": "709ec107af3cb2f385b9617be72af8cf62441d02",
                 "shasum": ""
             },
             "require": {
@@ -7314,7 +7314,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.42"
+                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.43"
             },
             "funding": [
                 {
@@ -7330,7 +7330,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-09-16T03:06:04+00:00"
+            "time": "2024-12-14T21:12:59+00:00"
         },
         {
             "name": "phpstan/phpdoc-parser",
@@ -8574,16 +8574,16 @@
         },
         {
             "name": "spatie/browsershot",
-            "version": "5.0.2",
+            "version": "5.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/browsershot.git",
-                "reference": "8a1e3476a9c07b72ace4d4747bac7c58dbc1c066"
+                "reference": "aae8a337f73f63fc41c4c759fc397ce725312367"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/browsershot/zipball/8a1e3476a9c07b72ace4d4747bac7c58dbc1c066",
-                "reference": "8a1e3476a9c07b72ace4d4747bac7c58dbc1c066",
+                "url": "https://api.github.com/repos/spatie/browsershot/zipball/aae8a337f73f63fc41c4c759fc397ce725312367",
+                "reference": "aae8a337f73f63fc41c4c759fc397ce725312367",
                 "shasum": ""
             },
             "require": {
@@ -8630,7 +8630,7 @@
                 "webpage"
             ],
             "support": {
-                "source": "https://github.com/spatie/browsershot/tree/5.0.2"
+                "source": "https://github.com/spatie/browsershot/tree/5.0.3"
             },
             "funding": [
                 {
@@ -8638,7 +8638,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-12-13T16:10:26+00:00"
+            "time": "2024-12-16T09:46:16+00:00"
         },
         {
             "name": "spatie/color",
@@ -8701,16 +8701,16 @@
         },
         {
             "name": "spatie/crawler",
-            "version": "8.3.1",
+            "version": "8.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/crawler.git",
-                "reference": "7639f9759f2e50b2962c3c713d131e977d50ed4b"
+                "reference": "344e1b90488c19bdf01d76d40d6728994d0951f7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/crawler/zipball/7639f9759f2e50b2962c3c713d131e977d50ed4b",
-                "reference": "7639f9759f2e50b2962c3c713d131e977d50ed4b",
+                "url": "https://api.github.com/repos/spatie/crawler/zipball/344e1b90488c19bdf01d76d40d6728994d0951f7",
+                "reference": "344e1b90488c19bdf01d76d40d6728994d0951f7",
                 "shasum": ""
             },
             "require": {
@@ -8753,7 +8753,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/crawler/issues",
-                "source": "https://github.com/spatie/crawler/tree/8.3.1"
+                "source": "https://github.com/spatie/crawler/tree/8.4.0"
             },
             "funding": [
                 {
@@ -8765,7 +8765,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-12-09T13:53:48+00:00"
+            "time": "2024-12-16T15:32:54+00:00"
         },
         {
             "name": "spatie/eloquent-sortable",
@@ -9575,16 +9575,16 @@
         },
         {
             "name": "spatie/laravel-translatable",
-            "version": "6.9.2",
+            "version": "6.9.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-translatable.git",
-                "reference": "a7c6aa171bd252dfef7729788a050a7346f83a5e"
+                "reference": "5f0712701a71054ba9bd6693808c4748f1f4ebda"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-translatable/zipball/a7c6aa171bd252dfef7729788a050a7346f83a5e",
-                "reference": "a7c6aa171bd252dfef7729788a050a7346f83a5e",
+                "url": "https://api.github.com/repos/spatie/laravel-translatable/zipball/5f0712701a71054ba9bd6693808c4748f1f4ebda",
+                "reference": "5f0712701a71054ba9bd6693808c4748f1f4ebda",
                 "shasum": ""
             },
             "require": {
@@ -9646,7 +9646,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-translatable/issues",
-                "source": "https://github.com/spatie/laravel-translatable/tree/6.9.2"
+                "source": "https://github.com/spatie/laravel-translatable/tree/6.9.3"
             },
             "funding": [
                 {
@@ -9654,7 +9654,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-12-11T09:51:14+00:00"
+            "time": "2024-12-16T12:58:20+00:00"
         },
         {
             "name": "spatie/robots-txt",
@@ -9779,16 +9779,16 @@
         },
         {
             "name": "stancl/jobpipeline",
-            "version": "v1.7.1",
+            "version": "v1.7.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/archtechx/jobpipeline.git",
-                "reference": "59467693e6782d7f1995d19d2bf1558ec55d0afe"
+                "reference": "6b5aaa16a5c2b6ca32abcefd82c9c1320be8c2f3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/archtechx/jobpipeline/zipball/59467693e6782d7f1995d19d2bf1558ec55d0afe",
-                "reference": "59467693e6782d7f1995d19d2bf1558ec55d0afe",
+                "url": "https://api.github.com/repos/archtechx/jobpipeline/zipball/6b5aaa16a5c2b6ca32abcefd82c9c1320be8c2f3",
+                "reference": "6b5aaa16a5c2b6ca32abcefd82c9c1320be8c2f3",
                 "shasum": ""
             },
             "require": {
@@ -9819,9 +9819,9 @@
             "description": "Turn any series of jobs into Laravel listeners.",
             "support": {
                 "issues": "https://github.com/archtechx/jobpipeline/issues",
-                "source": "https://github.com/archtechx/jobpipeline/tree/v1.7.1"
+                "source": "https://github.com/archtechx/jobpipeline/tree/v1.7.2"
             },
-            "time": "2024-11-09T19:58:45+00:00"
+            "time": "2024-12-16T15:45:18+00:00"
         },
         {
             "name": "stancl/tenancy",

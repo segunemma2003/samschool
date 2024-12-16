@@ -10,4 +10,9 @@ class Teacher extends Model
 {
     use HasFactory, HasRoles;
     protected $guarded = ['id'];
+
+    public function classes()
+    {
+        return $this->hasMany(SchoolClass::class, 'teacher_id');
+    }
 }

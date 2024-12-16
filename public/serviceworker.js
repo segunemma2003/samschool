@@ -3,7 +3,6 @@ var filesToCache = [
     '/offline',
     '/css/app.css',
     '/js/app.js',
-"
 ];
 
 // Cache on install

@@ -1,5 +1,5 @@
 <div class="filament-page">
-    <h1 class="text-2xl font-bold mb-4">Create Course Form</h1>
+    <h1 class="mb-4 text-2xl font-bold">Create Course Form</h1>
 
     <form wire:submit.prevent="create" class="space-y-6">
         {{-- Filter Section --}}
@@ -9,9 +9,13 @@
                 <select wire:model="classId" id="class" name="class_id" required
                     class="block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-800">
                     <option value="">Select Class</option>
-                    @foreach($subjects->groupBy('class_id') as $classId => $group)
-                        <option value="{{ $classId }}">Class {{ $classId }}</option>
-                    @endforeach
+                      @if($subjects && $subjects->isNotEmpty())
+                        @foreach($subjects->groupBy('class_id') as $classId => $group)
+                            <option value="{{ $classId }}">Class {{ $classId }}</option>
+                        @endforeach
+                    @else
+                        <option value="">No classes available</option>
+                    @endif
                 </select>
             </div>
 
@@ -29,29 +33,29 @@
 
         {{-- Subjects Table --}}
         <div>
-            <h2 class="text-lg font-semibold mb-2">Subjects</h2>
-            <table class="table-auto w-full border border-gray-300 dark:border-gray-700">
+            <h2 class="mb-2 text-lg font-semibold">Subjects</h2>
+            <table class="w-full border border-gray-300 table-auto dark:border-gray-700">
                 <thead>
                     <tr class="bg-gray-100 dark:bg-gray-800">
-                        <th class="border border-gray-300 dark:border-gray-700 px-4 py-2">Subject</th>
-                        <th class="border border-gray-300 dark:border-gray-700 px-4 py-2">Teacher</th>
-                        <th class="border border-gray-300 dark:border-gray-700 px-4 py-2">Select</th>
+                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-700">Subject</th>
+                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-700">Teacher</th>
+                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-700">Select</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($subjects as $subject)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2">{{ $subject->subjectDepot->name }}</td>
-                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2">
+                            <td class="px-4 py-2 border border-gray-300 dark:border-gray-700">{{ $subject->subjectDepot->name }}</td>
+                            <td class="px-4 py-2 border border-gray-300 dark:border-gray-700">
                                 {{ $subject->teacher->name ?? 'N/A' }}
                             </td>
-                            <td class="border border-gray-300 dark:border-gray-700 px-4 py-2 text-center">
+                            <td class="px-4 py-2 text-center border border-gray-300 dark:border-gray-700">
                                 <input type="checkbox" wire:model="selectedSubjects" value="{{ $subject->id }}">
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center border border-gray-300 dark:border-gray-700 px-4 py-2">
+                            <td colspan="3" class="px-4 py-2 text-center border border-gray-300 dark:border-gray-700">
                                 No subjects available
                             </td>
                         </tr>
@@ -63,7 +67,7 @@
         {{-- Submit Button --}}
         <div class="flex justify-end">
             <button type="submit"
-                class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md border-2 border-blue-600 hover:bg-blue-700 hover:border-blue-700 dark:bg-blue-500 dark:text-white dark:border-blue-500 dark:hover:bg-blue-600 dark:hover:border-blue-600 transition-colors duration-200 relative"
+                class="relative px-6 py-2 font-semibold text-white transition-colors duration-200 bg-blue-600 border-2 border-blue-600 rounded-md hover:bg-blue-700 hover:border-blue-700 dark:bg-blue-500 dark:text-white dark:border-blue-500 dark:hover:bg-blue-600 dark:hover:border-blue-600"
                 wire:target="create"
                 wire:loading.attr="disabled"
             >

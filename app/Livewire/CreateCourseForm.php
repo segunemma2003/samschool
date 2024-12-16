@@ -23,6 +23,7 @@ class CreateCourseForm extends Component
     {
         $this->classId = null;
         $this->termId = null;
+        $this->subjects = collect();
         $this->loadSubjects();
     }
 
@@ -37,6 +38,8 @@ class CreateCourseForm extends Component
             //     $query->where('term_id', $this->termId);
             // }
             $this->subjects = $query->get();
+        } else {
+            $this->subjects = collect(); // Ensure it's a collection if no subjects are found
         }
     }
 

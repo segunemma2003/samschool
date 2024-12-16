@@ -16,7 +16,7 @@ class CreateCourseForm extends Component
 
     public $classId;
     public $termId;
-    public $subjects = [];
+    public $subjects;
     public $selectedSubjects = [];
 
     public function mount()

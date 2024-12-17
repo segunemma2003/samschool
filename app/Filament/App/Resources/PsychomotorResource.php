@@ -6,6 +6,7 @@ use App\Filament\App\Resources\PsychomotorResource\Pages;
 use App\Filament\App\Resources\PsychomotorResource\RelationManagers;
 use App\Models\AcademicYear;
 use App\Models\Psychomotor;
+use App\Models\PsychomotorCategory;
 use App\Models\SchoolClass;
 use App\Models\StudentGroup;
 use App\Models\Term;
@@ -45,9 +46,15 @@ class PsychomotorResource extends Resource
                     ->options(AcademicYear::all()->pluck('title', 'id'))
                     ->preload()
                     ->searchable(),
+                    Forms\Components\Select::make('psychomotor_category_id')
+                    ->label('Category')
+                    ->options(PsychomotorCategory::all()->pluck('name', 'id'))
+                    ->preload()
+                    ->searchable(),
                 Forms\Components\TextInput::make('skill')
                     ->required()
                     ->maxLength(255),
+
             ]);
     }
 

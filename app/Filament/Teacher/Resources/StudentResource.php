@@ -19,6 +19,8 @@ use App\Models\StudentGroup;
 use App\Models\Teacher;
 use App\Models\Term;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Barryvdh\Snappy\Facades\SnappyPdf;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
@@ -37,8 +39,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Browsershot\Browsershot;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentResource extends Resource
 {
@@ -201,9 +206,36 @@ class StudentResource extends Resource
                 ->url(fn ($record) => CourseFormStudent::generateRoute($record->id)),
 
 
-                Tables\Actions\Action::make('viewresult')
-    ->label('View Result')
-    ->url(fn ($record) => StudentResultDetailsPage::generateRoute($record->id)),
+                \Filament\Tables\Actions\Action::make('viewresult')
+                ->label('View Result')
+                ->url(fn ($record) => StudentResultDetailsPage::generateRoute($record->id)),
+
+                \Filament\Tables\Actions\Action::make('downloadSingleResult')
+                ->label('Download Result')
+                ->icon('heroicon-s-arrow-down-on-square')
+                ->form([
+                    Forms\Components\Select::make('term_id')
+                        ->options(Term::all()->pluck('name', 'id'))
+                        ->preload()
+                        ->searchable()
+                        ->required(),
+                    Forms\Components\Select::make('academic_id')
+                    ->label('Academy Year')
+                    ->options(AcademicYear::all()->pluck('title', 'id'))
+                    ->preload()
+                    ->searchable(),
+                ])
+                ->action(function (array $data, $record) {
+                    $student = $record;
+                    $term= Term::whereId($data['term_id'])->first();
+                    $session = AcademicYear::whereId($data['academic_id'])->first();
+                    $pdf = SnappyPdf::loadView('results.template', compact('student','term', 'session'));
+
+                    // Return the PDF for download
+                    return $pdf->download('invoice.pdf');
+
+
+                }),
 
             ])
             ->bulkActions([

@@ -117,6 +117,11 @@ class StudentResults extends Component
 
         // Step 4: Calculate class metrics for students with valid totals
         $classAverage = count($validTotals) > 0 ? array_sum($validTotals) / count($validTotals) : 0;
+
+        // Check if the result is a whole number
+        $classAverage = fmod($classAverage, 1) === 0.0
+            ? (int) $classAverage // Convert to an integer if it has no decimal part
+            : round($classAverage, 1); // Otherwise, round to 1 decimal place
         $classHighestScore = count($validTotals) > 0 ? max($validTotals) : 0;
         $classLowestScore = count($validTotals) > 0 ? min($validTotals) : 0;
 

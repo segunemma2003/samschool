@@ -44,6 +44,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
+use Knp\Snappy\Pdf as KnpSnappyPdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Mpdf\Mpdf;
 use Spatie\LaravelPdf\Facades\Pdf as FacadesPdf;
@@ -290,14 +291,19 @@ class StudentResource extends Resource
                           'term'=>$term
                     ];
                     $time = time();
-                    $pdf = FacadesPdf::view('results.template',$data)->format('a4')->disk('cloudinary')->save("result-{$record->name}-$time.pdf");
-                    dd($pdf);
-                    $url = Storage::disk('cloudinary')->url("result-{$record->name}-$time.pdf");
+                   $pdf = SnappyPdf::loadView('results.template', $data)
+                    ->setPaper('a4')
+                    ->download("result-{$record->name}-$time.pdf"); // Trigger download directly
+                    return $pdf;
+//                     $time = time();
+//                     $pdf = FacadesPdf::view('results.template',$data)->format('a4')->disk('cloudinary')->save("result-{$record->name}-$time.pdf");
 
-// Redirect to the file for download
-return response()->streamDownload(function () use ($url) {
-    echo file_get_contents($url);
-}, "result-{$record->name}.pdf");
+//                     $url = Storage::disk('cloudinary')->url("result-{$record->name}-$time.pdf");
+
+// // Redirect to the file for download
+// return response()->streamDownload(function () use ($url) {
+//     echo file_get_contents($url);
+// }, "result-{$record->name}.pdf");
                     // $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'student_attendance', 'term'))->setPaper('a4', 'landscape');
                     // return response()->streamDownload(
                     //     fn () => print($pdf->output()),
@@ -314,9 +320,6 @@ return response()->streamDownload(function () use ($url) {
     }
 
 
-    protected static function pdfView(){
-
-    }
 
     public static function getRelations(): array
     {

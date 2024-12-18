@@ -269,12 +269,12 @@ class StudentResource extends Resource
                         ->get();
 
                     // Group headings by patterns
-                    $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']);
-                    $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']);
-                    $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']);
-                    $remarks = $headings->whereIn('calc_pattern', ['remarks']);
+                    $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
+                    $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
+                    $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
+                    $remarks = $headings->whereIn('calc_pattern', ['remarks']) ?? collect([]);
 
-                    $class = SchoolClass::where('id', $student->class->id)->first();
+                    $class = SchoolClass::where('id', $student->class->id)->first() ?? collect([]);
 
                     $data = [
                         'class'=>$class,
@@ -287,14 +287,21 @@ class StudentResource extends Resource
                         'student'=>$student,
                          'school'=>$school,
                          'academy'=>$academy,
-                          'student_attendance'=>$student_attendance,
+                          'studentAttendance'=>$student_attendance,
                           'term'=>$term
                     ];
                     $time = time();
-                   $pdf = SnappyPdf::loadView('results.template', $data)->setOption('encoding', 'UTF-8')
-                    ->setPaper('a4')
-                    ->download("result-{$record->name}-$time.pdf"); // Trigger download directly
-                    return $pdf;
+                    // $html = view('results.template', $data)->render();
+
+                    // // Initialize mPDF
+                    // $mpdf = new Mpdf();
+
+                    // // Load the HTML content
+                    // $mpdf->WriteHTML($html);
+
+                    // // Output the PDF as a download
+                    // return response($mpdf->Output("result-{$record->name}-$time.pdf", 'D'))
+                    //     ->header('Content-Type', 'application/pdf');
 //                     $time = time();
 //                     $pdf = FacadesPdf::view('results.template',$data)->format('a4')->disk('cloudinary')->save("result-{$record->name}-$time.pdf");
 
@@ -304,11 +311,11 @@ class StudentResource extends Resource
 // return response()->streamDownload(function () use ($url) {
 //     echo file_get_contents($url);
 // }, "result-{$record->name}.pdf");
-                    // $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'student_attendance', 'term'))->setPaper('a4', 'landscape');
-                    // return response()->streamDownload(
-                    //     fn () => print($pdf->output()),
-                    //     "result-{$record->name}.pdf"
-                    // );
+                    $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'student_attendance', 'term'))->setPaper('a4', 'portrait');
+                    return response()->streamDownload(
+                        fn () => print($pdf->output()),
+                        "result-{$record->name}.pdf"
+                    );
                 }),
 
             ])

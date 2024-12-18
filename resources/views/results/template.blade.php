@@ -229,9 +229,9 @@
         </tr>
         <!-- FIRST ROW -->
         <tr class="text-left">
-          <td class="border py-[0.1rem] px-[0.5rem] text-center">{{$student_attendance->expected_present}}</td>
-          <td class="border py-[0.1rem] px-[0.5rem] text-center">{{$student_attendance->total_present}}</td>
-          <td class="border py-[0.1rem] px-[0.5rem] text-center">{{$student_attendance->total_absent}}</td>
+          <td class="border py-[0.1rem] px-[0.5rem] text-center">{{$studentAttendance->expected_present}}</td>
+          <td class="border py-[0.1rem] px-[0.5rem] text-center">{{$studentAttendance->total_present}}</td>
+          <td class="border py-[0.1rem] px-[0.5rem] text-center">{{$studentAttendance->total_absent}}</td>
         </tr>
       </table>
     </div>

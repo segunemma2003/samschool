@@ -242,7 +242,7 @@ class StudentResource extends Resource
                         ['academic_id', $academy->id]
                     ])->first();
 
-                    $student_attendance = StudentAttendanceSummary::where([
+                    $studentAttendance = StudentAttendanceSummary::where([
                         ['term_id', $term->id],
                         ['academic_id', $academy->id]
                     ])->first();
@@ -287,7 +287,7 @@ class StudentResource extends Resource
                         'student'=>$student,
                          'school'=>$school,
                          'academy'=>$academy,
-                          'studentAttendance'=>$student_attendance,
+                          'studentAttendance'=>$studentAttendance,
                           'term'=>$term
                     ];
                     $time = time();
@@ -311,7 +311,7 @@ class StudentResource extends Resource
 // return response()->streamDownload(function () use ($url) {
 //     echo file_get_contents($url);
 // }, "result-{$record->name}.pdf");
-                    $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'student_attendance', 'term'))->setPaper('a4', 'portrait');
+                    $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term'))->setPaper('a4', 'portrait');
                     return response()->streamDownload(
                         fn () => print($pdf->output()),
                         "result-{$record->name}.pdf"

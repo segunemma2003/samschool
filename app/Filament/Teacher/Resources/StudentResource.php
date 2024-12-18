@@ -291,7 +291,7 @@ class StudentResource extends Resource
                           'term'=>$term
                     ];
                     $time = time();
-                   $pdf = SnappyPdf::loadView('results.template', $data)
+                   $pdf = SnappyPdf::loadView('results.template', $data)->setOption('encoding', 'UTF-8')
                     ->setPaper('a4')
                     ->download("result-{$record->name}-$time.pdf"); // Trigger download directly
                     return $pdf;

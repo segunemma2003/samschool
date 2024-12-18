@@ -11,9 +11,12 @@ use App\Models\AcademicYear;
 use App\Models\Arm;
 use App\Models\CourseForm;
 use App\Models\Guardians;
+use App\Models\ResultSectionType;
 use App\Models\SchoolClass;
+use App\Models\SchoolInformation;
 use App\Models\SchoolSection;
 use App\Models\Student;
+use App\Models\StudentAttendanceSummary;
 use App\Models\StudentComment;
 use App\Models\StudentGroup;
 use App\Models\Teacher;
@@ -39,11 +42,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
-use Spatie\Browsershot\Browsershot;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Mpdf\Mpdf;
+use Spatie\LaravelPdf\Facades\Pdf as FacadesPdf;
 
 class StudentResource extends Resource
 {
@@ -217,6 +219,7 @@ class StudentResource extends Resource
                     Forms\Components\Select::make('term_id')
                         ->options(Term::all()->pluck('name', 'id'))
                         ->preload()
+                        ->label('Term')
                         ->searchable()
                         ->required(),
                     Forms\Components\Select::make('academic_id')
@@ -227,14 +230,72 @@ class StudentResource extends Resource
                 ])
                 ->action(function (array $data, $record) {
                     $student = $record;
-                    $term= Term::whereId($data['term_id'])->first();
-                    $session = AcademicYear::whereId($data['academic_id'])->first();
-                    $pdf = SnappyPdf::loadView('results.template', compact('student','term', 'session'));
 
-                    // Return the PDF for download
-                    return $pdf->download('invoice.pdf');
+                    // Batch load related models
+                    $academy = AcademicYear::find($data['academic_id']);
+                    $term = Term::find($data['term_id']);
 
+                    $school = SchoolInformation::where([
+                        ['term_id', $term->id],
+                        ['academic_id', $academy->id]
+                    ])->first();
 
+                    $student_attendance = StudentAttendanceSummary::where([
+                        ['term_id', $term->id],
+                        ['academic_id', $academy->id]
+                    ])->first();
+
+                    $studentComment = StudentComment::where([
+                        ['student_id', $student->id],
+                        ['term_id', $term->id],
+                        ['academic_id', $academy->id]
+                    ])->first();
+
+                    // Eager load related data for courses
+                    $courses = CourseForm::where([
+                            ['student_id', $student->id],
+                            ['academic_year_id', $academy->id],
+                            ['term_id', $term->id]
+                        ])
+                        ->get();
+
+                    // Optimize headings query with eager loading
+                    $headings = ResultSectionType::with('resultSection')
+                        ->whereHas('resultSection', function ($query) use ($student) {
+                            $query->where('group_id', $student->class->group->id);
+                        })
+                        ->get();
+
+                    // Group headings by patterns
+                    $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']);
+                    $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']);
+                    $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']);
+                    $remarks = $headings->whereIn('calc_pattern', ['remarks']);
+
+                    $class = SchoolClass::where('id', $student->class->id)->first();
+                    $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'student_attendance', 'term'))->setPaper('a4', 'landscape');
+                    return response()->streamDownload(
+                        fn () => print($pdf->output()),
+                        "result-{$record->name}.pdf"
+                    );
+
+                    // $pdf = SnappyPdf::loadView('results.template',compact('student', 'school', 'academy', 'student_attendance', 'term'));
+                    // return $pdf->download("result-{$record->name}.pdf");
+                //     if (!$school || !$student_attendance) {
+                //         throw new \Exception('Required data is missing.');
+                //     }
+
+                //     $html = view('results.template', [
+                //         'student' => $student,
+                //         'school' => $school,
+                //         'academy' => $academy,
+                //         'student_attendance' => $student_attendance,
+                //         'term' => $term,
+                //     ])->render();
+
+                //     $mpdf = new Mpdf();
+                //     $mpdf->WriteHTML($html);
+                //     $mpdf->Output("result-{$record->name}.pdf", 'D');
                 }),
 
             ])
@@ -243,6 +304,11 @@ class StudentResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+
+    protected static function pdfView(){
+
     }
 
     public static function getRelations(): array

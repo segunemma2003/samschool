@@ -45,6 +45,11 @@ class SchoolInformationResource extends Resource
                     ->label('School Name')
                     ->required()
                     ->maxLength(255),
+                    Forms\Components\TextInput::make('email')
+                    ->label('School Email')
+                    ->email()
+                    ->required()
+                   ,
 
                 Forms\Components\TextInput::make('school_address')
                     ->label('School Address')

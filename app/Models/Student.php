@@ -16,6 +16,11 @@ class Student extends Model
         return $this->belongsTo(SchoolClass::class, 'class_id');
     }
 
+    public function parent()
+    {
+        return $this->belongsTo(Guardians::class, 'guardian_id');
+    }
+
     public function courseForms()
     {
         return $this->hasMany(CourseForm::class, 'student_id');

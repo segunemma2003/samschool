@@ -353,7 +353,7 @@
             </table>
           </div>
           <!-- TOTAL SCORES -->
-          <div
+          {{-- <div
             class="flex flex-wrap justify-between p-2 text-sm text-gray-700 bg-gray-200"
           >
             <div>NO. IN CLASS: <span class="font-bold">22</span></div>
@@ -361,7 +361,7 @@
             <div>
               POSITION: <span class="font-bold">7TH - 57.4%</span> SILVER
             </div>
-          </div>
+          </div> --}}
         </div>
       </section>
 

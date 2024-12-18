@@ -291,6 +291,7 @@ class StudentResource extends Resource
                     ];
                     $time = time();
                     $pdf = FacadesPdf::view('results.template',$data)->format('a4')->disk('cloudinary')->save("result-{$record->name}-$time.pdf");
+                    dd($pdf);
                     $url = Storage::disk('cloudinary')->url("result-{$record->name}-$time.pdf");
 
 // Redirect to the file for download

@@ -42,6 +42,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
 use Mpdf\Mpdf;
@@ -273,29 +274,34 @@ class StudentResource extends Resource
                     $remarks = $headings->whereIn('calc_pattern', ['remarks']);
 
                     $class = SchoolClass::where('id', $student->class->id)->first();
-                    $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'student_attendance', 'term'))->setPaper('a4', 'landscape');
-                    return response()->streamDownload(
-                        fn () => print($pdf->output()),
-                        "result-{$record->name}.pdf"
-                    );
 
-                    // $pdf = SnappyPdf::loadView('results.template',compact('student', 'school', 'academy', 'student_attendance', 'term'));
-                    // return $pdf->download("result-{$record->name}.pdf");
-                //     if (!$school || !$student_attendance) {
-                //         throw new \Exception('Required data is missing.');
-                //     }
+                    $data = [
+                        'class'=>$class,
+                        'markObtained'=>$markObtained,
+                        'remarks'=>$remarks,
+                        'studentSummary'=> $studentSummary,
+                        'termSummary'=>$termSummary,
+                        'courses'=>$courses,
+                        'studentComment'=>$studentComment,
+                        'student'=>$student,
+                         'school'=>$school,
+                         'academy'=>$academy,
+                          'student_attendance'=>$student_attendance,
+                          'term'=>$term
+                    ];
+                    $time = time();
+                    $pdf = FacadesPdf::view('results.template',$data)->format('a4')->disk('cloudinary')->save("result-{$record->name}-$time.pdf");
+                    $url = Storage::disk('cloudinary')->url("result-{$record->name}-$time.pdf");
 
-                //     $html = view('results.template', [
-                //         'student' => $student,
-                //         'school' => $school,
-                //         'academy' => $academy,
-                //         'student_attendance' => $student_attendance,
-                //         'term' => $term,
-                //     ])->render();
-
-                //     $mpdf = new Mpdf();
-                //     $mpdf->WriteHTML($html);
-                //     $mpdf->Output("result-{$record->name}.pdf", 'D');
+// Redirect to the file for download
+return response()->streamDownload(function () use ($url) {
+    echo file_get_contents($url);
+}, "result-{$record->name}.pdf");
+                    // $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'student_attendance', 'term'))->setPaper('a4', 'landscape');
+                    // return response()->streamDownload(
+                    //     fn () => print($pdf->output()),
+                    //     "result-{$record->name}.pdf"
+                    // );
                 }),
 
             ])

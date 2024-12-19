@@ -290,15 +290,27 @@ class StudentResource extends Resource
                           'studentAttendance'=>$studentAttendance,
                           'term'=>$term
                     ];
+                    // dd($data);
+
                     $time = time();
                     // $html = view('results.template', $data)->render();
 
-                    // // Initialize mPDF
+                    $pdf = SnappyPdf::loadView('results.template', $data);
+                    return $pdf->download('invoice.pdf');
+                    // $pdf = PDF::loadView('results.template', $data);
+                    // return response()->streamDownload(function () use ($pdf) {
+                    //     echo $pdf->stream();
+                    //     }, "result-{$student->name}-".time().'.pdf');
+                    // return $pdf->download("result-{$student->name}-".time().'.pdf');
+                    // $html = view('results.template', $data)->render();
+                    // dd($html);
+
+                    // // // Initialize mPDF
                     // $mpdf = new Mpdf();
 
-                    // // Load the HTML content
+                    // // // Load the HTML content
                     // $mpdf->WriteHTML($html);
-
+                    // dd($mpdf);
                     // // Output the PDF as a download
                     // return response($mpdf->Output("result-{$record->name}-$time.pdf", 'D'))
                     //     ->header('Content-Type', 'application/pdf');
@@ -311,11 +323,11 @@ class StudentResource extends Resource
 // return response()->streamDownload(function () use ($url) {
 //     echo file_get_contents($url);
 // }, "result-{$record->name}.pdf");
-                    $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term'))->setPaper('a4', 'portrait');
-                    return response()->streamDownload(
-                        fn () => print($pdf->output()),
-                        "result-{$record->name}.pdf"
-                    );
+                    // $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term'))->setPaper('a4', 'portrait');
+                    // return response()->streamDownload(
+                    //     fn () => print($pdf->output()),
+                    //     "result-{$record->name}.pdf"
+                    // );
                 }),
 
             ])

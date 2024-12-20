@@ -47,6 +47,7 @@ use Illuminate\Support\HtmlString;
 use Knp\Snappy\Pdf as KnpSnappyPdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Mpdf\Mpdf;
+use phpDocumentor\Reflection\PseudoTypes\LowercaseString;
 use Spatie\LaravelPdf\Facades\Pdf as FacadesPdf;
 
 class StudentResource extends Resource
@@ -254,7 +255,10 @@ class StudentResource extends Resource
                     ])->first();
 
                     // Eager load related data for courses
-                    $courses = CourseForm::where([
+                    $courses = CourseForm::with([
+                        'subject.subjectDepot',
+                        'scoreBoard'
+                    ])->where([
                             ['student_id', $student->id],
                             ['academic_year_id', $academy->id],
                             ['term_id', $term->id]
@@ -275,9 +279,67 @@ class StudentResource extends Resource
                     $remarks = $headings->whereIn('calc_pattern', ['remarks']) ?? collect([]);
 
                     $class = SchoolClass::where('id', $student->class->id)->first() ?? collect([]);
+                    $totalSubject =count($courses);
+
+                    $totalHeadings = $headings->where('calc_pattern', 'total');
+
+                    // Step 2: Initialize a variable to store the total sum
+                    $totalScore = 0;
+                    $englishScore = 0;
+                    $mathScore = 0;
+
+                    // Step 3: Iterate through the courses and calculate the total score
+                    // foreach ($courses as $course) {
+                    //     foreach ($totalHeadings as $heading) {
+                    //         $subject = $course->subject->subjectDepot->name;
+                    //         $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
+                    //         if(strtolower($subject) == 'english'){
+                    //             $englishScore = $score->score ?? 0;
+                    //         }
+                    //         if(strtolower($subject) == 'maths' || (strtolower($subject) == 'mathematics')){
+                    //             $mathScore = $score->score ?? 0;
+                    //         }
+
+                    //         // Retrieve the score for this subject and heading
+
+
+                    //         // Add the score to the total (only if it exists)
+                    //         $totalScore += $score->score ?? 0;
+                    //     }
+                    // }
+                    // dd($totalScore);
+                    // dd($totalSubject);
+
+                    $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings, &$englishScore, &$mathScore) {
+                        foreach ($totalHeadings as $heading) {
+                            $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
+                            $scoreValue = $score->score ?? 0;
+
+                            // Add to the total score
+                            $carry += $scoreValue;
+
+                            // Check if the subject is English or Maths and store their scores
+                            $subject = $course->subject->subjectDepot->name;
+                            if (strtolower($subject) == 'english') {
+                                $englishScore = $scoreValue;
+                            } elseif (strtolower($subject) == 'maths' || strtolower($subject) == 'mathematics') {
+                                $mathScore = $scoreValue;
+                            }
+                        }
+                        return $carry;
+                    }, 0);
+
+
+                    $percent = round(($totalScore / $totalSubject));
+                    // dd($percent);
+
+                    $principalComment = self::getPerformanceComment($percent, $englishScore, $mathScore);
 
                     $data = [
                         'class'=>$class,
+                        'totalSubject'=>$totalSubject,
+                        'totalScore'=>$totalScore,
+                        'percent'=>$percent,
                         'markObtained'=>$markObtained,
                         'remarks'=>$remarks,
                         'studentSummary'=> $studentSummary,
@@ -285,12 +347,13 @@ class StudentResource extends Resource
                         'courses'=>$courses,
                         'studentComment'=>$studentComment,
                         'student'=>$student,
-                         'school'=>$school,
-                         'academy'=>$academy,
-                          'studentAttendance'=>$studentAttendance,
-                          'term'=>$term
+                        'school'=>$school,
+                        'academy'=>$academy,
+                        'studentAttendance'=>$studentAttendance,
+                        'term'=>$term,
+                        'principalComment' => $principalComment
                     ];
-                    // dd($data);
+
 
                     $time = time();
                     // $html = view('results.template', $data)->render();
@@ -300,34 +363,17 @@ class StudentResource extends Resource
                             fn () => print($pdf->output()),
                             "result-{$record->name}.pdf"
                         );
-                    // return $pdf->download('invoice.pdf');
-                    // $pdf = PDF::loadView('results.template', $data);
-                    // return response()->streamDownload(function () use ($pdf) {
-                    //     echo $pdf->stream();
-                    //     }, "result-{$student->name}-".time().'.pdf');
-                    // return $pdf->download("result-{$student->name}-".time().'.pdf');
-                    // $html = view('results.template', $data)->render();
-                    // dd($html);
 
-                    // // // Initialize mPDF
-                    // $mpdf = new Mpdf();
+                    // $time = time();
+                    // $pdf = FacadesPdf::view('results.template',$data)->format('a4')->disk('cloudinary')->save("result-{$record->name}-$time.pdf");
 
-                    // // // Load the HTML content
-                    // $mpdf->WriteHTML($html);
-                    // dd($mpdf);
-                    // // Output the PDF as a download
-                    // return response($mpdf->Output("result-{$record->name}-$time.pdf", 'D'))
-                    //     ->header('Content-Type', 'application/pdf');
-//                     $time = time();
-//                     $pdf = FacadesPdf::view('results.template',$data)->format('a4')->disk('cloudinary')->save("result-{$record->name}-$time.pdf");
+                    // $url = Storage::disk('cloudinary')->url("result-{$record->name}-$time.pdf");
 
-//                     $url = Storage::disk('cloudinary')->url("result-{$record->name}-$time.pdf");
-
-// // Redirect to the file for download
-// return response()->streamDownload(function () use ($url) {
-//     echo file_get_contents($url);
-// }, "result-{$record->name}.pdf");
-                    // $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term'))->setPaper('a4', 'portrait');
+                    // Redirect to the file for download
+                    // return response()->streamDownload(function () use ($url) {
+                    //     echo file_get_contents($url);
+                    // }, "result-{$record->name}.pdf");
+                    // $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
                     // return response()->streamDownload(
                     //     fn () => print($pdf->output()),
                     //     "result-{$record->name}.pdf"
@@ -340,6 +386,95 @@ class StudentResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+
+    public static function getPerformanceComment($percentage, $englishScore, $mathScore) {
+        // Define comments based on percentage range
+        $comments = [
+            'excellent' => [
+                "Excellent Performance",
+                "Keep it up",
+                "Do not relent on your efforts. Keep it up"
+            ],
+            'very_good' => [
+                "A Very Good Performance",
+                "You are doing well. Keep pushing",
+                "An impressive effort!"
+            ],
+            'hardworking' => [
+                "A Hardworking Learner",
+                "Your effort is commendable",
+                "Good work, but you can achieve more"
+            ],
+            'work_harder' => [
+                "Work Harder For a better result",
+                "Keep improving",
+                "Better focus next term will yield results"
+            ],
+            'put_in_effort' => [
+                "Put In More Effort",
+                "Your performance can improve",
+                "Stay committed to better outcomes"
+            ],
+            'be_serious' => [
+                "Be more serious in your studies",
+                "Focus more on your academic goals",
+                "A stronger commitment is needed"
+            ],
+            'english_math_fail' => [
+                "Tried but should try harder next term for a better result in English and Mathematics",
+                "Put in more effort in English and Mathematics",
+                "A good result but can do better in English and Mathematics"
+            ],
+          'math_fail' => [
+                "Tried but should try harder next term for a better result in Mathematics",
+                "Put in more effort in Mathematics",
+                "A good result but can do better in Mathematics"
+            ],
+          'english_fail' => [
+                "Tried but should try harder next term for a better result in English",
+                "Put in more effort in English",
+                "A good result but can do better in English"
+            ],
+            'good_result' => [
+                "Good results but can be better if you put in more effort",
+                "Excellent Performance. Keep it up",
+                "A good result. Keep it up"
+            ],
+            'improve_next_term' => [
+                "Work harder next term for better results",
+                "There is still room for improvement next term",
+                "Stay focused for better performance next term"
+            ]
+        ];
+    if ($percentage >= 70) {
+        // Check English and Mathematics scores first
+        if ($englishScore < 50 && $mathScore < 50) {
+                return $comments['english_math_fail'][array_rand($comments['english_math_fail'])];
+        } elseif ($englishScore < 50) {
+            return $comments['english_fail'][array_rand($comments['english_fail'])];
+        } elseif ($mathScore < 50) {
+          return $comments['math_fail'][array_rand($comments['math_fail'])];
+        }
+      }
+
+        // Determine the comment based on percentage
+        if ($percentage >= 86) {
+            $performanceComment = $comments['excellent'][array_rand($comments['excellent'])];
+        } elseif ($percentage >= 75) {
+            $performanceComment = $comments['very_good'][array_rand($comments['very_good'])];
+        } elseif ($percentage >= 65) {
+            $performanceComment = $comments['hardworking'][array_rand($comments['hardworking'])];
+        } elseif ($percentage >= 51) {
+            $performanceComment = $comments['work_harder'][array_rand($comments['work_harder'])];
+        } elseif ($percentage >= 41) {
+            $performanceComment = $comments['put_in_effort'][array_rand($comments['put_in_effort'])];
+        } else {
+            $performanceComment = $comments['be_serious'][array_rand($comments['be_serious'])];
+        }
+
+        return $performanceComment;
     }
 
 

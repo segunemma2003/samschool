@@ -353,15 +353,17 @@
             </table>
           </div>
           <!-- TOTAL SCORES -->
-          {{-- <div
+          <div
             class="flex flex-wrap justify-between p-2 text-sm text-gray-700 bg-gray-200"
           >
-            <div>NO. IN CLASS: <span class="font-bold">22</span></div>
-            <div>TOTAL TERM SCORE: <span class="font-bold">746</span></div>
-            <div>
+            {{-- <div>NO. IN CLASS: <span class="font-bold">22</span></div> --}}
+            <div>TOTAL TERM SCORE: <span class="font-bold">{{$totalScore}}</span></div>
+             <div>TOTAL Subject Taken: <span class="font-bold">{{$totalSubject}}</span></div>
+               <div>TOTAL Percent: <span class="font-bold">{{$percent}} %</span></div>
+            {{-- <div>
               POSITION: <span class="font-bold">7TH - 57.4%</span> SILVER
-            </div>
-          </div> --}}
+            </div> --}}
+          </div>
         </div>
       </section>
 
@@ -618,7 +620,7 @@
           <div class="flex flex-col justify-between md:flex-row">
             <div>
               <p class="text-sm font-bold">Principal's Comments:</p>
-              <p class="mt-2 italic text-gray-700"></p>
+              <p class="mt-2 italic text-gray-700">{{$principalComment}}</p>
             </div>
             <div class="flex items-center justify-center mt-4 md:mt-0">
               <div class="w-32 border-t border-gray-400"></div>

@@ -11,6 +11,7 @@ use App\Models\AcademicYear;
 use App\Models\Arm;
 use App\Models\CourseForm;
 use App\Models\Guardians;
+use App\Models\PsychomotorCategory;
 use App\Models\ResultSectionType;
 use App\Models\SchoolClass;
 use App\Models\SchoolInformation;
@@ -272,6 +273,8 @@ class StudentResource extends Resource
                         })
                         ->get();
 
+                    $psychomotorCategory = PsychomotorCategory::all();
+
                     // Group headings by patterns
                     $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
                     $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
@@ -351,7 +354,8 @@ class StudentResource extends Resource
                         'academy'=>$academy,
                         'studentAttendance'=>$studentAttendance,
                         'term'=>$term,
-                        'principalComment' => $principalComment
+                        'principalComment' => $principalComment,
+                        'psychomotorCategory'=> $psychomotorCategory
                     ];
 
 
@@ -373,7 +377,7 @@ class StudentResource extends Resource
                     // return response()->streamDownload(function () use ($url) {
                     //     echo file_get_contents($url);
                     // }, "result-{$record->name}.pdf");
-                    // $pdf = Pdf::loadView('results.template',compact('class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
+                    // $pdf = Pdf::loadView('results.template',compact('psychomotorCategory','class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
                     // return response()->streamDownload(
                     //     fn () => print($pdf->output()),
                     //     "result-{$record->name}.pdf"

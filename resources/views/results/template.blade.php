@@ -17,7 +17,7 @@
           margin: 0;
           padding: 0;
           background-color: #fff;
-          font-size: 12px;
+          font-size: 10px;
         }
 
         /* Page size and margin */
@@ -48,7 +48,7 @@
         h1,
         h2,
         h3 {
-          font-size: 16px;
+          font-size: 12px;
           font-weight: bold;
           text-align: center;
         }
@@ -398,190 +398,7 @@
       </div>
     </section>
 
-    <section>
-      <div class="mx-auto max-w-[1200px] py-6">
-        <!-- Table Title -->
-        <h1 class="mb-4 text-xl font-bold text-center">
-          SKILLS DEVELOPMENT AND BEHAVIORAL ATTRIBUTES
-        </h1>
 
-        <!-- Table Container -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm border border-collapse border-gray-400">
-            <!-- Header Row -->
-            <thead>
-              <tr class="bg-gray-200">
-                <!-- Column Headers -->
-                <th
-                  class="px-2 py-1 text-left border border-gray-400"
-                  colspan="2"
-                >
-                  PERSONAL DEV.
-                </th>
-                <th
-                  class="px-2 py-1 text-left border border-gray-400"
-                  colspan="2"
-                >
-                  SENSE OF RESP.
-                </th>
-                <th
-                  class="px-2 py-1 text-left border border-gray-400"
-                  colspan="2"
-                >
-                  SOCIAL DEV.
-                </th>
-                <th
-                  class="px-2 py-1 text-left border border-gray-400"
-                  colspan="2"
-                >
-                  PSYCHOMOTOR (SKILLS) DEV.
-                </th>
-              </tr>
-            </thead>
-
-            <!-- Table Body -->
-            <tbody>
-              <!-- Row 1 -->
-              <tr>
-                <!-- PERSONAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">OBEDIENCE:</td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-                <!-- SENSE OF RESP -->
-                <td class="px-2 py-1 border border-gray-400">PUNCTUALITY:</td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- SOCIAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  COURTESY/POLITENESS:
-                </td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- PSYCHOMOTOR DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  READING AND WRITING SKILLS:
-                </td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-              </tr>
-
-              <!-- Row 2 -->
-              <tr>
-                <!-- PERSONAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">HONESTY:</td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-                <!-- SENSE OF RESP -->
-                <td class="px-2 py-1 border border-gray-400">NEATNESS:</td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-                <!-- SOCIAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  CONSIDERATIONS FOR OTHERS:
-                </td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- PSYCHOMOTOR DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  VERBAL COMMUNICATION
-                </td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-              </tr>
-
-              <!-- Row 3 -->
-              <tr>
-                <!-- PERSONAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">SELF-CONTROL:</td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-                <!-- SENSE OF RESP -->
-                <td class="px-2 py-1 border border-gray-400">PERSEVERANCE:</td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- SOCIAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  SOCIABILITY / TEAM PLAYER:
-                </td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- PSYCHOMOTOR DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  SPORT AND GAME:
-                </td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-              </tr>
-
-              <!-- Row 4 -->
-              <tr>
-                <!-- PERSONAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">SELF-RELIANCE:</td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- SENSE OF RESP -->
-                <td class="px-2 py-1 border border-gray-400">ATTENDANCE:</td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- SOCIAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  PROMPTNESS IN COMPLETING WORK:
-                </td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-                <!-- PSYCHOMOTOR DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  INQUISITIVENESS:
-                </td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-              </tr>
-
-              <!-- Row 5 -->
-              <tr>
-                <!-- PERSONAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  USE OF INITIATIVE:
-                </td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- SENSE OF RESP -->
-                <td class="px-2 py-1 border border-gray-400">ATTENTIVENESS:</td>
-                <td class="font-bold text-center border border-gray-400">3</td>
-                <!-- SOCIAL DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  ACCEPTS RESPONSIBILITIES:
-                </td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-                <!-- PSYCHOMOTOR DEV -->
-                <td class="px-2 py-1 border border-gray-400">
-                  DEXTERITY (MUSICAL & ART MATERIALS):
-                </td>
-                <td class="font-bold text-center border border-gray-400">4</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="mx-auto max-w-[1200px] py-4">
-      <div
-        class="w-full text-sm border border-collapse border-gray-400 md:text-base"
-      >
-        <table class="w-full bg-gray-200">
-          <tr>
-            <th class="p-1">KEYS TO RATINGS ON OBSERVABLE BEHAVIOUR</th>
-          </tr>
-        </table>
-
-        <table class="w-full">
-          <!-- FIRST ROW -->
-          <tr class="text-left">
-            <td class="border py-[0.1rem] px-[0.5rem] text-center">
-              5.) Maintains an excellent degree of observable traits
-            </td>
-            <td class="border py-[0.1rem] px-[0.5rem] text-center">
-              4.) Maintains high level of observable traits
-            </td>
-            <td class="border py-[0.1rem] px-[0.5rem] text-center">
-              3.) Acceptable level of observable traits
-            </td>
-          </tr>
-          <tr class="w-full text-left">
-            <td class="border py-[0.1rem] px-[0.5rem] text-center">
-              2.) Shows minimal regards for observable traits
-            </td>
-            <td class="border py-[0.1rem] px-[0.5rem] text-center">
-              1.) Has no regard for observable traits
-            </td>
-          </tr>
-        </table>
-      </div>
-    </section>
 
     <section>
       <div
@@ -602,7 +419,7 @@
               </p>
             </div>
             <div class="flex items-center justify-center mt-4 md:mt-0">
-              <div class="w-32 border-t border-gray-400"></div>
+              {{-- <div class="w-32 border-t border-gray-400"></div> --}}
               <!--  --> <img
                 width="40"
               height="40"
@@ -619,11 +436,11 @@
         <div class="p-4 border-b border-gray-300">
           <div class="flex flex-col justify-between md:flex-row">
             <div>
-              <p class="text-sm font-bold">Principal's Comments:</p>
+              <p class="text-sm font-bold">Head Teacher's/ Principal's Comment:</p>
               <p class="mt-2 italic text-gray-700">{{$principalComment}}</p>
             </div>
-            <div class="flex items-center justify-center mt-4 md:mt-0">
-              <div class="w-32 border-t border-gray-400"></div>
+            <div class="flex flex-row items-center justify-center mt-4 md:mt-0 gap-3">
+              {{-- <div class="w-32 border-t border-gray-400"></div> --}}
               <!--  -->
               <img
               width="40"
@@ -631,6 +448,13 @@
                src="{{ $school->principal_sign ? $school->principal_sign : 'https://via.placeholder.com/100' }}"
                 alt="{{ $school->principal_sign}}"
                 class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
+              />
+              <img
+                width="40"
+              height="40"
+                src="{{ $school->school_stamp ? Storage::url($school->school_stamp) : 'https://via.placeholder.com/100' }}"
+                alt="{{ $school->school_stamp}}"
+               class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
               />
             </div>
           </div>

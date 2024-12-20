@@ -450,8 +450,8 @@
                 class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
               />
               <img
-                width="70"
-              height="70"
+                width="40"
+              height="40"
                 src="{{ $school->school_stamp ? Storage::url($school->school_stamp) : 'https://via.placeholder.com/100' }}"
                 alt="{{ $school->school_stamp}}"
                class="mx-auto rounded-md w-[100px] h-[100px] object-cover"

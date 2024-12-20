@@ -420,13 +420,14 @@
             </div>
             <div class="flex items-center justify-center mt-4 md:mt-0">
               {{-- <div class="w-32 border-t border-gray-400"></div> --}}
-              <!--  --> <img
+              <!--  -->
+              {{-- <img
                 width="40"
               height="40"
                 src="{{ $class->teacher->signature ? $class->teacher->signature : 'https://via.placeholder.com/100' }}"
                 alt="{{$class->teacher->signature}}"
                class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
-              />
+              /> --}}
 
             </div>
           </div>

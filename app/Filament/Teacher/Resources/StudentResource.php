@@ -296,7 +296,11 @@ class StudentResource extends Resource
                     // $html = view('results.template', $data)->render();
 
                     $pdf = SnappyPdf::loadView('results.template', $data);
-                    return $pdf->download('invoice.pdf');
+                    return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            "result-{$record->name}.pdf"
+                        );
+                    // return $pdf->download('invoice.pdf');
                     // $pdf = PDF::loadView('results.template', $data);
                     // return response()->streamDownload(function () use ($pdf) {
                     //     echo $pdf->stream();

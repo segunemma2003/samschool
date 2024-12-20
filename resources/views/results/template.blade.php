@@ -73,7 +73,7 @@
 
     {{-- <body class="antialiased"> --}}
     <body class="p-4 text-gray-800 bg-gray-50">
-        <header class="text-center">
+        <header class="flex space-x-2">
             <div class="pt-[2rem]">
               <img
                 width="100"
@@ -84,7 +84,7 @@
               />
             </div>
 
-            <div class="w-[210mm] mx-auto">
+            <div class="w-[210mm] mx-auto text-center">
               <h1 class="text-2xl font-bold uppercase md:text-3xl">
                 {{$school->school_name}}
               </h1>
@@ -450,8 +450,8 @@
                 class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
               />
               <img
-                width="40"
-              height="40"
+                width="70"
+              height="70"
                 src="{{ $school->school_stamp ? Storage::url($school->school_stamp) : 'https://via.placeholder.com/100' }}"
                 alt="{{ $school->school_stamp}}"
                class="mx-auto rounded-md w-[100px] h-[100px] object-cover"

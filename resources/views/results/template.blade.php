@@ -73,7 +73,7 @@
 
     {{-- <body class="antialiased"> --}}
     <body class="p-4 text-gray-800 bg-gray-50">
-        <header class="flex space-x-2 text-center">
+        <header class="flex space-x-4 text-center">
             <div class="pt-[2rem]">
               <img
                 width="100"
@@ -442,13 +442,13 @@
             <div class="flex flex-row items-center justify-center mt-4 md:mt-0 gap-3">
               {{-- <div class="w-32 border-t border-gray-400"></div> --}}
               <!--  -->
-              <img
+              {{-- <img
               width="40"
               height="40"
                src="{{ $school->principal_sign ? $school->principal_sign : 'https://via.placeholder.com/100' }}"
                 alt="{{ $school->principal_sign}}"
                 class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
-              />
+              /> --}}
               <img
                 width="40"
               height="40"

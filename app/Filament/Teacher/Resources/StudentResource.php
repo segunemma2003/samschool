@@ -323,9 +323,9 @@ class StudentResource extends Resource
 
                             // Check if the subject is English or Maths and store their scores
                             $subject = $course->subject->subjectDepot->name;
-                            if (strtolower($subject) == 'english') {
+                            if (strncasecmp($subject, 'english', 7) === 0) {
                                 $englishScore = $scoreValue;
-                            } elseif (strtolower($subject) == 'maths' || strtolower($subject) == 'mathematics') {
+                            } elseif (strncasecmp($subject,'math', 4)  == 0) {
                                 $mathScore = $scoreValue;
                             }
                         }

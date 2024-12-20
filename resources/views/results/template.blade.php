@@ -85,7 +85,7 @@
             </div>
 
             <div class="w-[210mm] mx-auto text-center">
-              <h1 class="text-2xl font-bold uppercase md:text-3xl">
+              <h1 class="text-xl font-bold uppercase md:text-3xl">
                 {{$school->school_name}}
               </h1>
               <p class="mt-1 text-sm md:text-base">

@@ -22,6 +22,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use STS\ZipStream\Facades\Zip;
 use ZipArchive;
 
 class GenerateStudentResultPdf implements ShouldQueue
@@ -158,102 +159,26 @@ class GenerateStudentResultPdf implements ShouldQueue
         $time = time();
         // $html = view('results.template', $data)->render();
 
-        // $pdf = SnappyPdf::loadView('results.template', $data);
-        $pdf = Pdf::loadView('results.template',compact('psychomotorCategory','class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
+        $pdf = SnappyPdf::loadView('results.template', $data);
+        // $pdf = Pdf::loadView('results.template',compact('psychomotorCategory','class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
         $fileName = "result-{$student->id}-{$student->name}.pdf";
         $filePath = "results/{$fileName}";
         Storage::disk('cloudinary')->put($filePath, $pdf->output());
         Log::info("Uploading file to: {$filePath}");
         Log::info("Generated URL: " . Storage::disk('cloudinary')->url($filePath));
         $fileUrls[] =  Storage::disk('cloudinary')->url($filePath);
-
-
-          // $pdf = Pdf::loadView('results.template',compact('psychomotorCategory','class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
-                    // return response()->streamDownload(
-                    //     fn () => print($pdf->output()),
-                    //     "result-{$record->name}.pdf"
-                    // );
-
         }
 
-        $zip = new ZipArchive();
-        $mtime = time();
-        $zipFileName = "results_{$mtime}.zip";
-        Log::info($zipFileName);
-        $zipTempPath = tempnam(sys_get_temp_dir(), 'zip');
-        Log::info($zipTempPath);
-        $opened = $zip->open($zipTempPath, ZipArchive::CREATE);
-        if ($opened === TRUE) {
-            Log::info('ZIP file opened successfully');
-        } else {
-            Log::error('Failed to open ZIP file');
-        }
-        foreach ($fileUrls as $fileUrl) {
-            try {
-                $fileName = basename($fileUrl);  // Get the file name from the URL
-                $fileContent = file_get_contents($fileUrl); // Get the file contents
-                if ($fileContent === false) {
-                    throw new \Exception("Unable to fetch file content.");
-                }
-
-                // Create a unique name for the temporary file
-                $tim = time();
-                $tempFilePath = public_path("temp/result-{$tim}.pdf");
-
-                // Make sure the temp directory exists
-                if (!file_exists(public_path('temp'))) {
-                    mkdir(public_path('temp'), 0777, true);
-                }
-
-                // Save the file content to a temporary file
-                file_put_contents($tempFilePath, $fileContent);
-
-                // Add the temporary file to the ZIP archive
-                $zip->addFile($tempFilePath, "result-{$tim}.pdf");
-
-                // Optional: Clean up temporary files after adding them to the ZIP
-                // unlink($tempFilePath);
-
-            } catch (\Exception $e) {
-                Log::error('Error fetching file for ZIP:', ['url' => $fileUrl, 'error' => $e->getMessage()]);
-            }
-        }
-
-
-        $zip->close();
-
-        if (file_exists($zipTempPath)) {
-            $zipFileContent = file_get_contents($zipTempPath);
-            // Log::info($zipFileContent);
-            $zipFilePathCloud = "results/{$zipFileName}";
-            Log::info('Cloudinary file upload attempted.', ['path' => $zipFilePathCloud, 'content' => substr($zipFileContent, 0, 10)]);
-
-            try {
-                $stored = Storage::disk('cloudinary')->put($zipFilePathCloud, $zipFileContent);
-                if ($stored) {
-                    Log::info("File successfully uploaded to Cloudinary: {$zipFilePathCloud}");
-                } else {
-                    Log::error("File upload to Cloudinary failed for: {$zipFilePathCloud}");
-                }
-            } catch (\Exception $e) {
-                Log::error('Error during Cloudinary upload:', ['message' => $e->getMessage()]);
-            }
-            Log::info($stored);
-            $zipUrl = Storage::disk('cloudinary')->url($zipFilePathCloud);
-            Log::info('ZIP file URL:', ['url' => $zipUrl]);
-            $downloadStatus = DownloadStatus::whereId($this->downId)->first();
-            $downloadStatus->status ='completed';
-            $downloadStatus->download_links = $zipUrl;
-            $downloadStatus->save();
-
-            foreach ($fileUrls as $fileUrl) {
-                $fileName = basename($fileUrl);
-                Storage::cloud()->delete("results/{$fileName}");
-            }
-
-        // Optionally delete the temp ZIP file from local storage
-            // unlink($zipTempPath);
-        }
+        $tm = time();
+        $fileP = "result_$tm.zip";
+       Zip::create($fileP, $fileUrls)
+        ->saveTo(public_path("folder"));
+        $zipPath = "folder/$fileP";
+       $zipUrl= asset($zipPath);
+        $downloadStatus = DownloadStatus::whereId($this->downId)->first();
+        $downloadStatus->status ='completed';
+        $downloadStatus->download_links = $zipUrl;
+        $downloadStatus->save();
         Notification::make()
             ->title('Your download is ready')
             ->success()

@@ -38,6 +38,7 @@
         "shuchkin/simplexlsx": "^1.1",
         "spatie/laravel-google-calendar": "^3.8",
         "spatie/laravel-pdf": "^1.5",
+        "stechstudio/laravel-zipstream": "^5.3",
         "tomatophp/filament-invoices": "^1.0",
         "tomatophp/filament-media-manager": "^1.1",
         "tomatophp/filament-pwa": "^1.0",

@@ -7,9 +7,11 @@ use App\Filament\Teacher\Resources\StudentResource\Pages;
 use App\Filament\Teacher\Resources\StudentResource\Pages\CourseFormStudent;
 use App\Filament\Teacher\Resources\StudentResource\Pages\StudentResultDetailsPage;
 use App\Filament\Teacher\Resources\StudentResource\RelationManagers;
+use App\Jobs\GenerateStudentResultPdf;
 use App\Models\AcademicYear;
 use App\Models\Arm;
 use App\Models\CourseForm;
+use App\Models\DownloadStatus;
 use App\Models\Guardians;
 use App\Models\PsychomotorCategory;
 use App\Models\ResultSectionType;
@@ -246,6 +248,7 @@ class StudentResource extends Resource
 
                     $studentAttendance = StudentAttendanceSummary::where([
                         ['term_id', $term->id],
+                        ['student_id', $student->id],
                         ['academic_id', $academy->id]
                     ])->first();
 
@@ -367,16 +370,6 @@ class StudentResource extends Resource
                             fn () => print($pdf->output()),
                             "result-{$record->name}.pdf"
                         );
-
-                    // $time = time();
-                    // $pdf = FacadesPdf::view('results.template',$data)->format('a4')->disk('cloudinary')->save("result-{$record->name}-$time.pdf");
-
-                    // $url = Storage::disk('cloudinary')->url("result-{$record->name}-$time.pdf");
-
-                    // Redirect to the file for download
-                    // return response()->streamDownload(function () use ($url) {
-                    //     echo file_get_contents($url);
-                    // }, "result-{$record->name}.pdf");
                     // $pdf = Pdf::loadView('results.template',compact('psychomotorCategory','class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
                     // return response()->streamDownload(
                     //     fn () => print($pdf->output()),
@@ -387,6 +380,37 @@ class StudentResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('DownloadResult')
+                    ->label('Download Results')
+                    ->icon('heroicon-s-arrow-down-on-square')
+                    ->form([
+                        Forms\Components\Select::make('term_id')
+                            ->options(Term::all()->pluck('name', 'id'))
+                            ->preload()
+                            ->label('Term')
+                            ->searchable()
+                            ->required(),
+                        Forms\Components\Select::make('academic_id')
+                        ->label('Academy Year')
+                        ->options(AcademicYear::all()->pluck('title', 'id'))
+                        ->preload()
+                        ->searchable(),
+                    ]) ->action(function (array $data, $records) {
+                        // $selectedRecords = $this->getSelectedRecords();
+                        // dd($data);
+                        $students = $records;
+                        $status = DownloadStatus::create([
+                            'status'=>'processing',
+                            'time'=> time(),
+                            'data'=> json_encode($data)
+                        ]);
+                        GenerateStudentResultPdf::dispatch($data,$students, $status->id);
+                        Notification::make()
+                        ->title('Download is processing on the background')
+                        ->success()
+                        ->send();
+                    }),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);

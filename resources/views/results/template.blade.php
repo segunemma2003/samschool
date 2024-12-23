@@ -71,8 +71,8 @@
         @vite('resources/css/app.css')
     </head>
 
-    {{-- <body class="antialiased"> --}}
-    <body class="p-4 text-gray-800 bg-gray-50">
+    <body class="antialiased p-4 text-gray-800 bg-gray-50">
+    {{-- <body class="p-4 text-gray-800 bg-gray-50"> --}}
         <header class="flex space-x-3 text-center">
             <div class="pt-[2rem]">
               <img

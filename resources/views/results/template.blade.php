@@ -26,6 +26,13 @@
           margin: 1cm;
         }
 
+        .row {
+    display: -webkit-box; /* wkhtmltopdf uses this one */
+    display: flex;
+    -webkit-box-pack: center; /* wkhtmltopdf uses this one */
+    justify-content: center;
+}
+
         /* Ensure tables fit within the page */
         /* table {
           width: 100%;

@@ -34,9 +34,10 @@ class DownloadStatusResource extends Resource
             ->columns([
                 TextColumn::make('time')->searchable()->sortable(),
                 TextColumn::make('data')->searchable()->sortable(),
-                TextColumn::make('download_links')->searchable()->sortable(),
+                TextColumn::make('download_links')->searchable()->sortable() ->copyable(),
                 TextColumn::make('status')->searchable()->sortable(),
-                TextColumn::make('error')->searchable()->sortable()
+                TextColumn::make('error')->searchable()->sortable(),
+                TextColumn::make('created_at')->since()
             ])
             ->filters([
                 //

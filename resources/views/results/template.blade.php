@@ -161,7 +161,7 @@
             height="30"
           src="{{ $student->avatar ? Storage::url($student->avatar) : 'https://via.placeholder.com/100' }}"
           alt="Student Photo"
-         class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
+         class="mx-auto rounded-md w-[70px] h-[70px] object-cover"
         />
       {{-- </div>
 </div> --}}
@@ -341,11 +341,11 @@
 
                         <td class="text-center border border-gray-400">
                             <img
-                             width="25"
-                            height="25"
+                             width="10"
+                            height="10"
                             src="{{ $course->subject->teacher->signature ? $course->subject->teacher->signature : 'https://via.placeholder.com/100' }}"
                             alt="Teacher Signature"
-                            class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
+                            class="mx-auto rounded-md w-[20px] h-[20px] object-cover"
                           />
                         </td>
                     </tr>

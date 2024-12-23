@@ -17,7 +17,7 @@
           margin: 0;
           padding: 0;
           background-color: #fff;
-          font-size: 10px;
+          font-size: 8px;
         }
 
         /* Page size and margin */
@@ -49,22 +49,22 @@
         h1,
         h2,
         h3 {
-          font-size: 12px;
+          font-size: 10px;
           font-weight: bold;
           text-align: center;
         }
 
         .print-title {
           text-align: center;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
         }
 
         /* Adjust image size for print */
-        img {
+        /* img {
           max-width: 100px;
           max-height: 100px;
           object-fit: cover;
-        }
+        } */
       }
         </style>
 
@@ -157,8 +157,8 @@
 {{-- <div class="relative">
     <div class="absolute bottom-0 right-0"> --}}
         <img
-         width="40"
-            height="40"
+         width="30"
+            height="30"
           src="{{ $student->avatar ? Storage::url($student->avatar) : 'https://via.placeholder.com/100' }}"
           alt="Student Photo"
          class="mx-auto rounded-md w-[100px] h-[100px] object-cover"

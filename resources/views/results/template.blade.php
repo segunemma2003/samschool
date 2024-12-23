@@ -243,7 +243,7 @@
         <div class="max-w-[1200px] mx-auto px-4">
           <!-- Header -->
           <h1
-            class="text-xl font-bold text-center bg-gray-200 border border-gray-400"
+            class="text-lg font-bold text-center bg-gray-200 border border-gray-400"
           >
             ACADEMIC PERFORMANCE
           </h1>
@@ -252,7 +252,7 @@
             <table class="w-full text-sm border border-collapse border-gray-400 table-auto">
               <!-- Table Header -->
               <thead>
-                <tr class="bg-gray-200">
+                <tr class="bg-gray-200 text-base">
                   <th class="px-2 py-1 border border-gray-400" rowspan="2">
                     SUBJECTS
                   </th>

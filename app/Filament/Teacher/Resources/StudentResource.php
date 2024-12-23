@@ -381,7 +381,7 @@ class StudentResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
 
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\BulkAction::make('DownloadResult')
                     ->label('Download Results')
                     ->icon('heroicon-s-arrow-down-on-square')

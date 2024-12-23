@@ -26,6 +26,7 @@
           margin: 1cm;
         }
 
+
         /* Ensure tables fit within the page */
         /* table {
           width: 100%;
@@ -71,9 +72,9 @@
         @vite('resources/css/app.css')
     </head>
 
-    {{-- <body class="antialiased"> --}}
-    <body class="p-4 text-gray-800 bg-gray-50">
-        <header class="flex space-x-4 text-center">
+    <body class="antialiased p-4 text-gray-800 bg-gray-50">
+    {{-- <body class="p-4 text-gray-800 bg-gray-50"> --}}
+        <header class="flex space-x-3 text-center">
             <div class="pt-[2rem]">
               <img
                 width="100"
@@ -420,13 +421,14 @@
             </div>
             <div class="flex items-center justify-center mt-4 md:mt-0">
               {{-- <div class="w-32 border-t border-gray-400"></div> --}}
-              <!--  --> <img
+              <!--  -->
+              {{-- <img
                 width="40"
               height="40"
                 src="{{ $class->teacher->signature ? $class->teacher->signature : 'https://via.placeholder.com/100' }}"
                 alt="{{$class->teacher->signature}}"
                class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
-              />
+              /> --}}
 
             </div>
           </div>

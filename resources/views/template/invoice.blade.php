@@ -84,8 +84,9 @@
                 <th>Name</th>
                 <th>Amount</th>
             </tr>
+            @foreach($record->invoice_details as $item)
             <tr class="items">
-                @foreach($record->invoice_details as $item)
+
 
                 <td>
                     {{ $loop->index+1 }}
@@ -97,8 +98,9 @@
                     <td>
                         {{ number_format($item->amount, 2, '.', ',') }}
                     </td>
-                @endforeach
+
             </tr>
+            @endforeach
         </table>
     </div>
 

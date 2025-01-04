@@ -11,6 +11,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -34,15 +35,16 @@ class TeacherResource extends Resource
     {
         return $table
         ->modifyQueryUsing(function (Builder $query) {
-
             $userEmail = Auth::user()->email;
 
             // Retrieve the authenticated guardian
             $guardian = Guardians::where('email', $userEmail)->first();
+
             if ($guardian) {
                 // Get the IDs of the classes of the guardian's children
                 $classIds = Student::where('guardian_id', $guardian->id)
-                    ->pluck('class_id');
+                    ->pluck('class_id')
+                    ->toArray(); // Convert to array for compatibility
 
                 // Filter the teachers who are class teachers for these classes
                 $query->whereHas('classes', function ($query) use ($classIds) {
@@ -52,22 +54,25 @@ class TeacherResource extends Resource
                 // If no guardian is found, return an empty result
                 $query->whereRaw('0 = 1');
             }
-            $query->where('classes', );
-
         })
             ->columns([
-                //
+                TextColumn::make('No')
+    ->rowIndex(),
+    TextColumn::make('classes.name'),
+                TextColumn::make('name'),
+                TextColumn::make('phone')
+
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                // Tables\Actions\ViewAction::make(),
+                // Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

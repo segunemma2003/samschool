@@ -4,6 +4,8 @@ namespace App\Filament\Ourparent\Resources;
 
 use App\Filament\Ourparent\Resources\TeacherResource\Pages;
 use App\Filament\Ourparent\Resources\TeacherResource\RelationManagers;
+use App\Models\Guardians;
+use App\Models\Student;
 use App\Models\Teacher;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -31,10 +33,28 @@ class TeacherResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-        // ->modifyQueryUsing(function (Builder $query) {
-        //     $userId = Auth::user()->id;
-        //     $query->where('user_id', $userId);
-        // })
+        ->modifyQueryUsing(function (Builder $query) {
+
+            $userEmail = Auth::user()->email;
+
+            // Retrieve the authenticated guardian
+            $guardian = Guardians::where('email', $userEmail)->first();
+            if ($guardian) {
+                // Get the IDs of the classes of the guardian's children
+                $classIds = Student::where('guardian_id', $guardian->id)
+                    ->pluck('class_id');
+
+                // Filter the teachers who are class teachers for these classes
+                $query->whereHas('classes', function ($query) use ($classIds) {
+                    $query->whereIn('id', $classIds);
+                });
+            } else {
+                // If no guardian is found, return an empty result
+                $query->whereRaw('0 = 1');
+            }
+            $query->where('classes', );
+
+        })
             ->columns([
                 //
             ])

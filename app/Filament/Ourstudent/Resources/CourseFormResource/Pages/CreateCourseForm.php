@@ -35,6 +35,7 @@ class CreateCourseForm extends CreateRecord
         $subjects = collect();
         $terms = Term::all();
 
+
         if ($student) {
             $subjects = Subject::where('class_id', $student->class->id)->get();
         }

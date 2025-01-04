@@ -5,23 +5,23 @@
         {{-- Filter Section --}}
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label for="class" class="block font-medium">Class</label>
-                <select wire:model="classId" id="class" name="class_id" required
+                <label for="class" class="block font-medium">Class {{$classId}}</label>
+                <select wire:model.live="classId" id="class" name="class_id" required
                     class="block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-800">
-                    <option value="">Select Class</option>
+                    <option value="">Select Class </option>
                       @if($subjects && $subjects->isNotEmpty())
                         @foreach($subjects->groupBy('class_id') as $classId => $group)
                             <option value="{{ $classId }}">Class {{ $classId }}</option>
                         @endforeach
                     @else
-                        <option value="">No classes available</option>
+                        <option disabled value="">No classes available</option>
                     @endif
                 </select>
             </div>
 
             <div>
-                <label for="term" class="block font-medium">Term</label>
-                <select wire:model="termId" id="term" name="term_id" required
+                <label for="term" class="block font-medium">Term {{$termId}}</label>
+                <select wire:model.live="termId" id="term" name="term_id" required
                     class="block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-800">
                     <option value="">Select Term</option>
                     @foreach($terms as $term)
@@ -44,13 +44,20 @@
                 </thead>
                 <tbody>
                     @forelse($subjects as $subject)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <tr wire:key="subject-{{ $subject->id }}" >
                             <td class="px-4 py-2 border border-gray-300 dark:border-gray-700">{{ $subject->subjectDepot->name }}</td>
                             <td class="px-4 py-2 border border-gray-300 dark:border-gray-700">
                                 {{ $subject->teacher->name ?? 'N/A' }}
                             </td>
-                            <td class="px-4 py-2 text-center border border-gray-300 dark:border-gray-700">
+                            {{-- <td class="px-4 py-2 text-center border border-gray-300 dark:border-gray-700">
                                 <input type="checkbox" wire:model="selectedSubjects" value="{{ $subject->id }}">
+                            </td> --}}
+                            <td class="px-4 py-2 text-center border border-gray-300 dark:border-gray-700">
+                                <input type="checkbox" wire:model="selectedSubjects" value="{{ $subject->id }}"
+                                @if(in_array($subject->id, $selectedSubjects)) checked @endif>
+                                @if(in_array($subject->id, $selectedSubjects))
+                                    <span class="font-semibold text-green-500">Selected</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

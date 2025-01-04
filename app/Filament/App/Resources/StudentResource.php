@@ -6,14 +6,22 @@ use App\Exports\StudentExport;
 use App\Filament\App\Resources\StudentResource\Pages;
 use App\Filament\App\Resources\StudentResource\RelationManagers;
 use App\Filament\Exports\StudentExporter;
+use App\Models\AcademicYear;
 use App\Models\Arm;
 use App\Models\Guardians;
+use App\Models\InvoiceGroup;
+use App\Models\InvoiceStudent;
 use App\Models\SchoolClass;
 use App\Models\SchoolSection;
 use App\Models\Student;
 use App\Models\StudentGroup;
+use App\Models\Term;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -22,7 +30,9 @@ use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
 
 class StudentResource extends Resource
@@ -158,6 +168,100 @@ class StudentResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('createInvoice')
+                ->icon('heroicon-s-credit-card')
+                ->label("Pay")
+                ->modalHeading("create invoice")
+                ->requiresConfirmation()
+                ->iconButton()
+                ->color('info')
+                ->action(function (array $data) {
+                    do {
+                        $orderCode = 'ORD-' . random_int(100000000, 999999999);
+                    } while (InvoiceStudent::where('order_code', $orderCode)->exists());
+
+                    $invoiceStudent = InvoiceStudent::create([
+                        'order_code' => $orderCode,
+                        'term_id' => $data['term_id'],
+                        'academic_id' => $data['academic_id'],
+                        'student_id' => $data['student_id'],
+                        "amount_owed" =>$data['total_amount'],
+                        'total_amount' => $data['total_amount'],
+                    ]);
+
+                    foreach ($data['invoice_details'] as $detail) {
+                        $invoiceStudent->invoice_details()->create($detail);
+                    }
+                    Notification::make()
+                    ->title('Invoice created Successfully')
+                    ->success()
+                    ->send();
+                })
+                ->fillForm(fn($record) => [
+
+                    'student_id' => $record->id,
+                ])->form([
+                    Fieldset::make('Invoice Parent')
+                    ->schema([
+
+
+                        Select::make('term_id')
+                        ->label('Term')
+                        ->options(Term::all()->pluck('name', 'id'))
+                        ->preload()
+                        ->searchable(),
+
+                        Select::make('academic_id')
+                        ->label('Academy')
+                        ->options(AcademicYear::all()->pluck('title', 'id'))
+                        ->preload()
+                        ->searchable(),
+
+                        Select::make('student_id')
+                        ->label('Student Name')
+                        ->options(Student::all()->pluck('name', 'id'))
+                        ->preload()
+                        ->searchable(),
+
+                        TextInput::make('total_amount')
+                        ->numeric()
+                        ->live()
+                        ->prefix('₦')
+                        ->required(),
+
+                    ]),
+
+                    Fieldset::make('Invoice Details')
+                    ->schema([
+                        Repeater::make('invoice_details')
+
+                    ->schema([
+                        Select::make('invoice_group_id')
+                        ->label('Name')
+                        ->options(InvoiceGroup::all()->pluck('name', 'id'))
+                        ->preload()
+                        ->searchable(),
+
+                        TextInput::make('amount')
+                        ->numeric()
+                        ->prefix('₦')
+                        ->live('blur')
+                        ->hint(new HtmlString(Blade::render('<x-filament::loading-indicator class="w-5 h-5" wire:loading wire-target="data.invoice_student_id"/>')))
+                        ->required()
+        ])->columnSpanFull()
+        ->hiddenLabel()
+        ->collapsible()
+        ->collapsed(fn($record) => $record)
+        ->cloneable()
+        ->afterStateUpdated(function (callable $get, callable $set) {
+            // Calculate the total dynamically
+            $details = $get('invoice_details');
+            $total = collect($details)->sum('amount'); // Sum the 'amount' field
+            $set('total_amount', $total); // Update the total_amount field
+        }),
+                    ])
+
+                ]),
                 Tables\Actions\Action::make('changePassword')
                 ->label('Change Password')
                 ->action(function (array $data, $record) {
@@ -218,6 +322,98 @@ class StudentResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('generateBulkInvoices')
+                    ->label('Generate Bulk Invoices')
+                    ->requiresConfirmation()
+                    ->form([
+                        Select::make('term_id')
+                            ->label('Term')
+                            ->options(Term::all()->pluck('name', 'id'))
+                            ->preload()
+                            ->searchable()
+                            ->required(),
+
+                        Select::make('academic_id')
+                            ->label('Academy')
+                            ->options(AcademicYear::all()->pluck('title', 'id'))
+                            ->preload()
+                            ->searchable()
+                            ->required(),
+
+                        TextInput::make('total_amount')
+                            ->label('Total Amount')
+                            ->prefix('₦')
+                            ->numeric()
+                            ->live()
+                            ->required(),
+
+                        Repeater::make('invoice_details')
+                            ->label('Invoice Details')
+                            ->schema([
+                                Select::make('invoice_group_id')
+                                    ->label('Name')
+                                    ->options(InvoiceGroup::all()->pluck('name', 'id'))
+                                    ->preload()
+                                    ->searchable()
+                                    ->required(),
+
+                                TextInput::make('amount')
+                                    ->label('Amount')
+                                    ->prefix('₦')
+                                    ->numeric()
+                                    ->live('blur')
+                                    ->hint(new HtmlString(Blade::render('<x-filament::loading-indicator class="w-5 h-5" wire:loading wire-target="data.invoice_student_id"/>')))
+                                    ->required(),
+                            ])
+                            ->columnSpanFull()
+                            ->minItems(1)
+                            ->hiddenLabel()
+                            ->collapsible()
+                            ->collapsed(fn($record) => $record)
+                            ->cloneable()
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                // Calculate the total dynamically
+                                $details = $get('invoice_details');
+                                $total = collect($details)->sum('amount'); // Sum the 'amount' field
+                                $set('total_amount', $total); // Update the total_amount field
+                            })
+
+                            ->required(),
+                            ]) ->action(function (array $data,  $records) {
+                                foreach ($records as $record) {
+                                    // dd($record);
+                                    $student = Student::find($record->id);
+
+                                    if (!$student) {
+                                        continue;
+                                    }
+
+                                    // Generate unique order code
+                                    do {
+                                        $orderCode = 'ORD-' . random_int(100000000, 999999999);
+                                    } while (InvoiceStudent::where('order_code', $orderCode)->exists());
+
+                                    $invoiceStudent = InvoiceStudent::create([
+                                        'order_code' => $orderCode,
+                                        'term_id' => $data['term_id'],
+                                        'academic_id' => $data['academic_id'],
+                                        'student_id' => $record->id,
+                                        'total_amount' => $data['total_amount'],
+                                        'amount_owed' => $data['total_amount'],
+                                    ]);
+
+                                    foreach ($data['invoice_details'] as $detail) {
+                                        $invoiceStudent->invoice_details()->create($detail);
+                                    }
+                                }
+
+                                Notification::make()
+                                    ->title('Bulk Invoices Created Successfully')
+                                    ->success()
+                                    ->send();
+                            })
+                            ->icon('heroicon-s-document')
+                            ->color('success'),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);

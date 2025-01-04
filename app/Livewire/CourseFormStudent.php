@@ -28,6 +28,11 @@ class CourseFormStudent extends Component
         $this->terms = Term::all();
         $this->student = Student::whereId($record)->first();
         $this->loadSubjects($record);
+        $academy = AcademicYear::whereStatus('true')->first();
+        $academyId = $academy->id ?? 1;
+
+         // Preload selected subjects for this student
+
     }
 
 

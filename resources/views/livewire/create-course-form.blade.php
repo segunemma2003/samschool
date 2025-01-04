@@ -5,7 +5,7 @@
         {{-- Filter Section --}}
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label for="class" class="block font-medium">Class {{$classId}}</label>
+                <label for="class" class="block font-medium">Class</label>
                 <select wire:model.live="classId" id="class" name="class_id" required
                     class="block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-800">
                     <option value="">Select Class </option>
@@ -20,7 +20,7 @@
             </div>
 
             <div>
-                <label for="term" class="block font-medium">Term {{$termId}}</label>
+                <label for="term" class="block font-medium">Term</label>
                 <select wire:model.live="termId" id="term" name="term_id" required
                     class="block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-800">
                     <option value="">Select Term</option>

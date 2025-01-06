@@ -57,8 +57,8 @@ class TeacherResource extends Resource
         })
             ->columns([
                 TextColumn::make('No')
-    ->rowIndex(),
-    TextColumn::make('classes.name'),
+                    ->rowIndex(),
+                TextColumn::make('classes.name'),
                 TextColumn::make('name'),
                 TextColumn::make('phone')
 

@@ -7,6 +7,7 @@ use App\Filament\Teacher\Resources\StudentResource\Pages;
 use App\Filament\Teacher\Resources\StudentResource\Pages\CourseFormStudent;
 use App\Filament\Teacher\Resources\StudentResource\Pages\StudentResultDetailsPage;
 use App\Filament\Teacher\Resources\StudentResource\RelationManagers;
+use App\Jobs\GenerateBroadSheet;
 use App\Jobs\GenerateStudentResultPdf;
 use App\Models\AcademicYear;
 use App\Models\Arm;
@@ -293,29 +294,6 @@ class StudentResource extends Resource
                     $totalScore = 0;
                     $englishScore = 0;
                     $mathScore = 0;
-
-                    // Step 3: Iterate through the courses and calculate the total score
-                    // foreach ($courses as $course) {
-                    //     foreach ($totalHeadings as $heading) {
-                    //         $subject = $course->subject->subjectDepot->name;
-                    //         $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
-                    //         if(strtolower($subject) == 'english'){
-                    //             $englishScore = $score->score ?? 0;
-                    //         }
-                    //         if(strtolower($subject) == 'maths' || (strtolower($subject) == 'mathematics')){
-                    //             $mathScore = $score->score ?? 0;
-                    //         }
-
-                    //         // Retrieve the score for this subject and heading
-
-
-                    //         // Add the score to the total (only if it exists)
-                    //         $totalScore += $score->score ?? 0;
-                    //     }
-                    // }
-                    // dd($totalScore);
-                    // dd($totalSubject);
-
                     $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings, &$englishScore, &$mathScore) {
                         foreach ($totalHeadings as $heading) {
                             $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
@@ -381,6 +359,42 @@ class StudentResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
 
+                    Tables\Actions\BulkAction::make('DownloadBroadSheet')
+                    ->label('Download BroadSheet')
+                    ->icon('heroicon-s-arrow-down-on-square')
+                    ->form([
+                        Forms\Components\Select::make('term_id')
+                            ->options(Term::all()->pluck('name', 'id'))
+                            ->preload()
+                            ->label('Term')
+                            ->searchable()
+                            ->required(),
+                        Forms\Components\Select::make('class_id')
+                            ->options(SchoolClass::all()->pluck('name', 'id'))
+                            ->preload()
+                            ->label('Class')
+                            ->searchable()
+                            ->required(),
+                        Forms\Components\Select::make('academic_id')
+                        ->label('Academy Year')
+                        ->options(AcademicYear::all()->pluck('title', 'id'))
+                        ->preload()
+                        ->searchable(),
+                    ]) ->action(function (array $data, $records) {
+                        // $selectedRecords = $this->getSelectedRecords();
+                        // dd($data);
+                        $students = $records;
+                        $status = DownloadStatus::create([
+                            'status'=>'processing',
+                            'time'=> time(),
+                            'data'=> json_encode($data)
+                        ]);
+                        GenerateBroadSheet::dispatch($data,$students, $status->id);
+                        Notification::make()
+                        ->title('Download is processing on the background')
+                        ->success()
+                        ->send();
+                    }),
                     // Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\BulkAction::make('DownloadResult')
                     ->label('Download Results')

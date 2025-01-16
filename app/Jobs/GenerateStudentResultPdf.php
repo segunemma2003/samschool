@@ -85,6 +85,7 @@ class GenerateStudentResultPdf implements ShouldQueue
                 ])
                 ->get();
 
+
         // Optimize headings query with eager loading
         $headings = ResultSectionType::with('resultSection')
         ->whereHas('resultSection', function ($query) use ($student) {

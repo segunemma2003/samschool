@@ -80,34 +80,34 @@
 <body>
 
 <div class="logo">
-  <img src="logo.png" alt="School Logo"> <!-- Replace 'logo.png' with the actual image file -->
+  <img src="{{ $data['school']->school_logo ? Storage::url($data['school']->school_logo) : 'https://via.placeholder.com/100' }}" alt="School Logo"> <!-- Replace 'logo.png' with the actual image file -->
 </div>
 
 <div class="header">
   <div class="header-left">
-    <h1><strong>Rolex Comprehensive College</strong></h1>
+    <strong> {{$data['school']->school_name}}</strong>
   </div>
   <div class="header-right">
-    <strong>School Code:</strong> <span>12345</span> <br>
-    <strong>Edu Zone:</strong> <span>All</span>
+    {{-- <strong>School Code:</strong> <span>12345</span> <br> --}}
+    {{-- <strong>Edu Zone:</strong> <span>All</span> --}}
   </div>
 </div>
 <div class="horizontal-line"></div>
 <div class="header-left">
-  <strong>Phone:</strong> 08061365630
+  <strong>Phone:</strong> {{$data['school']->school_phone}}
 </div>
 
 <div class="info">
   <div class="info-left">
-    <strong>Class:</strong> SS 2 White C <br>
-    <strong>Term:</strong> 2015/2016 Term 1
+    <strong>Class:</strong> {{$data['className']}} <br>
+    <strong>Term:</strong> {{$data['academy']->title}} {{$data['term']->name}}
   </div>
   <div class="info-center">
     <h3>Broad Sheet</h3>
   </div>
   <div class="info-right">
-    <strong>Class Teacher:</strong> Mr. Nwalia E.S <br>
-    <strong>Date:</strong> 21 Dec, 2015
+    <strong>Class Teacher:</strong> {{$data['classTeacherName']}} <br>
+    <strong>Date:</strong>  {{ \Carbon\Carbon::now()->toFormattedDateString() }}
   </div>
 </div>
 
@@ -117,40 +117,28 @@
       <th rowspan="2">S/N</th>
       <th rowspan="2">Name of Student</th>
       <th rowspan="2">Sex</th>
-      <th colspan="5">Subjects</th>
+      <th colspan="{{count($data['students'][0]['scores'])}}">Subjects</th>
       <th rowspan="2">Remarks</th>
     </tr>
     <tr>
-      <th>English</th>
-      <th>Math</th>
-      <th>Physics</th>
-      <th>Chemistry</th>
-      <th>Biology</th>
+        @foreach($data['students'][0]['scores'] as $score)
+            <th>{{ $score['subject'] }}</th>
+        @endforeach
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td>1</td>
-      <td>Adede Martins Charles</td>
-      <td>M</td>
-      <td>64</td>
-      <td>67</td>
-      <td>50</td>
-      <td>47</td>
-      <td>42</td>
-      <td>PASSED</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Adegunle Stephen</td>
-      <td>M</td>
-      <td>48</td>
-      <td>50</td>
-      <td>49</td>
-      <td>44</td>
-      <td>34</td>
-      <td>PASSED</td>
-    </tr>
+    @foreach($data['students'] as $index => $studentData)
+        <tr>
+            <td>{{ $index + 1 }}</td>
+        <td>{{ $studentData['student']->name }}</td>
+        <td>{{ $studentData['student']->gender }}</td>
+        @foreach($studentData['scores'] as $score)
+            <td>{{ $score['score'] }}</td>
+        @endforeach
+        <td>{{$studentData['remark']}}</td>
+        </tr>
+        @endforeach
+
     <!-- Add more rows as needed -->
   </tbody>
 </table>
@@ -158,20 +146,20 @@
 <div class="criteria">
   <h4>ACADEMIC CRITERIA USED FOR PASSED/PROMOTED STUDENTS</h4>
   <ul>
-    <li>Results with only 1 term out of 3 terms in a session.</li>
-    <li>Results with exams written of less than 15 subjects in an academic session.</li>
-    <li>Results with exams written of less than 5 subjects in a term.</li>
+    <li>Results with only {{$data['term']->name}} term out of 3 terms in a session.</li>
+    <li>Results with exams written of less than {{count($data['courses'])}} subjects in an academic session.</li>
+    {{-- <li>Results with exams written of less than 5 subjects in a term.</li> --}}
   </ul>
   <p><strong>NOTE:</strong> <br/>Cumulative results of 1st, 2nd, and 3rd term scores are used in 3rd term promotional results.</p>
   <h4>INCOMPLETE RESULTS:</h4>
-  <p><strong>***</strong> English is compulsory with 30% as the pass mark.</p>
-  <p><strong>***</strong> Mathematics is compulsory with 30% as the pass mark.</p>
-  <p><strong>***</strong> Additional 4 subject(s) with 30% as the pass mark also required.</p>
+  <p><strong>***</strong> English is compulsory with 40% as the pass mark.</p>
+  <p><strong>***</strong> Mathematics is compulsory with 40% as the pass mark.</p>
+  <p><strong>***</strong> Additional 4 subject(s) with 40% as the pass mark also required.</p>
 
   <h4>RESULTS SUMMARY</h4>
-  <p><strong>STUDENTS IN ROLL:</strong> 22</p>
-  <p><strong>NO. OF PASSED / PROMOTED:</strong> 20</p>
-  <p><strong>PERCENTAGE PASSED / PROMOTED (%):</strong> 90%</p>
+  <p><strong>STUDENTS IN ROLL:</strong> {{count($data['students'])}}</p>
+  <p><strong>NO. OF PASSED / PROMOTED:</strong> {{$data['totalPassed']}}</p>
+  <p><strong>PERCENTAGE PASSED / PROMOTED (%):</strong> {{$data['passPercent']}}%</p>
 </div>
 
 </body>

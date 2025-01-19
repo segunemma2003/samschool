@@ -358,43 +358,6 @@ class StudentResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-
-                    Tables\Actions\BulkAction::make('DownloadBroadSheet')
-                    ->label('Download BroadSheet')
-                    ->icon('heroicon-s-arrow-down-on-square')
-                    ->form([
-                        Forms\Components\Select::make('term_id')
-                            ->options(Term::all()->pluck('name', 'id'))
-                            ->preload()
-                            ->label('Term')
-                            ->searchable()
-                            ->required(),
-                        Forms\Components\Select::make('class_id')
-                            ->options(SchoolClass::all()->pluck('name', 'id'))
-                            ->preload()
-                            ->label('Class')
-                            ->searchable()
-                            ->required(),
-                        Forms\Components\Select::make('academic_id')
-                        ->label('Academy Year')
-                        ->options(AcademicYear::all()->pluck('title', 'id'))
-                        ->preload()
-                        ->searchable(),
-                    ]) ->action(function (array $data, $records) {
-                        // $selectedRecords = $this->getSelectedRecords();
-                        // dd($data);
-                        $students = $records;
-                        $status = DownloadStatus::create([
-                            'status'=>'processing',
-                            'time'=> time(),
-                            'data'=> json_encode($data)
-                        ]);
-                        GenerateBroadSheet::dispatch($data,$students, $status->id);
-                        Notification::make()
-                        ->title('Download is processing on the background')
-                        ->success()
-                        ->send();
-                    }),
                     // Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\BulkAction::make('DownloadResult')
                     ->label('Download Results')

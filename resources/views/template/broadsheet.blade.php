@@ -42,12 +42,14 @@
     }
     table {
       width: 100%;
+      font-size: 10px; /* Reduced font size */
       border-collapse: collapse;
     }
     th, td {
-      border: 1px solid black;
-      padding: 5px;
-      text-align: center;
+
+      padding: 2px 4px; /* Smaller padding */
+        text-align: center;
+        border: 1px solid black;
     }
     th {
       background-color: #f2f2f2;

@@ -75,7 +75,7 @@ class GenerateBroadSheet implements ShouldQueue
                 $markObtained = $headings->where('calc_pattern', 'total')->first();
                 $className = $schoolClass->name ?? 'N/A';
                 $classTeacherName =$schoolClass->teacher->name ?? 'N/A';
-
+                $totalSubjects = 0;
                 $studentData = [];
                 $courseTotals = [];
                 $totalPassed = 0;
@@ -159,7 +159,11 @@ class GenerateBroadSheet implements ShouldQueue
             }
             // Log::info('PDF Data:', compact('data'));
             // dd($students);
-            $pdf = Pdf::loadView('template.broadsheet',compact('data'))->setPaper('a4', 'landscape');
+            $subjectCount = count($data['students'][0]['scores']);
+            $baseWidth = 842; // Base width for A4 landscape in points
+            $extraWidthPerSubject = 40; // Approximate additional width per subject
+            $calculatedWidth = $baseWidth + ($extraWidthPerSubject * $subjectCount);
+            $pdf = Pdf::loadView('template.broadsheet',compact('data'))->setPaper([0, 0, $calculatedWidth, 595], 'landscape');
             $time = time();
             $fileName = "broadsheet-$time.pdf";
             $filePath = "results/{$fileName}";

@@ -109,6 +109,9 @@
     </div>
 
     <div class="footer margin-top">
+        <div>
+            <h4>Note:</h4>
+            <br />{!! $record->note ?? ""!!}</div>
         <div>Thank you</div>
         <div>&copy; School Management</div>
     </div>

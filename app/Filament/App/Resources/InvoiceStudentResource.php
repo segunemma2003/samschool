@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -78,6 +79,9 @@ class InvoiceStudentResource extends Resource
                     ->numeric()
                     ->live()
                     ->prefix('₦')
+                    ->required(),
+
+                    RichEditor::make('note')
                     ->required(),
 
                 ]),
@@ -234,7 +238,7 @@ class InvoiceStudentResource extends Resource
 
                         return response()->streamDownload(
                             fn () => print($pdf->output()),
-                            "result-{$record->order_code}.pdf"
+                            "result-{$record->student->name}.pdf"
                         );
                         // return $pdf->download($record->id. '.pdf');
 

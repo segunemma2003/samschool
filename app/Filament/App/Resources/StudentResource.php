@@ -20,6 +20,7 @@ use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -339,14 +340,8 @@ class StudentResource extends Resource
                             ->preload()
                             ->searchable()
                             ->required(),
-
-                        TextInput::make('total_amount')
-                            ->label('Total Amount')
-                            ->prefix('₦')
-                            ->numeric()
-                            ->live()
+                            RichEditor::make('note')
                             ->required(),
-
                         Repeater::make('invoice_details')
                             ->label('Invoice Details')
                             ->schema([
@@ -379,6 +374,14 @@ class StudentResource extends Resource
                             })
 
                             ->required(),
+
+                            TextInput::make('total_amount')
+                            ->label('Total Amount')
+                            ->prefix('₦')
+                            ->numeric()
+                            ->live()
+                            ->required(),
+
                             ]) ->action(function (array $data,  $records) {
                                 foreach ($records as $record) {
                                     // dd($record);
@@ -398,6 +401,7 @@ class StudentResource extends Resource
                                         'term_id' => $data['term_id'],
                                         'academic_id' => $data['academic_id'],
                                         'student_id' => $record->id,
+                                        'note'=> $data['note'],
                                         'total_amount' => $data['total_amount'],
                                         'amount_owed' => $data['total_amount'],
                                     ]);

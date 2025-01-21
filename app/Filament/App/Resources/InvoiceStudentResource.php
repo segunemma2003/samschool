@@ -208,11 +208,28 @@ class InvoiceStudentResource extends Resource
                             ]);
                         }
 
+                        $school = SchoolInformation::where([
+                            ['term_id', $record->term_id],
+                            ['academic_id', $record->academic_id]
+                        ])->first();
+                        $data = [
+                            'school'=>$school,
+                            'record'=>$record,
+                            'amount'=>$data['amount']
+                        ];
+
+                        $pdf = Pdf::loadView('template.receipt', $data);
                         Notification::make()
-                            ->title("Invoice payment")
-                            ->body('Invoice Paid')
-                            ->success()
-                            ->send();
+                        ->title("Invoice payment")
+                        ->body('Invoice Paid')
+                        ->success()
+                        ->send();
+                        return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            "result-{$record->student->name}.pdf"
+                        );
+
+
                     })
                     ->icon('heroicon-s-credit-card')
                     ->label("Pay")

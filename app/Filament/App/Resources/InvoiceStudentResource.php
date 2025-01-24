@@ -246,9 +246,15 @@ class InvoiceStudentResource extends Resource
                             ['term_id', $record->term_id],
                             ['academic_id', $record->academic_id]
                         ])->first();
+
+                        $term = Term::whereId($record->term_id)->first();
+                        $academy = AcademicYear::whereId($record->academic_id)->first();
                         $data = [
                             'school'=>$school,
-                            'record'=>$record
+                            'record'=>$record,
+                            'term'=>$term,
+                            'academy'=>$academy,
+                            'date'=> \Carbon\Carbon::now()
                         ];
 
                         $pdf = Pdf::loadView('template.invoice', $data);

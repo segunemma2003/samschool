@@ -54,9 +54,18 @@
 <body>
     <table class="w-full">
         <tr>
+            <img  src="{{ $school->school_logo ? Storage::url($school->school_logo) : 'https://via.placeholder.com/100' }}"
+            alt="{{$school->school_logo}}" width="200" />
+            <h1> {{$school->school_name}}</h1>
+            <p>{{$school->school_address}}</p>
+            <p>{{$school->email}}, {{$school->school_phone}}</p>
+        </tr>
+        <tr>
             <td class="w-half">
-                <img  src="{{ $school->school_logo ? Storage::url($school->school_logo) : 'https://via.placeholder.com/100' }}"
-                alt="{{$school->school_logo}}" width="200" />
+                <h2>Term: {{$term->name}}</h2><br/>
+
+                <h2>Session: {{$academy->title}}</h2>
+                <h2>Date: {{$date}}</h2>
             </td>
             <td class="w-half">
                 <h2>Invoice ID: {{$record->order_code}}</h2>
@@ -69,8 +78,8 @@
             <tr>
                 <td class="w-half">
                     <div><h4>To:</h4></div>
-                    <div>{{$record->student->name}}</div>
-                    <div>{{$record->student->class->name}}</div>
+                    <div><b>Name: </b> {{$record->student->name}}</div>
+                    <div><b>Class: </b>{{$record->student->class->name}}</div>
                 </td>
 
             </tr>
@@ -113,6 +122,15 @@
             <h4>Note:</h4>
             <br />{!! $record->note ?? ""!!}</div>
         <div>Thank you</div>
+        <div>
+            <img
+            width="40"
+          height="40"
+            src="{{ $school->school_stamp ? Storage::url($school->school_stamp) : 'https://via.placeholder.com/100' }}"
+            alt="{{ $school->school_stamp}}"
+           class="mx-auto rounded-md w-[100px] h-[100px] object-cover"
+          />
+        </div>
         <div>&copy; School Management</div>
     </div>
 </body>

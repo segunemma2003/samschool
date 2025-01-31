@@ -7,8 +7,8 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      font-size: 12px;
-      margin: 20px;
+      font-size: 8px;
+      margin: 10px;
     }
     .header {
       display: flex;
@@ -42,12 +42,11 @@
     }
     table {
       width: 100%;
-      font-size: 10px; /* Reduced font size */
+      font-size: 8px; /* Reduced font size */
       border-collapse: collapse;
     }
     th, td {
-
-      padding: 2px 4px; /* Smaller padding */
+        padding: 1px 2px; /* Reduce padding */
         text-align: center;
         border: 1px solid black;
     }
@@ -64,7 +63,7 @@
     }
     .criteria {
       margin-top: 20px;
-      font-size: 12px;
+      font-size: 10px;
       text-align: left;
     }
     .criteria h4 {

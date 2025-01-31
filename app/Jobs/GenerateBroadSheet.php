@@ -161,7 +161,7 @@ class GenerateBroadSheet implements ShouldQueue
             // dd($students);
             $subjectCount = count($data['students'][0]['scores']);
             $baseWidth = 842; // Base width for A4 landscape in points
-            $extraWidthPerSubject = 40; // Approximate additional width per subject
+            $extraWidthPerSubject = 30; // Approximate additional width per subject
             $calculatedWidth = $baseWidth + ($extraWidthPerSubject * $subjectCount);
             $pdf = Pdf::loadView('template.broadsheet',compact('data'))->setPaper([0, 0, $calculatedWidth, 595], 'landscape');
             $time = time();

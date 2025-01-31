@@ -163,7 +163,7 @@ class GenerateBroadSheet implements ShouldQueue
             $baseWidth = 842; // Base width for A4 landscape in points
             $extraWidthPerSubject = 30; // Approximate additional width per subject
             $calculatedWidth = $baseWidth + ($extraWidthPerSubject * $subjectCount);
-            $pdf = Pdf::loadView('template.broadsheet',compact('data'))->setPaper([0, 0, $calculatedWidth, 595], 'landscape');
+            $pdf = Pdf::loadView('template.broadsheet',compact('data'))->setPaper('A4', 'landscape');
             $time = time();
             $fileName = "broadsheet-$time.pdf";
             $filePath = "results/{$fileName}";

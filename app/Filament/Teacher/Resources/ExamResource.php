@@ -4,6 +4,7 @@ namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\ExamResource\Pages;
 use App\Filament\Teacher\Resources\ExamResource\RelationManagers;
+use App\Models\AcademicYear;
 use App\Models\Exam;
 use App\Models\ResultSectionType;
 use App\Models\SchoolSection;
@@ -18,6 +19,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -107,23 +109,55 @@ class ExamResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $academy = AcademicYear::whereStatus('true')->first();
+        $term = Term::whereStatus('true')->first();
+
+        // Start with the base query
+        $query = Exam::query();
+
+        // Apply filters separately based on whether $academy and $term are available
+        // if ($academy) {
+        //     $query->where('academic_year_id', $academy->id);
+        // }
+
+        // if ($term) {
+        //     $query->where('term_id', $term->id);
+        // }
+
         return $table
+            ->query($query) // Apply the filtered query to the table
             ->columns([
                 TextColumn::make('academic.title')->searchable(),
                 TextColumn::make('term.name')->searchable()->default('Term 1'),
                 TextColumn::make('subject.code')->searchable(),
-                TextColumn::make('subject.class.name')->searchable()
+                TextColumn::make('subject.class.name')->searchable(),
             ])
             ->filters([
-                //
+                // Filter for Academic Year with default value
+                SelectFilter::make('academic_year_id')
+                    ->label('Academic Year')
+                    ->options(AcademicYear::pluck('title', 'id'))
+                    ->default($academy?->id),// Set default if an active academic year exists
+                //     ->query(function ($query, $value) {
+                //         $query->where('academic_year_id', $value);
+                //     }),
+
+                // // Filter for Term with default value
+                SelectFilter::make('term_id')
+                    ->label('Term')
+                    ->options(Term::pluck('name', 'id'))
+                    ->default($term?->id) // Set default if an active term exists
+                //     ->query(function ($query, $value) {
+                //         $query->where('term_id', $value);
+                //     }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('view-students')
-                ->label('View Students') // Custom label for the action
-                ->url(fn ($record) => static::getUrl('view-students', ['record' => $record->getKey()])) // Correctly generates the URL
-                ->icon('heroicon-o-user-group') // Optional: Add an icon
+                    ->label('View Students')
+                    ->url(fn ($record) => static::getUrl('view-students', ['record' => $record->getKey()]))
+                    ->icon('heroicon-o-user-group'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -131,6 +165,7 @@ class ExamResource extends Resource
                 ]),
             ]);
     }
+
 
     public static function getRelations(): array
     {

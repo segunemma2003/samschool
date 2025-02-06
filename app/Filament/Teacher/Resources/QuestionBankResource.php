@@ -4,9 +4,11 @@ namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\QuestionBankResource\Pages;
 use App\Filament\Teacher\Resources\QuestionBankResource\RelationManagers;
+use App\Models\AcademicYear;
 use App\Models\Exam;
 use App\Models\QuestionBank;
 use App\Models\Teacher;
+use App\Models\Term;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
@@ -32,7 +34,16 @@ class QuestionBankResource extends Resource
 
     public static function form(Form $form): Form
 {
-    $exams = Exam::all()->pluck('subject.code', 'id');
+
+    $academy = AcademicYear::whereStatus('true')->first();
+    $term = Term::whereStatus('true')->first();
+    $exams = Exam::where('term_id', $term->id)
+                ->where('academic_year_id', $academy->id)
+                ->get()
+                ->mapWithKeys(function ($exam) {
+                    return [$exam->id => "{$exam->subject->code} - {$exam->assessment_type} - ({$exam->term->name}) - {$exam->academic->title}"];
+                });
+                // ->pluck('subject.code', 'id');
 
     return $form
         ->schema([

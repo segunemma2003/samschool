@@ -6,17 +6,17 @@ use App\Models\CourseForm;
 use App\Models\Exam;
 use App\Models\ExamRecording;
 use App\Models\QuizScore;
-use App\Models\QuizSubmission;
 use App\Models\Student;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use Stancl\Tenancy\Concerns\UsesTenantModel;
+use Livewire\WithFileUploads;
 
 class Quiz extends Component
 {
-
+    use WithFileUploads;
 
     public $isRecording = false;
     public $showSuccessMessage = false;
@@ -29,7 +29,7 @@ class Quiz extends Component
     public $currentQuestion = 0;
     public $questions = [];
     public $examId = null;
-    public $recordingPath = null;
+    public $recording = null;
     public $selectedAnswer = null;
     public $userAnswers = [];
     public $timeRemaining;
@@ -37,15 +37,15 @@ class Quiz extends Component
     public $isSubmitted = false;
     public $isReviewing = false;
     public $courseFormId = null;
+    public $loadingNext = false; // For loading state on "Next"
+    public $loadingPrevious = false; // For loading state on "Previous"
+
+    private $sessionKey = 'quiz_state';
 
     protected $listeners = [
         'submit' => 'submit',
-        'answerSelected' => 'saveAnswer',
         'timeUpdated' => 'updateTimer',
-        'cameraError' => 'handleCameraError',
-        'recordingStarted' => 'handleRecordingStarted',
         'recordingStopped' => 'handleRecordingStopped',
-        'recordingUploaded' => 'handleRecordingUploaded'
     ];
 
     public function mount($record)
@@ -69,57 +69,71 @@ class Quiz extends Component
         $this->duration = $exam->duration;
         $this->timeRemaining = $exam->duration * 60;
 
-        $this->loadState();
-        $this->generateQuestions($exam);
-        $this->startRecording();
-        $this->startTimer();
+        $this->restoreState(); // Restore state on mount
+        if(count($this->questions)< 1){
+            $this->generateQuestions($exam);
+        }
+        if (!$this->hasShuffled()) {
+            $this->markAsShuffled();
+        } else {
+            $this->questions = $this->restoreQuestionOrder($exam); // Restore shuffled order
+        }
     }
 
-    private function loadState()
+    private function hasShuffled()
     {
-        $this->userAnswers = session()->get("quiz_answers_{$this->examId}", []);
-        $this->currentQuestion = session()->get("quiz_question_{$this->examId}", 0);
-        $this->timeRemaining = session()->get("quiz_timer_{$this->examId}", $this->timeRemaining);
+        $state = session()->get($this->sessionKey . '_' . $this->examId . '_' . $this->studentId, []);
+        return isset($state['shuffled']) && $state['shuffled'] === true;
     }
 
-    private function saveState()
+    private function markAsShuffled()
     {
-        session()->put("quiz_answers_{$this->examId}", $this->userAnswers);
-        session()->put("quiz_question_{$this->examId}", $this->currentQuestion);
-        session()->put("quiz_timer_{$this->examId}", $this->timeRemaining);
+        $state = session()->get($this->sessionKey . '_' . $this->examId . '_' . $this->studentId, []);
+        $state['shuffled'] = true;
+        $state['questionOrder'] = array_keys($this->questions); // Store shuffled order
+        session()->put($this->sessionKey . '_' . $this->examId . '_' . $this->studentId, $state);
     }
 
-    public function handleRecordingStarted()
+    private function restoreQuestionOrder($exam)
     {
-        $this->isRecording = true;
+        $state = session()->get($this->sessionKey . '_' . $this->examId . '_' . $this->studentId, []);
+        $questionOrder = $state['questionOrder'] ?? [];
+        // dd($questionOrder);
+        $orderedQuestions = [];
+        foreach ($questionOrder as $key) {
+
+            $orderedQuestions[] = $this->questions[$key]; // Use stored order
+        }
+
+        return $orderedQuestions;
     }
 
-    public function handleRecordingStopped()
+    public function handleRecordingStopped($blob)
     {
-        $this->isRecording = false;
-    }
-
-    public function handleRecordingUploaded($path)
-    {
-        $this->recordingPath = $path;
+        // Convert Blob to file and save
+        $path = 'exam_recordings/' . uniqid() . '.webm';
+        Storage::disk('cloudinary')->put($path, base64_decode($blob));
 
         ExamRecording::create([
             'exam_id' => $this->examId,
             'student_id' => $this->studentId,
             'recording_path' => $path,
-            'recorded_at' => now()
+            'recorded_at' => now(),
         ]);
+
+        $this->recording = null;
     }
 
     public function handleCameraError()
     {
-        session()->flash('error', 'Camera access is required for this exam. Please enable camera access and refresh the page.');
+        session()->flash('error', 'Camera access is required for this exam.');
     }
 
     public function submitQuiz()
     {
         $this->isSubmitted = true;
         $this->isReviewing = true;
+        $this->saveState(); // Save state before reviewing
     }
 
     public function generateQuestions($exam)
@@ -131,7 +145,6 @@ class Quiz extends Component
     public function startTimer()
     {
         $this->timerActive = true;
-        $this->dispatch('start-timer', ['timeRemaining' => $this->timeRemaining]);
     }
 
     #[On('updateTimer')]
@@ -149,12 +162,12 @@ class Quiz extends Component
         $this->saveCurrentAnswer();
         if ($this->currentQuestion < count($this->questions) - 1) {
             $this->currentQuestion++;
-            $this->selectedAnswer = null;
-            $this->dispatch('question-changed', $this->timeRemaining);
+            $this->selectedAnswer = $this->userAnswers[$this->currentQuestion] ?? null; // Restore answer
         } else {
             $this->submitQuiz();
         }
         $this->saveState();
+        $this->loadingNext = false;
     }
 
     public function previousQuestion()
@@ -162,10 +175,10 @@ class Quiz extends Component
         $this->saveCurrentAnswer();
         if ($this->currentQuestion > 0) {
             $this->currentQuestion--;
-            $this->selectedAnswer = null;
-            $this->dispatch('question-changed', $this->timeRemaining);
+            $this->selectedAnswer = $this->userAnswers[$this->currentQuestion] ?? null; // Restore answer
         }
         $this->saveState();
+        $this->loadingPrevious = false;
     }
 
     private function saveCurrentAnswer()
@@ -177,19 +190,50 @@ class Quiz extends Component
     {
         $this->isLoading = true;
         try {
-            $this->dispatch('stopRecording');
             $this->isSubmitted = true;
             $this->saveCurrentAnswer();
-            $this->dispatch('done');
 
             QuizScore::updateOrCreate(
                 ['course_form_id' => $this->courseFormId, 'student_id' => $this->studentId, 'exam_id' => $this->examId],
-                ['total_score' => collect($this->questions)->sum(fn($q, $i) => $this->normalizeAnswer($this->userAnswers[$i]) == $this->normalizeAnswer($q['answer']) ? $q['marks'] : 0)]
+                ['total_score' => collect($this->questions)->sum(fn ($q, $i) => $this->normalizeAnswer($this->userAnswers[$i]) == $this->normalizeAnswer($q['answer']) ? $q['marks'] : 0)]
             );
 
             $this->showSuccessMessage = true;
+            $this->clearState(); // Clear session state after submission
         } finally {
             $this->isLoading = false;
+        }
+    }
+
+    private function clearState()
+    {
+        session()->forget($this->sessionKey . '_' . $this->examId . '_' . $this->studentId);
+    }
+
+    private function saveState()
+    {
+        $state = [
+            'timeRemaining' => $this->timeRemaining,
+            'currentQuestion' => $this->currentQuestion,
+            'userAnswers' => $this->userAnswers,
+        ];
+        session()->put($this->sessionKey . '_' . $this->examId . '_' . $this->studentId, $state);
+    }
+
+    private function restoreState()
+    {
+        $state = session()->get($this->sessionKey . '_' . $this->examId . '_' . $this->studentId, []);
+
+        if (isset($state['timeRemaining'])) {
+            // dd($state);
+            $this->timeRemaining = $state['timeRemaining'];
+            $this->currentQuestion = $state['currentQuestion'];
+            $this->userAnswers = $state['userAnswers'];
+        } else {
+            // Initialize default values if no state exists
+            $this->timeRemaining = $this->duration * 60;
+            $this->currentQuestion = 0;
+            $this->userAnswers = [];
         }
     }
 
@@ -198,7 +242,9 @@ class Quiz extends Component
         return view('livewire.quiz', [
             'isSubmitted' => $this->isSubmitted,
             'timeRemaining' => $this->timeRemaining,
-            'isRecording' => $this->isRecording
+            'isRecording' => $this->isRecording,
+            'loadingNext' => $this->loadingNext, // Pass loading state to the view
+            'loadingPrevious' => $this->loadingPrevious, // Pass loading state to the view
         ]);
     }
 }

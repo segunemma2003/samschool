@@ -1,6 +1,5 @@
 <div class="flex flex-col items-center justify-center h-screen p-4 bg-gray-100 dark:bg-gray-900">
     <div class="relative w-full max-w-4xl p-4 mx-auto bg-white rounded-lg shadow-lg dark:bg-gray-800">
-        <!-- Header Section -->
         <div class="flex items-center justify-between p-4 border-b-2 border-gray-200 dark:border-gray-700">
             <div class="space-y-2">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">User: {{ $userName }}</h2>
@@ -8,43 +7,41 @@
                 <p class="text-sm text-gray-600 dark:text-gray-400">Details: {{ $quizTitle }}</p>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Duration: {{ $duration }} mins</p>
                 <div class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    Time Remaining: <span id="timer">{{ gmdate('H:i:s', $timeRemaining) }}</span>
+                    Time Remaining: <span id="timer" wire:ignore>{{ gmdate('H:i:s', $timeRemaining) }}</span>
                 </div>
             </div>
-            <div class="w-48 h-36 bg-black rounded-lg overflow-hidden">
+            <div id="videoContainer" class="bg-black rounded-lg overflow-hidden">
                 <video id="cameraPreview" class="w-full h-full object-cover" autoplay muted></video>
             </div>
         </div>
 
-        <!-- Conditional Rendering Based on State -->
         @if($isReviewing)
-            <!-- Review Section -->
             <div class="p-4">
                 <h1 class="text-xl font-bold mb-4">Quiz Review</h1>
                 <div class="h-96 overflow-y-auto border border-gray-300 dark:border-gray-700 p-4 mb-4 bg-white dark:bg-gray-800">
                     @foreach ($questions as $index => $question)
                         <div class="border-b border-gray-300 dark:border-gray-700 mb-2 py-2">
                             <p class="font-semibold text-gray-800 dark:text-gray-200">
-                                Question {{ $index + 1 }}: {{ isset($userAnswers[$index]) && $userAnswers[$index] !== null ? "answered" : "unanswered" }}
+                                Question {{ $index + 1 }}:
+                                @if(isset($userAnswers[$index]))
+                                    {{ $userAnswers[$index] !== null ? "Answered" : "Unanswered" }}
+                                @else
+                                    Unanswered
+                                @endif
                             </p>
                         </div>
                     @endforeach
                 </div>
 
                 <div class="flex justify-between mt-4">
-                    <button
-                        wire:click="goBackToQuiz"
-                        class="bg-blue-500 text-dark-500 dark:text-white py-2 px-4  border-1 rounded hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-600">
+                    <button wire:click="goBackToQuiz" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-600">
                         Back to Exam
                     </button>
-                    <button
-                    wire:click="submitResult"
-                     wire:loading.attr="disabled"
-                    wire:loading.class="bg-gray-400 cursor-not-allowed"
-                    class="bg-green-500 text-white py-2 px-4 border-1 rounded hover:bg-green-600 dark:bg-green-700 dark:hover:bg-green-600 flex items-center justify-center">
-                    <span wire:loading.remove>
-                        Final Submission
-                    </span>
+                    <button wire:click="submitResult"
+                        wire:loading.attr="disabled"
+                        wire:loading.class="bg-gray-400 cursor-not-allowed"
+                        class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 dark:bg-green-700 dark:hover:bg-green-600 flex items-center justify-center">
+                    <span wire:loading.remove>Final Submission</span>
                     <span class="flex items-center" wire:loading>
                         <svg class="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -52,13 +49,11 @@
                         </svg>
                         Loading...
                     </span>
-                    </button>
-
+                </button>
                 </div>
             </div>
 
-            @elseif($showSuccessMessage)
-            <!-- Success Message -->
+        @elseif($showSuccessMessage)
             <div class="max-w-lg p-6 text-center bg-white rounded-lg shadow-md dark:bg-gray-800">
                 <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Exam Submitted Successfully!</h1>
                 <p class="mt-4 text-gray-600 dark:text-gray-400">
@@ -69,9 +64,7 @@
                 </a>
             </div>
 
-
         @else
-            <!-- Question Section -->
             <div class="p-6 space-y-6 rounded-lg shadow-lg bg-blue-50 dark:bg-blue-900">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
                     Question {{ $currentQuestion + 1 }} of {{ count($questions) }}: {{ $questions[$currentQuestion]['question'] }}
@@ -96,17 +89,22 @@
                     @endif
                 </div>
 
-                <!-- Navigation Buttons -->
                 <div class="flex items-center justify-between mt-6">
-                    <button wire:click="previousQuestion" class="px-4 py-2 font-semibold text-gray-600 transition bg-gray-200 rounded-lg shadow dark:bg-gray-600 dark:text-gray-200 hover:bg-gray-300">
-                        Previous
+                    <button wire:click="previousQuestion"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 font-semibold text-gray-600 transition bg-gray-200 rounded-lg shadow dark:bg-gray-600 dark:text-gray-200 hover:bg-gray-300 @if($loadingPrevious) opacity-50 cursor-not-allowed @endif"
+                            @if($currentQuestion === 0) disabled @endif>
+                        <span wire:loading.remove wire:target="previousQuestion">Previous</span>
+                        <span wire:loading wire:target="previousQuestion">Loading...</span>
                     </button>
-                    <button wire:click="nextQuestion" class="px-4 py-2 font-semibold text-gray-600  transition bg-blue-500 rounded-lg shadow-xl dark:text-white dark:border-1 dark:bg-blue-700 hover:bg-blue-600">
-                        @if($currentQuestion === count($questions) - 1)
-                            Submit
-                        @else
-                            Next
-                        @endif
+                    <button wire:click="nextQuestion"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 font-semibold text-gray-600 transition bg-blue-500 rounded-lg shadow-xl dark:text-white dark:border-1 dark:bg-blue-700 hover:bg-blue-600 @if($loadingNext) opacity-50 cursor-not-allowed @endif"
+                            @if($currentQuestion === count($questions) - 1) wire:click="submitQuiz" @endif>
+                        <span wire:loading.remove wire:target="nextQuestion">
+                            @if($currentQuestion === count($questions) - 1) Submit @else Next @endif
+                        </span>
+                        <span wire:loading wire:target="nextQuestion">Loading...</span>
                     </button>
                 </div>
             </div>
@@ -119,62 +117,53 @@
     document.addEventListener('livewire:init', () => {
         let timeRemaining = @json($timeRemaining);
         let timerInterval;
-
         let mediaRecorder;
         let recordedChunks = [];
+        let videoPreview = document.getElementById('cameraPreview');
 
-         // Initialize camera
-    async function initializeCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480 },
-                audio: true
-            });
 
-            const videoPreview = document.getElementById('cameraPreview');
-            videoPreview.srcObject = stream;
+        const videoContainer = document.getElementById('videoContainer');
+    // const videoPreview = document.getElementById('cameraPreview');
 
-            mediaRecorder = new MediaRecorder(stream);
+    function resizeVideo() {
+        const desiredWidth = 320; // Or calculate dynamically
+        const desiredHeight = 240; // Or calculate dynamically based on aspect ratio
 
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    recordedChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                await uploadRecording(blob);
-            };
-
-            mediaRecorder.start(1000); // Capture in 1-second chunks
-            Livewire.dispatch('recordingStarted');
-        } catch (error) {
-            console.error('Camera access error:', error);
-        }
+        videoContainer.style.width = desiredWidth + 'px';
+        videoContainer.style.height = desiredHeight + 'px';
     }
 
-    async function uploadRecording(blob) {
-        const formData = new FormData();
-        formData.append('video', blob);
-        formData.append('exam_id', @json($examId));
-        formData.append('student_id', @json($studentId));
+    // Set initial size (important!)
+    resizeVideo();
 
-        try {
-            const response = await fetch('/api/exam-recordings', {
-                method: 'POST',
-                body: formData,
-            });
+    window.addEventListener('resize', resizeVideo);
 
-            if (response.ok) {
-                const data = await response.json();
-                Livewire.dispatch('recordingUploaded', data.path);
+        async function initializeCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                videoPreview.srcObject = stream;
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    Livewire.dispatch('recordingStopped', blob);
+                    recordedChunks = [];
+                };
+
+                mediaRecorder.start(1000);
+                Livewire.set('isRecording', true); // Set isRecording to true
+            } catch (error) {
+                console.error('Camera access error:', error);
+                Livewire.set('isRecording', false); // Set isRecording to false on error
+                // Handle error, maybe show a message to the user
             }
-        } catch (error) {
-            console.error('Upload error:', error);
         }
-    }
-
 
         function startTimer() {
             timerInterval = setInterval(() => {
@@ -185,43 +174,49 @@
                 } else {
                     timeRemaining--;
                     document.getElementById('timer').textContent = new Date(timeRemaining * 1000).toISOString().substr(11, 8);
+                    Livewire.emit('updateTimer', timeRemaining);
                 }
             }, 1000);
         }
 
-
         function stopRecording() {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-            Livewire.dispatch('recordingStopped');
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                Livewire.set('isRecording', false); // Set isRecording to false when stopped
+            }
         }
-    }
-    initializeCamera();
-    startTimer();
+
+        initializeCamera(); // Call initializeCamera
+        startTimer(); // Call startTimer
 
         Livewire.on('quiz-submitted', () => {
             clearInterval(timerInterval);
-                stopRecording();
-            });
-            // Handle page unload
-        window.addEventListener('beforeunload', (e) => {
-            // Save current state
-            localStorage.setItem('examState', JSON.stringify({
-                timeRemaining,
-                currentQuestion: @this.currentQuestion,
-                userAnswers: @this.userAnswers
-            }));
+            stopRecording();
         });
 
-        // Restore state if exists
-        const savedState = localStorage.getItem('examState');
-        if (savedState) {
-            const state = JSON.parse(savedState);
-            timeRemaining = state.timeRemaining;
-            @this.currentQuestion = state.currentQuestion;
-            @this.userAnswers = state.userAnswers;
-        }
+        window.addEventListener('beforeunload', () => {
+            Livewire.dispatch('saveState', timeRemaining, @this.currentQuestion, @this.userAnswers);
+        });
 
+        Livewire.on('restoreState', (timeRemaining, currentQuestion, userAnswers) => {
+            timeRemaining = timeRemaining;
+            @this.currentQuestion = currentQuestion;
+            @this.userAnswers = userAnswers;
+            startTimer();
+        });
+
+        Livewire.on('startTimer', (initialTime) => {
+            timeRemaining = initialTime;
+            startTimer();
+        });
+
+        Livewire.on('question-changed', (timeRemaining) => {
+            timeRemaining = timeRemaining;
+        });
+
+        Livewire.on('done', () => {
+            localStorage.removeItem('examState');
+        });
 
     });
 </script>

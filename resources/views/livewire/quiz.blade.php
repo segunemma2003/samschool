@@ -11,6 +11,9 @@
                     Time Remaining: <span id="timer">{{ gmdate('H:i:s', $timeRemaining) }}</span>
                 </div>
             </div>
+            <div class="w-48 h-36 bg-black rounded-lg overflow-hidden">
+                <video id="cameraPreview" class="w-full h-full object-cover" autoplay muted></video>
+            </div>
         </div>
 
         <!-- Conditional Rendering Based on State -->
@@ -117,10 +120,67 @@
         let timeRemaining = @json($timeRemaining);
         let timerInterval;
 
+        let mediaRecorder;
+        let recordedChunks = [];
+
+         // Initialize camera
+    async function initializeCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480 },
+                audio: true
+            });
+
+            const videoPreview = document.getElementById('cameraPreview');
+            videoPreview.srcObject = stream;
+
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                await uploadRecording(blob);
+            };
+
+            mediaRecorder.start(1000); // Capture in 1-second chunks
+            Livewire.dispatch('recordingStarted');
+        } catch (error) {
+            console.error('Camera access error:', error);
+        }
+    }
+
+    async function uploadRecording(blob) {
+        const formData = new FormData();
+        formData.append('video', blob);
+        formData.append('exam_id', @json($examId));
+        formData.append('student_id', @json($studentId));
+
+        try {
+            const response = await fetch('/api/exam-recordings', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                Livewire.dispatch('recordingUploaded', data.path);
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+        }
+    }
+
+
         function startTimer() {
             timerInterval = setInterval(() => {
                 if (timeRemaining <= 0) {
                     clearInterval(timerInterval);
+                    stopRecording();
                     Livewire.emit('submit');
                 } else {
                     timeRemaining--;
@@ -129,10 +189,39 @@
             }, 1000);
         }
 
+
+        function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            Livewire.dispatch('recordingStopped');
+        }
+    }
+    initializeCamera();
+    startTimer();
+
         Livewire.on('quiz-submitted', () => {
             clearInterval(timerInterval);
+                stopRecording();
+            });
+            // Handle page unload
+        window.addEventListener('beforeunload', (e) => {
+            // Save current state
+            localStorage.setItem('examState', JSON.stringify({
+                timeRemaining,
+                currentQuestion: @this.currentQuestion,
+                userAnswers: @this.userAnswers
+            }));
         });
 
-        startTimer();
+        // Restore state if exists
+        const savedState = localStorage.getItem('examState');
+        if (savedState) {
+            const state = JSON.parse(savedState);
+            timeRemaining = state.timeRemaining;
+            @this.currentQuestion = state.currentQuestion;
+            @this.userAnswers = state.userAnswers;
+        }
+
+
     });
 </script>

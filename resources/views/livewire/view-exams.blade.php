@@ -31,11 +31,19 @@
                         <div>
                             <strong class="text-sm text-gray-900 dark:text-gray-100">Options:</strong>
                             @if(!is_null($question->options))
-                                <ul class="mt-2 text-gray-500 list-disc list-inside dark:text-gray-200">
-                                    @foreach(json_decode($question->options, true) as $key => $option)
-                                        <li>{{ $key }}: {{ $option }}</li>
+                                <div class="mt-2 text-gray-500 list-disc list-inside dark:text-gray-200">
+                                    @foreach($question->options as $key => $option)
+
+                                        @if(is_numeric($key))
+                                            {{-- No explicit key, use A, B, C... --}}
+                                            <p>
+                                                {{ chr(65 + $key) }}: {{ $option['option'] }}</p>
+                                        @else
+                                            {{-- Key exists, use it --}}
+                                            <p>{{ $key }}: {{ $option }}<p>
+                                        @endif
                                     @endforeach
-                                </ul>
+                                            </div>
                             @else
                                 <p class="text-gray-500 dark:text-gray-400">N/A</p>
                             @endif

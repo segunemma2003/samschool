@@ -10,6 +10,9 @@ class QuestionBank extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'options' => 'array', // Automatically converts JSON to array
+    ];
 
     public function exam()
     {

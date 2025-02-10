@@ -25,4 +25,24 @@ class EditQuestionBank extends EditRecord
     //     $this->record->save();
     //     session()->flash('message', 'Question updated successfully.');
     // }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Ensure options is an array
+        if (isset($data['options']) && is_string($data['options'])) {
+            $data['options'] = json_decode($data['options'], true) ?? [];
+        }
+
+        // Automatically update the answer column if question type is multiple choice or true/false
+        if (in_array($data['question_type'], ['multiple_choice', 'true_false']) && (empty($data['answer']) || is_null($data['answer']))) {
+            foreach ($data['options'] as $option) {
+                if (!empty($option['is_correct']) && $option['is_correct'] === true) {
+                    $data['answer'] = $option['option'];
+                    break; // Stop after the first correct answer
+                }
+            }
+        }
+
+        return $data;
+    }
 }

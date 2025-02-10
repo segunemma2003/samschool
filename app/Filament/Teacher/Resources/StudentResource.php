@@ -484,11 +484,22 @@ class StudentResource extends Resource
                         ];
 
                         // Generate PDF efficiently
-                        $pdf = SnappyPdf::loadView('results.template', $viewData);
-                        return response()->streamDownload(
-                            fn () => print($pdf->output()),
-                            "result-{$record->name}.pdf"
-                        );
+                        // $pdf = SnappyPdf::loadView('results.template', $viewData);
+                        // return response()->streamDownload(
+                        //     fn () => print($pdf->output()),
+                        //     "result-{$record->name}.pdf"
+                        // );
+
+                        $pdf = Pdf::loadView('results.template', $viewData);
+
+        // Optional: Configure PDF settings if needed
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
+
+        return response()->streamDownload(
+            fn () => print($pdf->output()),
+            "result-{$record->name}.pdf"
+        );
                     })
 
             ])

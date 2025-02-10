@@ -49,15 +49,24 @@ protected function processQuestion(array $questionData, int $examId): array
         'question_type' => $questionData['question_type'],
         'answer' => $questionData['answer'] ?? null,
         'marks' => $questionData['mark'],
-        'options'=>json_encode($questionData['options']??[]),
+        'options' => $questionData['options'] ?? [], // Store as an array, Laravel will handle JSON conversion
         'hint' => $questionData['hint'] ?? null,
         'image' => $questionData['image'] ?? null,
     ];
 
-    if ($questionData['question_type'] === 'multiple_choice') {
-        $questionBankData['options'] = json_encode($questionData['options']);
+    if (in_array($questionData['question_type'], ['multiple_choice', 'true_false']) && (is_null($questionData['answer']) || empty($questionData['answer']))) {
+        $options = is_array($questionData['options']) ? $questionData['options'] : [];
+
+        foreach ($options as $option) {
+            if (!empty($option['is_correct']) && $option['is_correct'] === true) {
+                $questionBankData['answer'] = $option['option']; // Store the correct option
+                break; // Stop after finding the first correct answer
+            }
+        }
     }
 
     return $questionBankData;
 }
+
+
 }

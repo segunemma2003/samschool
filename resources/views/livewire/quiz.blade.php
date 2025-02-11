@@ -11,7 +11,7 @@
                 </div>
             </div>
             <div id="videoContainer" class="bg-black rounded-lg overflow-hidden">
-                <video id="cameraPreview" class="w-full h-full object-cover" autoplay muted></video>
+                <video id="cameraPreview" class="w-full h-full object-cover" autoplay muted style="max-height: 240px; max-width: 320px;"></video>
             </div>
         </div>
 
@@ -69,6 +69,15 @@
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
                     Question {{ $currentQuestion + 1 }} of {{ count($questions) }}: {{ $questions[$currentQuestion]['question'] }}
                 </h3>
+                @if(!is_null($questions[$currentQuestion]['image']))
+
+                    <div class="w-12 h-12">
+                        <img src="{{Storage::disk('cloudinary')->url($questions[$currentQuestion]['image'])}}"
+                        class="object-cover rounded-md"
+                        style=" max-width: 400px; max-height: 300px;" />
+                        />
+                    </div>
+                @endif
 
                 <div class="space-y-2">
                     @if($questions[$currentQuestion]['question_type'] === 'true_false')
@@ -81,9 +90,28 @@
                     @elseif($questions[$currentQuestion]['question_type'] === 'open_ended')
                         <textarea wire:model="selectedAnswer" rows="4" class="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-200" placeholder="Type your answer here..."></textarea>
                     @elseif($questions[$currentQuestion]['question_type'] === "multiple_choice")
-                        @foreach(json_decode($questions[$currentQuestion]['options'], true) as $key => $option)
+                        @foreach($questions[$currentQuestion]['options'] as $key => $option)
+
                             <label class="block p-3 bg-white rounded-lg shadow-md dark:bg-gray-700">
-                                <input type="radio" name="question{{ $currentQuestion }}" value="{{ $key }}" wire:model="selectedAnswer" class="mr-2"> {{ $key }}. {{ $option }}
+                                @if(is_numeric($key))
+                                    <div class="flex space-x-3">
+                                        <input type="radio" name="question{{ $currentQuestion }}" value="{{ $option['option'] }}" wire:model="selectedAnswer" class="mr-2">
+                                        <div class=" flex flex-col space-y-4">
+                                            <div>{{ chr(65 + $key) }}: {{ $option['option'] }}</div>
+                                            {{-- {{dd($option)}} --}}
+                                            @if(isset($option['image']) && !is_null($option['image']))
+                                            <div class="w-12 h-12">
+                                                <img src="{{ Storage::disk('cloudinary')->url($option['image']) }}"
+                                                     class="object-cover rounded-md"
+                                                     style=" max-width: 200px; max-height: 200px;" />
+                                            </div>
+                                            @endif
+                                        </div>
+
+                                    </div>
+                                @else
+                                    <input type="radio" name="question{{ $currentQuestion }}" value="{{ $key }}" wire:model="selectedAnswer" class="mr-2"> {{ $key }}. {{ $option }}
+                                @endif
                             </label>
                         @endforeach
                     @endif
@@ -131,6 +159,8 @@
 
         videoContainer.style.width = desiredWidth + 'px';
         videoContainer.style.height = desiredHeight + 'px';
+        videoContainer.style.maxWidth = desiredWidth + 'px';
+        videoContainer.style.maxHeight = desiredHeight + 'px';
     }
 
     // Set initial size (important!)

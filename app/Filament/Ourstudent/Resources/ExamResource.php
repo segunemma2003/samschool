@@ -70,23 +70,27 @@ class ExamResource extends Resource
                 TextColumn::make('subject.class.name')->searchable(),
                 TextColumn::make('subject.class.name')->searchable(),
                 // TextColumn::make('is_set')->searchable(),
-                TextColumn::make('score') // Display the exam score
+                TextColumn::make('score')
                 ->label('Exam Score')
-                ->formatStateUsing(function ($record) use ($student) {
-                    // Retrieve the student's examScore
+                ->badge()
+                ->colors([
+                    'gray' => fn ($record) => !$record->examScore($student->id)->exists(),
+                    'yellow' => fn ($record) => optional($record->examScore($student->id)->first())->approved !== 'yes',
+                    'green' => fn ($record) => optional($record->examScore($student->id)->first())->approved === 'yes',
+                ])
+                ->getStateUsing(function ($record) use ($student) {
                     $examScore = $record->examScore($student->id)->first();
 
-                    // Determine the score state
                     if (!$examScore) {
-                        return 'Not Submitted'; // No examScore exists
+                        return 'Not Submitted';
                     }
 
                     if ($examScore->approved !== 'yes') {
-                        return 'Not Graded'; // Submitted but not yet graded
+                        return 'Not Graded';
                     }
 
-                    return $examScore->total_score ?? 'No Score'; // Display the total score
-                }),
+                    return $examScore->total_score ?? 'No Score';
+                })
             ])
             ->filters([
                 //

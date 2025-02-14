@@ -24,8 +24,8 @@
                         <div class="border-b border-gray-300 dark:border-gray-700 mb-2 py-2">
                             <p class="font-semibold text-gray-800 dark:text-gray-200">
                                 Question {{ $index + 1 }}:
-                                @if(isset($userAnswers[$index]))
-                                    {{ $userAnswers[$index] !== null ? "Answered" : "Unanswered" }}
+                                @if(isset($userAnswers[$question['id']]))
+                                    {{ $userAnswers[$question['id']] !== null ? "Answered" : "Unanswered" }}
                                 @else
                                     Unanswered
                                 @endif
@@ -61,7 +61,7 @@
                     Thank you for completing the exam. Your submission has been recorded.
                 </p>
                 <p class="mt-2 text-lg font-semibold text-gray-800 dark:text-gray-200">
-                    Your Final Score: {{ $finalScore }}
+                    Your Final Score: {{ $finalScore }}%
                 </p>
                 <a href="/student/exams" class="mt-6 inline-block px-4 py-2 font-semibold text-white bg-blue-500 rounded-lg shadow hover:bg-blue-600 dark:bg-blue-700">
                     Go to Exams Page

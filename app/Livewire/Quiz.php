@@ -8,6 +8,7 @@ use App\Models\ExamRecording;
 use App\Models\QuizScore;
 use App\Models\Student;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
@@ -38,6 +39,7 @@ class Quiz extends Component
     public $isReviewing = false;
     public $courseFormId = null;
     public $finalScore = 0;
+    public $totalScore = 0;
     public $loadingNext = false; // For loading state on "Next"
     public $loadingPrevious = false; // For loading state on "Previous"
 
@@ -198,23 +200,54 @@ class Quiz extends Component
             $this->isSubmitted = true;
             $this->saveCurrentAnswer();
         //   dd($this->userAnswers);
-            $totalScore = collect($this->questions)->sum(function ($q, $key) {
-                return isset($this->userAnswers[$key]) && $this->userAnswers[$key] == $q['answer']
+            // $totalScore = collect($this->questions)->sum(function ($q, $key) {
+
+            //     return isset($this->userAnswers[$q['id']]) && $this->userAnswers[$q['id']] == $q['answer']
+            //         ? $q['marks']
+            //         : 0;
+            // });
+
+            $totalScore = collect($this->questions)->reduce(function ($carry, $q) {
+
+
+                return $carry +  $q['marks'];
+            }, 0);
+
+            $total = collect($this->questions)->reduce(function ($carry, $q) {
+                if (!isset($q['id'], $q['answer'], $q['marks'])) {
+                    Log::error("Question data missing fields", ['question' => $q]);
+                    return $carry;
+                }
+
+
+                return $carry + (isset($this->userAnswers[$q['id']]) && $this->userAnswers[$q['id']] == $q['answer']
                     ? $q['marks']
-                    : 0;
-            });
+                    : 0);
+            }, 0);
+
+            // $totalScore = collect($this->questions)->sum(function ($q, $key) {
+
+            //     return isset($this->userAnswers[$q['id']]) && $this->userAnswers[$q['id']] == $q['answer']
+            //         ? $q['marks']
+            //         : 0;
+            // });
+
+            Log::info($totalScore);
+            Log::info($total);
+            $this->finalScore = ($total/$totalScore)*100;
             QuizScore::updateOrCreate(
                 [
                     'course_form_id' => $this->courseFormId,
                     'student_id' => $this->studentId,
                     'exam_id' => $this->examId
                 ],
-                ['total_score' => $totalScore]
+                ['total_score' => $this->finalScore, 'comments'=>"submitted"]
             );
 
-            $this->finalScore = $totalScore;
+
+            $this->isReviewing = false;
             $this->showSuccessMessage = true;
-            $this->clearState(); // Clear session state after submission
+            // Clear session state after submission
         } finally {
             $this->isLoading = false;
         }

@@ -37,6 +37,7 @@ class Quiz extends Component
     public $isSubmitted = false;
     public $isReviewing = false;
     public $courseFormId = null;
+    public $finalScore = 0;
     public $loadingNext = false; // For loading state on "Next"
     public $loadingPrevious = false; // For loading state on "Previous"
 
@@ -196,7 +197,7 @@ class Quiz extends Component
         try {
             $this->isSubmitted = true;
             $this->saveCurrentAnswer();
-          dd($this->userAnswers);
+        //   dd($this->userAnswers);
             $totalScore = collect($this->questions)->sum(function ($q, $key) {
                 return isset($this->userAnswers[$key]) && $this->userAnswers[$key] == $q['answer']
                     ? $q['marks']
@@ -211,6 +212,7 @@ class Quiz extends Component
                 ['total_score' => $totalScore]
             );
 
+            $this->finalScore = $totalScore;
             $this->showSuccessMessage = true;
             $this->clearState(); // Clear session state after submission
         } finally {
@@ -258,6 +260,7 @@ class Quiz extends Component
             'isRecording' => $this->isRecording,
             'loadingNext' => $this->loadingNext, // Pass loading state to the view
             'loadingPrevious' => $this->loadingPrevious, // Pass loading state to the view
+            'finalScore' => $this->finalScore,
         ]);
     }
 }

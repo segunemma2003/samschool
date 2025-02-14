@@ -60,6 +60,9 @@
                 <p class="mt-4 text-gray-600 dark:text-gray-400">
                     Thank you for completing the exam. Your submission has been recorded.
                 </p>
+                <p class="mt-2 text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    Your Final Score: {{ $finalScore }}
+                </p>
                 <a href="/student/exams" class="mt-6 inline-block px-4 py-2 font-semibold text-white bg-blue-500 rounded-lg shadow hover:bg-blue-600 dark:bg-blue-700">
                     Go to Exams Page
                 </a>

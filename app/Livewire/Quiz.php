@@ -183,7 +183,11 @@ class Quiz extends Component
 
     private function saveCurrentAnswer()
     {
-        $this->userAnswers[$this->currentQuestion] = $this->selectedAnswer;
+        // $this->userAnswers[$this->currentQuestion] = $this->selectedAnswer;
+        if (isset($this->questions[$this->currentQuestion])) {
+            $questionId = $this->questions[$this->currentQuestion]['id'];
+            $this->userAnswers[$questionId] = $this->selectedAnswer;
+        }
     }
 
     public function submitResult()
@@ -192,10 +196,19 @@ class Quiz extends Component
         try {
             $this->isSubmitted = true;
             $this->saveCurrentAnswer();
-
+          dd($this->userAnswers);
+            $totalScore = collect($this->questions)->sum(function ($q, $key) {
+                return isset($this->userAnswers[$key]) && $this->userAnswers[$key] == $q['answer']
+                    ? $q['marks']
+                    : 0;
+            });
             QuizScore::updateOrCreate(
-                ['course_form_id' => $this->courseFormId, 'student_id' => $this->studentId, 'exam_id' => $this->examId],
-                ['total_score' => collect($this->questions)->sum(fn ($q, $i) => $this->normalizeAnswer($this->userAnswers[$i]) == $this->normalizeAnswer($q['answer']) ? $q['marks'] : 0)]
+                [
+                    'course_form_id' => $this->courseFormId,
+                    'student_id' => $this->studentId,
+                    'exam_id' => $this->examId
+                ],
+                ['total_score' => $totalScore]
             );
 
             $this->showSuccessMessage = true;

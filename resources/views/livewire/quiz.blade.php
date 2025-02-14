@@ -7,7 +7,8 @@
                 <p class="text-sm text-gray-600 dark:text-gray-400">Details: {{ $quizTitle }}</p>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Duration: {{ $duration }} mins</p>
                 <div class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    Time Remaining: <span id="timer" wire:ignore>{{ gmdate('H:i:s', $timeRemaining) }}</span>
+                    {{-- Time Remaining: <span id="timer" wire:ignore>{{ gmdate('H:i:s', $timeRemaining) }}</span> --}}
+                    Time Remaining: <span id="timer">{{ gmdate('H:i:s', max(0, $timeRemaining)) }}</span>
                 </div>
             </div>
             <div id="videoContainer" class="bg-black rounded-lg overflow-hidden">
@@ -143,7 +144,7 @@
 
 <script>
     document.addEventListener('livewire:init', () => {
-        let timeRemaining = @json($timeRemaining);
+        // let timeRemaining = @json($timeRemaining);
         let timerInterval;
         let mediaRecorder;
         let recordedChunks = [];
@@ -195,19 +196,39 @@
             }
         }
 
+
         function startTimer() {
-            timerInterval = setInterval(() => {
-                if (timeRemaining <= 0) {
-                    clearInterval(timerInterval);
-                    stopRecording();
-                    Livewire.emit('submit');
-                } else {
-                    timeRemaining--;
-                    document.getElementById('timer').textContent = new Date(timeRemaining * 1000).toISOString().substr(11, 8);
-                    Livewire.emit('updateTimer', timeRemaining);
-                }
-            }, 1000);
-        }
+        // Get the current timeRemaining from the element
+
+        let timeRemaining = localStorage.getItem('timer') ?? parseInt(document.getElementById('timer').textContent.split(':').reduce((acc, time) => (60 * acc) + parseInt(time), 0));
+        console.log(timeRemaining);
+        timerInterval = setInterval(() => {
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                stopRecording();
+                Livewire.emit('submit');
+            } else {
+                timeRemaining--;
+                document.getElementById('timer').textContent = new Date(timeRemaining * 1000).toISOString().substr(11, 8);
+                localStorage.setItem('timer', timeRemaining)
+                Livewire.emit('updateTimer', timeRemaining);
+            }
+        }, 1000);
+    }
+
+        // function startTimer() {
+        //     timerInterval = setInterval(() => {
+        //         if (timeRemaining <= 0) {
+        //             clearInterval(timerInterval);
+        //             stopRecording();
+        //             Livewire.emit('submit');
+        //         } else {
+        //             timeRemaining--;
+        //             document.getElementById('timer').textContent = new Date(timeRemaining * 1000).toISOString().substr(11, 8);
+        //             Livewire.emit('updateTimer', timeRemaining);
+        //         }
+        //     }, 1000);
+        // }
 
         function stopRecording() {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -222,6 +243,7 @@
         Livewire.on('quiz-submitted', () => {
             clearInterval(timerInterval);
             stopRecording();
+            localStorage.removeItem('timer')
         });
 
         window.addEventListener('beforeunload', () => {

@@ -47,15 +47,17 @@ class CourseFormResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $academy = AcademicYear::whereStatus('true')->first();
+        $term = Term::whereStatus('true')->first();
         return $table
         ->modifyQueryUsing(function (Builder $query) {
             $userId = Auth::user()->id;
             $user = User::where('id', $userId)->first();
             $student = Student::where('email', $user->email)->first();
-            $academy = AcademicYear::whereStatus('true')->first();
-            $query->where('student_id',  $student->id)
-            ->where('academic_year_id', $academy->id)
-            ->where('term_id', 1);
+
+            $query->where('student_id',  $student->id);
+            // ->where('academic_year_id', $academy->id)
+            // ->where('term_id', 1);
         })
             ->columns([
 
@@ -70,11 +72,13 @@ class CourseFormResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('academic_year_id')
                 ->label('Academic Year')
-                ->options(AcademicYear::pluck('title', 'id')->toArray()),
+                ->options(AcademicYear::pluck('title', 'id')->toArray())
+                ->default($academy->id),
 
             Tables\Filters\SelectFilter::make('term_id')
                 ->label('Term')
-                ->options(Term::pluck('name', 'id')->toArray()),
+                ->options(Term::pluck('name', 'id')->toArray())
+                ->default($term->id),
             ])
             ->actions([
                 // Tables\Actions\ViewAction::make(),

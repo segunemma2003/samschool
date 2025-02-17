@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Result;
 
+use App\Models\AcademicYear;
 use App\Models\CourseForm;
 use App\Models\ResultSection;
 use App\Models\ResultSectionStudentType;
 use App\Models\Subject;
+use App\Models\Term;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -16,6 +19,10 @@ class StudentResults extends Component
     public $record;
     public $resultSections;
     public Subject $subject;
+    public $termId;
+    public $terms;
+    public $academic;
+    public $academicYears;
     public $groupId;
     public $students = [];
     public $sectionValues = []; // Holds values for ResultSections
@@ -27,25 +34,48 @@ class StudentResults extends Component
     public function mount($record){
         $this->record = $record;
         $subject = Subject::whereId($record)->firstOrFail();
+        $this->subject = $subject;
         $this->groupId = $subject->class->group->id;
+        $this->terms = Term::all();
+        $this->academicYears = AcademicYear::all();
+        $this->termId = Term::query()->first()?->id; // Default to the first term
+        $this->academic = AcademicYear::query()->where('status', "true")->first()?->id;
         $this->resultSections = ResultSection::where('group_id', $this->groupId)->first();
-        $this->students = CourseForm::where('subject_id', $subject->id)->get();
+        $this->loadSubjects();
+
+    }
+
+    public function loadSubjects(){
+        $this->students = CourseForm::where('subject_id', $this->subject->id)
+        ->where('term_id', $this->termId)
+        ->where('academic_year_id', $this->academic)
+        ->get();
 
         // Initialize sectionValues and studentValues
         foreach ($this->resultSections->resultDetails as $section) {
-            $this->sectionValues[$section->id] = ''; // Default values for sections
-            foreach ($this->students as $student) {
-                // $this->studentValues[$student->id][$section->id] = ''; // Default values for students
-                $existingResult = ResultSectionStudentType::where([
-                    'result_section_type_id' => $section->id,
-                    'course_form_id' => $student->id,
-                ])->first();
+        $this->sectionValues[$section->id] = ''; // Default values for sections
+        foreach ($this->students as $student) {
+        // $this->studentValues[$student->id][$section->id] = ''; // Default values for students
+        $existingResult = ResultSectionStudentType::where([
+        'result_section_type_id' => $section->id,
+        'course_form_id' => $student->id,
+        ])->first();
 
-                // Preload existing values or set default
-                $this->studentValues[$student->id][$section->id] = $existingResult ? $existingResult->score : '';
+        // Preload existing values or set default
+        $this->studentValues[$student->id][$section->id] = $existingResult ? $existingResult->score : '';
 
-            }
         }
+        }
+    }
+
+    public function updatedAcademic()
+    {
+        $this->loadSubjects();
+    }
+
+    public function updatedTermId()
+    {
+        $this->loadSubjects();
     }
 
     public function calculateGradeLevel($total)
@@ -159,8 +189,88 @@ class StudentResults extends Component
 
 
 
+    public function calculateTotalsForAllStudents()
+    {
+        // Step 1: Calculate raw totals for all students first
+        $studentTotals = [];
+        foreach ($this->students as $student) {
+            $studentTotal = 0;
+            foreach ($this->resultSections->resultDetails as $section) {
+                if ($section->calc_pattern == 'input' && isset($this->studentValues[$student->id][$section->id])) {
+                    $studentTotal += (float) $this->studentValues[$student->id][$section->id];
+                }
+            }
+            $studentTotals[$student->id] = $studentTotal;
+        }
+
+        // Filter, rank, and calculate class metrics in one pass
+        $validTotals = array_filter($studentTotals, fn($total) => $total > 0);
+        arsort($validTotals);
+
+        // Calculate class metrics once
+        $classAverage = count($validTotals) > 0 ? array_sum($validTotals) / count($validTotals) : 0;
+        $classAverage = fmod($classAverage, 1) === 0.0 ? (int) $classAverage : round($classAverage, 1);
+        $classHighestScore = count($validTotals) > 0 ? max($validTotals) : 0;
+        $classLowestScore = count($validTotals) > 0 ? min($validTotals) : 0;
+
+        // Assign positions
+        $positions = [];
+        $rank = 1;
+        $previousScore = null;
+        $tieCount = 0;
+
+        foreach ($validTotals as $studentIdKey => $score) {
+            if ($score !== $previousScore) {
+                $rank += $tieCount;
+                $tieCount = 0;
+            } else {
+                $tieCount++;
+            }
+            $positions[$studentIdKey] = $rank;
+            $previousScore = $score;
+        }
+
+        // Update all students' calculated fields in one go
+        foreach ($this->students as $student) {
+            foreach ($this->resultSections->resultDetails as $section) {
+                switch ($section->calc_pattern) {
+                    case 'position':
+                        $this->studentValues[$student->id][$section->id] = $positions[$student->id] ?? null;
+                        break;
+                    case 'total':
+                        $this->studentValues[$student->id][$section->id] = $studentTotals[$student->id];
+                        break;
+                    case 'class_average':
+                        $this->studentValues[$student->id][$section->id] = $classAverage;
+                        break;
+                    case 'class_highest_score':
+                        $this->studentValues[$student->id][$section->id] = $classHighestScore;
+                        break;
+                    case 'class_lowest_score':
+                        $this->studentValues[$student->id][$section->id] = $classLowestScore;
+                        break;
+                    case 'grade_level':
+                        $this->studentValues[$student->id][$section->id] = $this->calculateGradeLevel($studentTotals[$student->id]);
+                        break;
+                    case 'remarks':
+                        $this->studentValues[$student->id][$section->id] = $this->remarksStatement($studentTotals[$student->id]);
+                        break;
+                }
+            }
+        }
+    }
+
     public function saveResults()
     {
+
+        // foreach ($this->students as $student) {
+        //     $this->calculateTotal($student->id);
+        // }
+
+        $this->calculateTotalsForAllStudents();
+
+        DB::beginTransaction();
+        try {
         foreach ($this->studentValues as $studentId => $sections) {
             foreach ($sections as $sectionId => $value) {
                 // Use updateOrCreate to handle both update and create operations
@@ -176,11 +286,22 @@ class StudentResults extends Component
             }
         }
 
+        DB::commit();
         Notification::make()
             ->title('Success')
             ->body('Results saved successfully.')
             ->success()
             ->send();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error saving results: ' . $e->getMessage());
+            Notification::make()
+                ->title('Error')
+                ->body('There was a problem saving the results. Please try again.')
+                ->danger()
+                ->send();
+        }
     }
 
     public function render()

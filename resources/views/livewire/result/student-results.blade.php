@@ -1,6 +1,40 @@
 <div class="p-4 space-y-6">
     <!-- Upper Form Panel -->
     <div class="p-4 bg-white rounded shadow dark:bg-gray-800">
+        <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg shadow dark:bg-gray-800">
+            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200">
+                Teacher: {{ $subject->teacher->name ?? 'N/A' }}
+            </h2>
+            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200">
+                Subject: {{ $subject->subjectDepot->name ?? 'N/A' }}
+            </h2>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+
+            <div>
+                <label for="term" class="block font-medium">Academy year</label>
+                <select wire:model.live="academic" id="academic" name="academic" required
+                    class="block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-800">
+                    <option value="">Select Academic Year</option>
+                    @foreach($academicYears as $academy)
+                        <option value="{{ $academy->id }}">{{ $academy->title }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="term" class="block font-medium">Term</label>
+                <select wire:model.live="termId" id="term" name="term_id" required
+                    class="block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-800">
+                    <option value="">Select Term</option>
+                    @foreach($terms as $term)
+                        <option value="{{ $term->id }}">{{ $term->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
 
     </div>
 
@@ -50,7 +84,7 @@
                                             class="w-full px-2 py-1 text-gray-800 border border-gray-300 rounded bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
                                             placeholder="Value for {{ $detail->name }}"
                                             {{ $detail->type == 'numeric' ? 'max='.$detail->score_weight : '' }}
-                                            wire:change="calculateTotal({{$student->id}})"
+                                            {{-- wire:change="calculateTotal({{$student->id}})" --}}
                                           oninput="{{ $detail->type == 'numeric' ? 'this.value = Math.min(this.value, this.max)' : '' }}"
                                             pattern="{{ $detail->type == 'text' ? '[A-Za-z0-9 ]*' : '' }}"
                                             {{ $detail->calc_pattern != 'input' ? 'disabled' : '' }}

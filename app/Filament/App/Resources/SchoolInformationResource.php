@@ -62,14 +62,14 @@ class SchoolInformationResource extends Resource
                 SignaturePad::make('principal_sign'),
 
                 FileUpload::make('school_stamp')
-                ->disk('cloudinary'),
+                ->disk('s3'),
                 Forms\Components\TextInput::make('school_phone')
                     ->label('School Phone')
 
                     ->required(),
 
                     FileUpload::make('school_logo')
-                    ->disk('cloudinary'),
+                    ->disk('s3'),
                 Forms\Components\TextInput::make('school_website')
                     ->label('School Website')
                     ->url()

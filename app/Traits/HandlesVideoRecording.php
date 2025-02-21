@@ -39,7 +39,7 @@ trait HandlesVideoRecording
         $combinedBlob = $this->combineChunks($this->recordingChunks);
         $path = "recordings/{$this->examId}/{$this->studentId}/" . uniqid() . '.webm';
 
-        Storage::disk('cloudinary')->put($path, $combinedBlob);
+        Storage::disk('s3')->put($path, $combinedBlob);
 
         ExamRecording::create([
             'exam_id' => $this->examId,

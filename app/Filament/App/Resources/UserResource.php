@@ -44,7 +44,7 @@ class UserResource extends Resource
                     ->maxLength(255),
                 Forms\Components\DatePicker::make('joining_date'),
                 Forms\Components\FileUpload::make('avatar')
-                    ->disk('cloudinary')
+                    ->disk('s3')
                         ->required(),
                 Forms\Components\Select::make('user_type')
                         ->options([
@@ -74,7 +74,7 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('religion')
                     ->searchable(),
-                Tables\Columns\ImageColumn::make('avatar')->disk('cloudinary')->width(50)->height(50),
+                Tables\Columns\ImageColumn::make('avatar')->disk('s3')->width(50)->height(50),
                 Tables\Columns\TextColumn::make('username')
                     ->searchable(),
             ])

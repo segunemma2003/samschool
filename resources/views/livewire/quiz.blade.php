@@ -76,7 +76,7 @@
                 @if(!is_null($questions[$currentQuestion]['image']))
 
                     <div class="w-12 h-12">
-                        <img src="{{Storage::disk('cloudinary')->url($questions[$currentQuestion]['image'])}}"
+                        <img src="{{Storage::disk('s3')->url($questions[$currentQuestion]['image'])}}"
                         class="object-cover rounded-md"
                         style=" max-width: 400px; max-height: 300px;" />
                         />
@@ -105,7 +105,7 @@
                                             {{-- {{dd($option)}} --}}
                                             @if(isset($option['image']) && !is_null($option['image']))
                                             <div class="w-12 h-12">
-                                                <img src="{{ Storage::disk('cloudinary')->url($option['image']) }}"
+                                                <img src="{{ Storage::disk('s3')->url($option['image']) }}"
                                                      class="object-cover rounded-md"
                                                      style=" max-width: 200px; max-height: 200px;" />
                                             </div>

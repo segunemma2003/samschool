@@ -137,7 +137,7 @@ class StudentResource extends Resource
                     ->searchable(),
                 Forms\Components\FileUpload::make('avatar')
                 ->label('Passport')
-                    ->disk('cloudinary')
+                    ->disk('s3')
                         ->required(),
                 Forms\Components\Select::make('user_type')
                         ->options([
@@ -319,7 +319,7 @@ class StudentResource extends Resource
 
                 //         return $query;
                 //     })
-                //      ->fileDisk('cloudinary')
+                //      ->fileDisk('s3')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

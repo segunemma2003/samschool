@@ -67,7 +67,7 @@ class ViewAssignment extends Component implements HasForms, HasInfolists
                 "submitted"=>"Submit"
                ]),
                FileUpload::make('file')
-               ->disk('cloudinary')
+               ->disk('s3')
 
             ]) ->statePath('data');
 
@@ -89,7 +89,7 @@ class ViewAssignment extends Component implements HasForms, HasInfolists
                 ->formatStateUsing(function ($state) {
                     if ($state) {
                         // Generate the download URL
-                        $fileUrl = Storage::disk('cloudinary')->url($state);
+                        $fileUrl = Storage::disk('s3')->url($state);
 
                         // Return HTML for download icon and link
                         return sprintf(

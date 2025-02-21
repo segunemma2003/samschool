@@ -155,7 +155,7 @@ class StudentResource extends Resource
                     ->searchable(),
                 Forms\Components\FileUpload::make('avatar')
                 ->label('Passport')
-                    ->disk('cloudinary')
+                    ->disk('s3')
                         ->required(),
                 Forms\Components\Select::make('user_type')
                         ->options([
@@ -368,6 +368,16 @@ class StudentResource extends Resource
                         Forms\Components\Select::make('academic_id')
                             ->label('Academy Year')
                             ->options(AcademicYear::whereNotNull('title')->pluck('title', 'id'))
+                            ->preload()
+                            ->required()
+                            ->searchable(),
+                        Forms\Components\Select::make('mid')
+                            ->label('Mid Term Result?')
+                            ->options([
+                                "Yes"=>"Yes",
+                                "No"=> "No"
+                            ])
+                            ->required()
                             ->preload()
                             ->searchable(),
                     ])

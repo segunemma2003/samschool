@@ -62,7 +62,7 @@ class AssignmentResource extends Resource
                     ->label('Subject')
                     ->options(Subject::where('teacher_id',$teacherId->id)->pluck('code', 'id'))
                     ->searchable(),
-                FileUpload::make('file')->disk('cloudinary'),
+                FileUpload::make('file')->disk('s3'),
                 RichEditor::make('description')->required()
                 ->label("Question")
                 ->columnSpanFull()

@@ -47,7 +47,8 @@
                     <th class="px-4 py-2 text-gray-700 border border-gray-700 dark:border-gray-600 dark:text-gray-200">No.</th>
                     <th class="px-4 py-2 text-gray-700 border border-gray-700 dark:border-gray-600 dark:text-gray-200">Student</th>
                     {{-- @foreach($resultSections as $section) --}}
-                        @foreach($resultSections->resultDetails as $detail)
+
+                        @foreach($resTitle as $detail)
                             <th class="px-4 py-2 text-gray-700 border border-gray-700 dark:border-gray-600 dark:text-gray-200">
                                {{ $detail->name }}
                             </th>
@@ -61,7 +62,7 @@
                         <td class="px-4 py-2 text-center text-gray-700 border border-gray-200 dark:border-gray-600 dark:text-gray-200">{{ $index + 1 }}</td>
                         <td class="px-4 py-2 text-gray-700 border border-gray-200 dark:border-gray-600 dark:text-gray-200">{{ $student->student->name }}</td>
 
-                            @foreach($resultSections->resultDetails as $detail)
+                            @foreach($this->resTitle as $detail)
                                 <td class="px-4 py-2 border border-gray-200 dark:border-gray-600">
                                     @if ($detail->calc_pattern == 'total')
                                     <input

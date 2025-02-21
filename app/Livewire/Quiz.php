@@ -115,7 +115,7 @@ class Quiz extends Component
     {
         // Convert Blob to file and save
         $path = 'exam_recordings/' . uniqid() . '.webm';
-        Storage::disk('cloudinary')->put($path, base64_decode($blob));
+        Storage::disk('s3')->put($path, base64_decode($blob));
 
         ExamRecording::create([
             'exam_id' => $this->examId,

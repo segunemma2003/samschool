@@ -167,10 +167,10 @@ class GenerateBroadSheet implements ShouldQueue
             $time = time();
             $fileName = "broadsheet-$time.pdf";
             $filePath = "results/{$fileName}";
-            Storage::disk('cloudinary')->put($filePath, $pdf->output());
+            Storage::disk('s3')->put($filePath, $pdf->output());
             $downloadStatus = DownloadStatus::whereId($this->downId)->first();
             $downloadStatus->status ='completed';
-            $downloadStatus->download_links = Storage::disk('cloudinary')->url($filePath);
+            $downloadStatus->download_links = Storage::disk('s3')->url($filePath);
             $downloadStatus->save();
             Notification::make()
                 ->title('Your download is ready')

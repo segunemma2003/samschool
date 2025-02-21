@@ -287,6 +287,7 @@
                   </th>
                   @endforeach
                   <!-- Term Summary Sub-Headers -->
+
                   @foreach($termSummary as $marks)
                   <th class="px-2 py-1 border border-gray-400">
                         {{ $marks->name}}

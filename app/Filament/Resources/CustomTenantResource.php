@@ -57,7 +57,7 @@ class CustomTenantResource extends TenantResource
                     ,
                     // SpatieMediaLibraryFileUpload::make('logo'),
                     Forms\Components\FileUpload::make('logo')
-                    ->disk('cloudinary')
+                    ->disk('s3')
                         ->required(),
 
                     Forms\Components\TextInput::make('email')->required()->email(),
@@ -92,7 +92,7 @@ class CustomTenantResource extends TenantResource
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('ID')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('name'),
-                Tables\Columns\ImageColumn::make('logo')->disk('cloudinary')->width(50)->height(50),
+                Tables\Columns\ImageColumn::make('logo')->disk('s3')->width(50)->height(50),
                 Tables\Columns\TextColumn::make('name')
                     ->description(function ($record){
                         return "https://".$record->domains()->first()?->domain .'.'.config('filament-tenancy.central_domain'). '/app';

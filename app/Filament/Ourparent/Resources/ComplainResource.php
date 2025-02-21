@@ -38,12 +38,12 @@ class ComplainResource extends Resource
                 ->required()
                 ->maxLength(255),
                 // TinyEditor::make('description')
-                // // ->fileAttachmentsDisk('cloudinary')
-                // // ->fileAttachmentsVisibility('cloudinary')
+                // // ->fileAttachmentsDisk('s3')
+                // // ->fileAttachmentsVisibility('s3')
                 // ->required(),
 
                 Forms\Components\FileUpload::make('file')
-                ->disk('cloudinary')
+                ->disk('s3')
                     ->required(),
 
             ]);

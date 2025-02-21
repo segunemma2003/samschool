@@ -164,10 +164,10 @@ class GenerateStudentResultPdf implements ShouldQueue
         // $pdf = Pdf::loadView('results.template',compact('psychomotorCategory','class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
         $fileName = "result-{$student->id}-{$student->name}.pdf";
         $filePath = "results/{$fileName}";
-        Storage::disk('cloudinary')->put($filePath, $pdf->output());
+        Storage::disk('s3')->put($filePath, $pdf->output());
         Log::info("Uploading file to: {$filePath}");
-        Log::info("Generated URL: " . Storage::disk('cloudinary')->url($filePath));
-        $fileUrls[] =  Storage::disk('cloudinary')->url($filePath);
+        Log::info("Generated URL: " . Storage::disk('s3')->url($filePath));
+        $fileUrls[] =  Storage::disk('s3')->url($filePath);
         }
 
         $tm = time();

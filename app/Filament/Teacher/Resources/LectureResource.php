@@ -71,7 +71,7 @@ class LectureResource extends Resource
                 ->label("Links to other Materials"),
                 FileUpload::make('other_materials')
                 ->label("Other materials")
-                ->disk('cloudinary')
+                ->disk('s3')
             ]);
     }
 

@@ -28,6 +28,7 @@ class StudentResults extends Component
     public $sectionValues = []; // Holds values for ResultSections
     public $studentValues = []; // Holds values for students by ResultSection
     public $liveResults = [];
+    public $resTitle = [];
     protected $listeners = ['calculateTotal'];
 
 
@@ -46,13 +47,16 @@ class StudentResults extends Component
     }
 
     public function loadSubjects(){
+        $this->resTitle =  $this->resultSections->resultDetails()->where('term_id', $this->termId)->get();
+        // dd($this->resTitle);
         $this->students = CourseForm::where('subject_id', $this->subject->id)
         ->where('term_id', $this->termId)
         ->where('academic_year_id', $this->academic)
         ->get();
 
         // Initialize sectionValues and studentValues
-        foreach ($this->resultSections->resultDetails as $section) {
+        // foreach ($this->resultSections->resultDetails as $section) {
+            foreach ($this->resTitle as $section) {
         $this->sectionValues[$section->id] = ''; // Default values for sections
         foreach ($this->students as $student) {
         // $this->studentValues[$student->id][$section->id] = ''; // Default values for students
@@ -114,7 +118,7 @@ class StudentResults extends Component
         $studentTotals = [];
         foreach ($this->students as $student) {
             $studentTotal = 0;
-            foreach ($this->resultSections->resultDetails as $section) {
+            foreach ($this->resTitle as $section) {
                 if ($section->calc_pattern == 'input' && isset($this->studentValues[$student->id][$section->id])) {
                     $studentTotal += (float) $this->studentValues[$student->id][$section->id];
                 }
@@ -157,7 +161,7 @@ class StudentResults extends Component
 
         // Step 5: Update student values for all relevant metrics
         foreach ($this->students as $student) {
-            foreach ($this->resultSections->resultDetails as $section) {
+            foreach ($this->resTitle as $section) {
                 if ($section->calc_pattern == 'position') {
                     $this->studentValues[$student->id][$section->id] = $positions[$student->id] ?? null;
                 }
@@ -195,7 +199,7 @@ class StudentResults extends Component
         $studentTotals = [];
         foreach ($this->students as $student) {
             $studentTotal = 0;
-            foreach ($this->resultSections->resultDetails as $section) {
+            foreach ($this->resTitle as $section) {
                 if ($section->calc_pattern == 'input' && isset($this->studentValues[$student->id][$section->id])) {
                     $studentTotal += (float) $this->studentValues[$student->id][$section->id];
                 }
@@ -232,7 +236,7 @@ class StudentResults extends Component
 
         // Update all students' calculated fields in one go
         foreach ($this->students as $student) {
-            foreach ($this->resultSections->resultDetails as $section) {
+            foreach ($this->resTitle as $section) {
                 switch ($section->calc_pattern) {
                     case 'position':
                         $this->studentValues[$student->id][$section->id] = $positions[$student->id] ?? null;

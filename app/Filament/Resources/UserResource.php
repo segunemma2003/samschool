@@ -55,7 +55,7 @@ class UserResource extends Resource
                 ]),
                 Forms\Components\DatePicker::make('joining_date'),
                 Forms\Components\FileUpload::make('avatar')
-                    ->disk('cloudinary')
+                    ->disk('s3')
                         ,
                 Forms\Components\TextInput::make('username')->unique(table: User::class, ignoreRecord: true)
                     ->maxLength(255),
@@ -97,7 +97,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('joining_date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\ImageColumn::make('avatar')->disk('cloudinary')->width(50)->height(50),
+                Tables\Columns\ImageColumn::make('avatar')->disk('s3')->width(50)->height(50),
                 Tables\Columns\TextColumn::make('username')
                     ->searchable(),
             ])

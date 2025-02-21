@@ -101,7 +101,7 @@ $subject= $assignment->subject->name;
                         ->label('Download File')
                         ->formatStateUsing(function ($state) {
                             if ($state) {
-                                $fileUrl = Storage::disk('cloudinary')->url($state);
+                                $fileUrl = Storage::disk('s3')->url($state);
                                 return sprintf(
                                     '<a href="%s" target="_blank" download class="flex items-center space-x-1 text-blue-500 hover:underline">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

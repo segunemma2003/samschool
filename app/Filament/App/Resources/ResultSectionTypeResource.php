@@ -6,6 +6,7 @@ use App\Filament\App\Resources\ResultSectionTypeResource\Pages;
 use App\Filament\App\Resources\ResultSectionTypeResource\RelationManagers;
 use App\Models\ResultSection;
 use App\Models\ResultSectionType;
+use App\Models\Term;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -46,6 +47,13 @@ class ResultSectionTypeResource extends Resource
                 ])->searchable()
                 ->live(),
 
+                Select::make('term_id')
+                ->options(Term::all()->pluck('name', 'id')->toArray())
+                ->live()
+                ->label('Term')
+                ->preload()
+                ->searchable(),
+
                 Select::make('calc_pattern')->label('Calculation Pattern')
                 ->options([
                     "input"=> "Input",
@@ -80,6 +88,11 @@ class ResultSectionTypeResource extends Resource
 
         TextColumn::make('name')
             ->label('Name')
+            ->sortable()
+            ->searchable(),
+
+            TextColumn::make('term.name')
+            ->label('Term')
             ->sortable()
             ->searchable(),
 

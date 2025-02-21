@@ -52,7 +52,7 @@ class TeacherResource extends Resource
             ])->required(),
             Forms\Components\DatePicker::make('joining_date')->required(),
             Forms\Components\FileUpload::make('avatar')
-                ->disk('cloudinary')
+                ->disk('s3')
                   ,
             Forms\Components\Select::make('user_type')
                   ->options([
@@ -91,7 +91,7 @@ class TeacherResource extends Resource
                 ->dateTime()
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
-            Tables\Columns\ImageColumn::make('avatar')->disk('cloudinary')->width(50)->height(50),
+            Tables\Columns\ImageColumn::make('avatar')->disk('s3')->width(50)->height(50),
             Tables\Columns\ImageColumn::make('signature')
             ])
             ->filters([

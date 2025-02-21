@@ -93,7 +93,7 @@ class QuestionBankResource extends Resource
 
                                 FileUpload::make('image')
                                     ->label('Option Image')
-                                    ->disk('cloudinary')
+                                    ->disk('s3')
                                     ->nullable()
                                     ->image()
                                     ->directory('exam_images'),
@@ -125,7 +125,7 @@ class QuestionBankResource extends Resource
 
                         FileUpload::make('image')
                             ->label('Question Image')
-                            ->disk('cloudinary')
+                            ->disk('s3')
                             ->nullable()
                             ->image()
                             ->directory('exam_images')
@@ -202,7 +202,7 @@ class QuestionBankResource extends Resource
 
     //                 FileUpload::make('image')
     //                     ->label('Image')
-    //                     ->disk('cloudinary') // Specify Cloudinary as the storage disk
+    //                     ->disk('s3') // Specify Cloudinary as the storage disk
     //                     ->nullable()
     //                     ->image() // Restrict to image files
     //                     ->directory('exam_images') // Optional: specify a directory in Cloudinary
@@ -294,7 +294,7 @@ class QuestionBankResource extends Resource
 
                 //     FileUpload::make('image')
                 //         ->label('Image')
-                //         ->disk('cloudinary') // Specify Cloudinary as the storage disk
+                //         ->disk('s3') // Specify Cloudinary as the storage disk
                 //         ->nullable()
                 //         ->image() // Restrict to image files
                 //         ->directory('exam_images') // Optional: specify a directory in Cloudinary
@@ -356,7 +356,7 @@ class QuestionBankResource extends Resource
 
                                 FileUpload::make('image')
                                     ->label('Option Image')
-                                    ->disk('cloudinary')
+                                    ->disk('s3')
                                     ->nullable()
                                     ->image()
                                     ->directory('exam_images'),
@@ -395,7 +395,7 @@ class QuestionBankResource extends Resource
 
                         FileUpload::make('image')
                             ->label('Question Image')
-                            ->disk('cloudinary')
+                            ->disk('s3')
                             ->nullable()
                             ->image()
                             ->directory('exam_images')

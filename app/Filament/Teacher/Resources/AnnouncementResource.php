@@ -44,7 +44,7 @@ class AnnouncementResource extends Resource
             ->columns([
                 // TextColumn::make('type_of_user_sent_to'),
                 TextColumn::make('owner.name')->label("Sender"),
-                // ImageColumn::make('file')->disk('cloudinary'),
+                // ImageColumn::make('file')->disk('s3'),
                 TextColumn::make('title')->searchable()
                 ->description(fn (Announcement $record): string => $record->sub)->searchable(),
                 TextColumn::make('created_at')

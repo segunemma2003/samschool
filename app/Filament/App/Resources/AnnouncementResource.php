@@ -43,11 +43,11 @@ class AnnouncementResource extends Resource
                 TextInput::make('sub')->label('Short Description')->minLength(2)
                 ->maxLength(255)->required(),
                 FileUpload::make('file')
-    ->disk('cloudinary'),
+    ->disk('s3'),
                 TextInput::make('link')->url()
                 ->suffixIcon('heroicon-m-globe-alt'),
                 RichEditor::make('text')
-                ->fileAttachmentsDisk('cloudinary')->columnSpanFull()
+                ->fileAttachmentsDisk('s3')->columnSpanFull()
             ]);
 
     }

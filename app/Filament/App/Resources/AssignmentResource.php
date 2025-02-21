@@ -50,7 +50,7 @@ class AssignmentResource extends Resource
                     ->options(Subject::all()->pluck('code', 'id'))
                     ->searchable(),
                 Forms\Components\FileUpload::make('file')
-                    ->disk('cloudinary')
+                    ->disk('s3')
                         ->required(),
             ]);
     }

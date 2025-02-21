@@ -14,4 +14,9 @@ class ResultSectionType extends Model
     {
         return $this->belongsTo(ResultSection::class, 'result_section_id');
     }
+
+    public function term()
+    {
+        return $this->belongsTo(Term::class, 'term_id');
+    }
 }

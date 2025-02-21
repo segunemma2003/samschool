@@ -54,7 +54,7 @@ class GuardianResource extends Resource
                 ->required()
                 ->maxLength(255),
             Forms\Components\FileUpload::make('photo')
-                ->disk('cloudinary'),
+                ->disk('s3'),
                     // ->required(),
             Forms\Components\TextInput::make('password')
                 ->password()
@@ -87,7 +87,7 @@ class GuardianResource extends Resource
             Tables\Columns\TextColumn::make('username')
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
-            Tables\Columns\ImageColumn::make('photo')->disk('cloudinary')->width(50)->height(50),
+            Tables\Columns\ImageColumn::make('photo')->disk('s3')->width(50)->height(50),
             ])
             ->filters([
                 //

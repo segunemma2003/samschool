@@ -27,6 +27,11 @@
             </div>
         </div>
 
+        <div class="mb-2">
+            <input type="checkbox" wire:model.live="selectAll" id="selectAll">
+            <label for="selectAll" class="font-medium">Select All</label>
+        </div>
+
         {{-- Subjects Table --}}
         <div>
             <h2 class="mb-2 text-lg font-semibold">Subjects</h2>

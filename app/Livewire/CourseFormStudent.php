@@ -19,6 +19,11 @@ class CourseFormStudent extends Component
     public $record;
     public $terms;
     public $student;
+    public $selectAll = false;
+
+
+
+
 
     public function mount($record)
     {
@@ -62,6 +67,22 @@ class CourseFormStudent extends Component
         }else {
             $this->subjects = collect(); // Ensure it's a collection if no subjects are found
             $this->selectedSubjects = [];
+        }
+    }
+
+    public function updatedSelectAll($value)
+    {
+        // dd($value);
+        if ($value) {
+            // Ensure array updates are detected by Livewire
+            $this->selectedSubjects = $this->subjects->pluck('id')->toArray();
+        } else {
+            // Deselect only subjects not stored in DB
+            $this->selectedSubjects = CourseForm::where('student_id', $this->record)
+                ->where('academic_year_id', AcademicYear::whereStatus('true')->first()->id ?? 1)
+                ->where('term_id', $this->termId ?? 1)
+                ->pluck('subject_id')
+                ->toArray();
         }
     }
 

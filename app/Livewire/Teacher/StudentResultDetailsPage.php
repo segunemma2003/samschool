@@ -46,7 +46,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         $this->record = $record;
         $this->terms = Term::all();
         $this->academicYears = AcademicYear::all();
-        $this->termId = Term::query()->first()?->id; // Default to the first term
+        $this->termId = Term::query()->where('status', true)->first()?->id; // Default to the first term
         $this->academic = AcademicYear::query()->where('status', "true")->first()?->id; // Default to active academic year
         $this->student = Student::where('id', $record)->first();
         $this->classId = $this->student->class->group->id;

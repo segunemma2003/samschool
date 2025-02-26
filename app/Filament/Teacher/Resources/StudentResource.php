@@ -215,9 +215,9 @@ class StudentResource extends Resource
                 ->url(fn ($record) => CourseFormStudent::generateRoute($record->id)),
 
 
-                // \Filament\Tables\Actions\Action::make('viewresult')
-                // ->label('View Result')
-                // ->url(fn ($record) => StudentResultDetailsPage::generateRoute($record->id)),
+                \Filament\Tables\Actions\Action::make('viewresult')
+                ->label('View Result')
+                ->url(fn ($record) => StudentResultDetailsPage::generateRoute($record->id)),
 
                 // \Filament\Tables\Actions\Action::make('downloadSingleResult')
                 // ->label('Download Result')

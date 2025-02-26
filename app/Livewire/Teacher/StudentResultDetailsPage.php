@@ -18,6 +18,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Request;
 use Livewire\Component;
 
 
@@ -55,12 +56,14 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
     public function loadComment()
     {
+        // dd($this->termId);
         $studentComment = StudentComment::query()
             ->where('student_id', $this->student->id)
             ->where('term_id', $this->termId)
             ->where('academic_id', $this->academic)
             ->first();
 
+        // dd( $studentComment);
         $this->comment =$studentComment?->comment ?? '';
         $this->form->fill([
             'comment' => $studentComment?->comment ?? '', // Load the comment or set empty
@@ -124,13 +127,17 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     ->label('Term')
                     ->options($this->terms->pluck('name', 'id')->toArray())
                     ->default($this->termId)
-                    ->searchable(),
+                    ->searchable()
+
+              ,
 
                 SelectFilter::make('academic_year_id')
                     ->label('Academic Year')
                     ->options($this->academicYears->pluck('title', 'id')->toArray())
                     ->default($this->academic)
+
                     ->searchable()
+                    ,
             ])
             ->actions([])
             ->bulkActions([]);
@@ -139,9 +146,29 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
     public function updated($property)
     {
+
+
+        // dd($this->termId);
         if (in_array($property, ['termId', 'academic'])) {
+
             $this->calculateTotals();
+            $this->loadComment();
         }
+    }
+
+    public function updatedTableFilters($filters)
+    {
+        $updates = request('components.0.updates', []);
+        // dd($updates);
+        if (isset($updates['tableFilters.term_id.value'])) {
+            $this->termId = $updates['tableFilters.term_id.value'];
+        }
+
+        if (isset($updates['tableFilters.academic_year_id.value'])) {
+            $this->academic = $updates['tableFilters.academic_year_id.value'];
+        }
+
+        $this->loadComment(); // Reload comment when filters change
     }
 
     public function calculateTotals()

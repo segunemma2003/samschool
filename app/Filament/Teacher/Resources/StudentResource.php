@@ -437,8 +437,9 @@ class StudentResource extends Resource
                         $headings = cache()->remember(
                             "result_section_types_{$student->class->group->id}",
                             3600,
-                            function() use ($student) {
+                            function() use ($student, $data) {
                                 return ResultSectionType::with('resultSection')
+                                    ->where('term_id',$data['term_id'])
                                     ->whereHas('resultSection', function ($query) use ($student) {
                                         $query->where('group_id', $student->class->group->id);
                                     })
@@ -531,6 +532,16 @@ class StudentResource extends Resource
                         ->options(AcademicYear::all()->pluck('title', 'id'))
                         ->preload()
                         ->searchable(),
+
+                        Forms\Components\Select::make('mid')
+                            ->label('Mid Term Result?')
+                            ->options([
+                                "Yes"=>"Yes",
+                                "No"=> "No"
+                            ])
+                            ->required()
+                            ->preload()
+                            ->searchable(),
                     ]) ->action(function (array $data, $records) {
                         // $selectedRecords = $this->getSelectedRecords();
                         // dd($data);

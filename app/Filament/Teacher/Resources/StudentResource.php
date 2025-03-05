@@ -428,6 +428,17 @@ class StudentResource extends Resource
                         ])
                         ->get();
 
+
+                        if(count($courses) < 1){
+                            Notification::make()
+                            ->title('Error')
+                            ->body('No courses found for this student in the selected term and academic year.')
+                            ->danger()
+                            ->send();
+
+                            return;
+                        }
+
                         // Cache psychomotor categories
                         $psychomotorCategory = cache()->remember('psychomotor_categories', 3600, function() {
                             return PsychomotorCategory::all();

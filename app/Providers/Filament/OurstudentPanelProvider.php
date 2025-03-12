@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\CustomLogin;
 use App\Filament\Auth\StudentLogin;
+use App\Filament\Plugins\CustomAuthUIEnhancerStudent;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -29,6 +30,9 @@ class OurstudentPanelProvider extends PanelProvider
             ->id('student')
             ->path('student')
             ->login(StudentLogin::class)
+            ->brandLogo(getTenantLogo())
+            ->favicon(getTenantLogo())
+            ->brandLogoHeight('2rem')
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -56,6 +60,8 @@ class OurstudentPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(
-                FilamentTenancyAppPlugin::make())->plugins([]);
+                FilamentTenancyAppPlugin::make())->plugins([
+                    CustomAuthUIEnhancerStudent::make(),
+                ]);
     }
 }

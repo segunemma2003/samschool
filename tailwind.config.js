@@ -6,5 +6,6 @@ export default {
         './app/Filament/**/*.php',
         './resources/views/**/*.blade.php',
         './vendor/filament/**/*.blade.php',
+        './vendor/diogogpinto/filament-auth-ui-enhancer/resources/**/*.blade.php',
     ],
 }

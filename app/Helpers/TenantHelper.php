@@ -2,6 +2,33 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+if(!function_exists('getTenantLogo')){
+     function getTenantLogo()  // Replace School with your actual tenant model
+    {
+        $domain = request()->getHost();
+        $subdomain = explode('.', $domain)[0];
+
+
+        // 🔹 Query the `domains` table directly
+        $domainEntry = DB::table('domains')->where('domain', $subdomain)->first();
+
+        if ($domainEntry && $domainEntry->tenant_id) {
+            $tenant = DB::table('tenants')->where('id', $domainEntry->tenant_id)->first();
+            if ($tenant && $tenant->logo) {
+                return Storage::disk('s3')->url($tenant->logo);
+            }
+        }
+        return asset("images/2023-08-Compasse-Network-Limited.png");
+    }
+
+    //  function getTenantLogo(): string
+    // {
+    //     $tenant = $this->getTenantFromDomain(); // 🔹 Retrieve tenant (Replace this with your actual method)
+    //     return $tenant;
+    // }
+}
 
 if (!function_exists('getGeneralSettings')) {
     function getGeneralSettings()

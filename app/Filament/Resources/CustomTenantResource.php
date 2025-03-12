@@ -57,7 +57,16 @@ class CustomTenantResource extends TenantResource
                     ,
                     // SpatieMediaLibraryFileUpload::make('logo'),
                     Forms\Components\FileUpload::make('logo')
-                    ->disk('s3')
+                    ->disk('s3')->visibility('public')
+                    ->imageResizeTargetWidth('500')
+                    ->imageResizeTargetHeight('500')
+                    ->openable()
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('1:1')
+                    ->image()
+                    ->maxSize(3096)
+                    ->directory('images')
+                    ->uploadingMessage('Uploading image...')
                         ->required(),
 
                     Forms\Components\TextInput::make('email')->required()->email(),

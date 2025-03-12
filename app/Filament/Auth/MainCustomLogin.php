@@ -15,6 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class MainCustomLogin extends BaseLogin
 {
+    public $remember = false;
+    public $loginField; // ✅ Define this property
+    public $password;   // ✅ Also define password since it's used in form
+
     public function authenticate(): ?LoginResponse
     {
         try {
@@ -26,52 +30,40 @@ class MainCustomLogin extends BaseLogin
 
         $data = $this->form->getState();
 
+
         try {
             $credentials = $this->getCredentialsFromFormData($data);
 
-            // Get current tenant from domain
-            $tenant = $this->getTenantFromDomain();
-
-            if (! $tenant) {
-                Notification::make()
-                    ->danger()
-                    ->title('Invalid School Domain')
-                    ->send();
-                return null;
-            }
 
             if (! Filament::auth()->attempt($credentials, $data['remember'] ?? false)) {
+
                 $this->throwFailureValidationException();
             }
 
             $user = Filament::auth()->user();
 
-            // Check if user belongs to this tenant/school
-            if (! $this->userBelongsToTenant($user, $tenant)) {
+            if (
+                ($user instanceof FilamentUser) &&
+                (! $user->canAccessPanel(Filament::getCurrentPanel()))
+            ) {
                 Filament::auth()->logout();
-                Notification::make()
-                    ->danger()
-                    ->title('Access Denied')
-                    ->body('You do not have access to this school.')
-                    ->send();
-                return null;
-            }
 
-            // Check panel access
-            if (! $user->canAccessPanel(Filament::getCurrentPanel())) {
-                Filament::auth()->logout();
-                Notification::make()
-                    ->danger()
-                    ->title('Access Denied')
-                    ->body('You do not have permission to access this panel.')
-                    ->send();
-                return null;
+                $this->throwFailureValidationException();
             }
-
             session()->regenerate();
+            Notification::make()
+            ->success()
+            ->title('Success')
+            ->body("Successfully Logged in ")
+            ->send();
             return app(LoginResponse::class);
 
         } catch (ValidationException $e) {
+            Notification::make()
+            ->danger()
+            ->title('Authentication failed')
+            ->body($e->getMessage())
+            ->send();
             throw $e;
         } catch (\Exception $e) {
             Notification::make()
@@ -84,27 +76,18 @@ class MainCustomLogin extends BaseLogin
     }
 
 
-    protected function userBelongsToTenant($user, $tenant): bool
-    {
-        // Implement your logic to check if user belongs to the school/tenant
-        // Example:
-        return $user->school_id === $tenant->id;
-        // Or if using many-to-many:
-        // return $user->schools->contains($tenant->id);
-    }
-    protected function getTenantFromDomain(): ?School  // Replace School with your actual tenant model
-    {
-        $domain = request()->getHost();
-        $subdomain = explode('.', $domain)[0];
 
-        // Assuming you have a School model with a 'domain' or 'subdomain' column
-        return School::where('domain', $subdomain)
-            ->orWhere('subdomain', $subdomain)
-            ->first();
+    protected function throwFailureValidationException(): never
+    {
+        throw ValidationException::withMessages([
+            'loginField' => __('filament-panels::pages/auth/login.messages.failed'), // ✅ Fix reference here
+        ]);
     }
+
 
     protected function getCredentialsFromFormData(array $data): array
     {
+        // dd($data);
         $loginField = $data['loginField'];
 
         // Check if input is email or username

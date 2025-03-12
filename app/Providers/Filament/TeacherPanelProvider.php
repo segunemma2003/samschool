@@ -4,7 +4,12 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\CustomLogin;
 use App\Filament\Auth\TeacherLogin;
+use App\Filament\Pages\Auth\MainCustomLogin;
+use App\Filament\Plugins\CustomAuthUIEnhancer;
+use App\Filament\Plugins\CustomAuthUIEnhancerTeacher;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
+use App\Models\School;
+use DiogoGPinto\AuthUIEnhancer\AuthUIEnhancerPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -19,6 +24,8 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use TomatoPHP\FilamentTenancy\FilamentTenancyAppPlugin;
 
@@ -29,6 +36,9 @@ class TeacherPanelProvider extends PanelProvider
         return $panel
             ->id('teacher')
             ->path('teacher')
+            ->brandLogo(getTenantLogo())
+            ->favicon(getTenantLogo())
+            ->brandLogoHeight('2rem')
             ->login(TeacherLogin::class)
             // ->profile()
             ->colors([
@@ -36,11 +46,12 @@ class TeacherPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')
             ->discoverPages(in: app_path('Filament/Teacher/Pages'), for: 'App\\Filament\\Teacher\\Pages')
+            ->discoverPages(in: app_path('Filament/Auth'), for: 'App\\Filament\\Auth')
+            ->discoverPages(in: app_path('Filament/Plugins'), for: 'App\\Filament\\Plugins')
             ->discoverClusters(in: app_path('Filament/Teacher/Clusters'), for: 'App\\Filament\\Teacher\\Clusters')
-
             ->pages([
                 Pages\Dashboard::class,
-                ViewSubmittedAssignmentTeacher::class
+                ViewSubmittedAssignmentTeacher::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
             ->widgets([
@@ -60,7 +71,20 @@ class TeacherPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ])->plugin(
-                FilamentTenancyAppPlugin::make())->plugins([]);
+            ])
+            ->plugin(
+
+
+                FilamentTenancyAppPlugin::make()
+
+                )
+                ->plugins([
+                    CustomAuthUIEnhancerTeacher::make(),
+
+                ]);
     }
+
+
+
+
 }

@@ -23,7 +23,7 @@ class User extends Authenticatable implements FilamentUser
         if ($panel->getId() === 'admin') {
             return $this->email == "myadmin@admin.com";
         }else if($panel->getId() === 'app'){
-            return $this->user_type=="admin" ||  $this->email == "admin@admin.com" ||  $this->email == "myadmin@admin.com";
+            return is_null($this->user_type) || $this->user_type=="admin" ||  $this->email == "admin@admin.com" ||  $this->email == "myadmin@admin.com";
         }else if($panel->getId() === 'parent'){
             return $this->user_type=="parent";
         }else if($panel->getId() === 'student'){

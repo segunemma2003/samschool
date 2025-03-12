@@ -3,6 +3,7 @@
 namespace App\Filament\Auth;
 
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use DiogoGPinto\AuthUIEnhancer\Pages\Auth\Concerns\HasCustomLayout;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
 use Filament\Http\Responses\Auth\LoginResponse;
@@ -14,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class StudentLogin extends CustomLogin
 {
+    use HasCustomLayout;
+
     public $remember = false;
     public $loginField; // ✅ Define this property
     public $password;   // ✅ Also define password since it's used in form

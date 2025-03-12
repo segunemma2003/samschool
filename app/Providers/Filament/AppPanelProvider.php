@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\AdminLogin;
 use App\Filament\Auth\CustomLogin;
+use App\Filament\Plugins\CustomAuthUIEnhancerAdmin;
 use Filament\Enums\ThemeMode;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
@@ -39,11 +40,16 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('app')
             ->login(AdminLogin::class)
+            ->brandLogo(getTenantLogo())
+            ->favicon(getTenantLogo())
+            ->brandLogoHeight('2rem')
             ->colors([
                 'primary' => Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
+            ->discoverPages(in: app_path('Filament/Auth'), for: 'App\\Filament\\Auth')
+            ->discoverPages(in: app_path('Filament/Plugins'), for: 'App\\Filament\\Plugins')
             // ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
             ->pages([
                 Pages\Dashboard::class,
@@ -74,6 +80,7 @@ class AppPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(
+                \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
                 FilamentTenancyAppPlugin::make())->plugins([
                     FilamentGeneralSettingsPlugin::make(
                         SettingHold::make()
@@ -88,6 +95,8 @@ class AppPanelProvider extends PanelProvider
                     \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
                     \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
+                ])->plugins([
+                    CustomAuthUIEnhancerAdmin::make()
                 ]);
     }
 }

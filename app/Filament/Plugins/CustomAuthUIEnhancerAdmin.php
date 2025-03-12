@@ -2,6 +2,7 @@
 
 namespace App\Filament\Plugins;
 
+use App\Filament\Auth\AdminLogin;
 use DiogoGPinto\AuthUIEnhancer\AuthUIEnhancerPlugin;
 use App\Filament\Auth\TeacherLogin; // Your custom login
 use DiogoGPinto\AuthUIEnhancer\Pages\Auth\AuthUiEnhancerRegister;
@@ -15,14 +16,14 @@ use Filament\Pages\Auth\PasswordReset\ResetPassword;
 use Filament\Pages\Auth\Register;
 use Filament\Panel;
 
-class CustomAuthUIEnhancerTeacher extends AuthUIEnhancerPlugin
+class CustomAuthUIEnhancerAdmin extends AuthUIEnhancerPlugin
 {
 
 
 public function register(Panel $panel): void
 {
     // Override login to use TeacherLogin
-    $panel->login(TeacherLogin::class);
+    $panel->login(AdminLogin::class);
 
     // Call the parent register method (optional)
     parent::register($panel);

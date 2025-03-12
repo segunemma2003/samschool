@@ -1,8 +1,19 @@
 <?php
 
+use Filament\Models\Contracts\FilamentUser;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+
+
+if(!function_exists('getAuthName')){
+    function getAuthName(){
+        $auth = auth()->user();
+        return $auth->name?? "User";
+    }
+
+}
 
 if(!function_exists('getTenantLogo')){
      function getTenantLogo()  // Replace School with your actual tenant model

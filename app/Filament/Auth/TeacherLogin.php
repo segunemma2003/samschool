@@ -29,6 +29,7 @@ use Illuminate\Validation\ValidationException;
 class TeacherLogin extends BaseLogin
 {
 
+    use HasCustomLayout;
 
     public $remember = false;
    public $loginField; // ✅ Define this property

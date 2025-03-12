@@ -10,6 +10,7 @@ use App\Filament\Plugins\CustomAuthUIEnhancerTeacher;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
 use App\Models\School;
 use DiogoGPinto\AuthUIEnhancer\AuthUIEnhancerPlugin;
+use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -27,7 +28,10 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Orion\FilamentGreeter\GreeterPlugin;
 use TomatoPHP\FilamentTenancy\FilamentTenancyAppPlugin;
+
+
 
 class TeacherPanelProvider extends PanelProvider
 {
@@ -77,9 +81,13 @@ class TeacherPanelProvider extends PanelProvider
 
                 FilamentTenancyAppPlugin::make()
 
+
                 )
                 ->plugins([
-                    CustomAuthUIEnhancerTeacher::make(),
+                    CustomAuthUIEnhancerTeacher::make()
+                    ->emptyPanelBackgroundColor(Color::hex('#f0f0f0'))
+                    ->emptyPanelBackgroundImageUrl('https://images.pexels.com/photos/466685/pexels-photo-466685.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'),
+
 
                 ]);
     }

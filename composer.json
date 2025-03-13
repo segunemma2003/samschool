@@ -49,6 +49,7 @@
         "tomatophp/filament-settings-hub": "^1.0",
         "tomatophp/filament-subscriptions": "^1.0",
         "tomatophp/filament-tenancy": "^1.0",
+        "vormkracht10/filament-mails": "^2.3",
         "yoelpc4/laravel-cloudinary": "^5.0"
     },
     "require-dev": {

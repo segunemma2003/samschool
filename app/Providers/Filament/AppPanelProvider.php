@@ -5,6 +5,9 @@ namespace App\Providers\Filament;
 use App\Filament\Auth\AdminLogin;
 use App\Filament\Auth\CustomLogin;
 use App\Filament\Plugins\CustomAuthUIEnhancerAdmin;
+use App\Http\Middleware\FilamentUnauthorizedRedirect;
+use Vormkracht10\FilamentMails\FilamentMailsPlugin;
+use Vormkracht10\FilamentMails\Facades\FilamentMails;
 use Filament\Enums\ThemeMode;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
@@ -18,9 +21,11 @@ use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use TomatoPHP\FilamentTenancy\FilamentTenancyAppPlugin;
@@ -66,6 +71,7 @@ class AppPanelProvider extends PanelProvider
                 // Widgets\AccountWidget::class,
                 // Widgets\FilamentInfoWidget::class,
             ])
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -76,7 +82,11 @@ class AppPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                FilamentUnauthorizedRedirect::class,
+
             ])
+            ->routes(fn() => FilamentMails::routes())
+            ->plugin(FilamentMailsPlugin::make())
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(

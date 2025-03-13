@@ -8,6 +8,7 @@ use App\Filament\Pages\Auth\MainCustomLogin;
 use App\Filament\Plugins\CustomAuthUIEnhancer;
 use App\Filament\Plugins\CustomAuthUIEnhancerTeacher;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
+use App\Http\Middleware\FilamentUnauthorizedRedirect;
 use App\Models\School;
 use DiogoGPinto\AuthUIEnhancer\AuthUIEnhancerPlugin;
 use Filament\Actions\Action;
@@ -72,6 +73,7 @@ class TeacherPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                FilamentUnauthorizedRedirect::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\FilamentUnauthorizedRedirect;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->group('universal', [
             InitializeTenancyByDomain::class,
             InitializeTenancyBySubdomain::class,
+        ]);
+
+        $middleware->alias([
+            // 'filament.unauthorized.redirect' => FilamentUnauthorizedRedirect::class,
         ]);
         // $middleware->trustProxies(at:
         // '*'

@@ -10,6 +10,7 @@ use App\Filament\Plugins\CustomAuthUIEnhancerTeacher;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
 use App\Http\Middleware\FilamentUnauthorizedRedirect;
 use App\Models\School;
+use App\Providers\MyImageProvider;
 use DiogoGPinto\AuthUIEnhancer\AuthUIEnhancerPlugin;
 use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
@@ -30,6 +31,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Orion\FilamentGreeter\GreeterPlugin;
+use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
+use Swis\Filament\Backgrounds\ImageProviders\MyImages;
+use TheThunderTurner\FilamentLatex\FilamentLatexPlugin;
 use TomatoPHP\FilamentTenancy\FilamentTenancyAppPlugin;
 
 
@@ -86,10 +90,18 @@ class TeacherPanelProvider extends PanelProvider
 
                 )
                 ->plugins([
+                    // FilamentLatexPlugin::make(),
+                    // FilamentBackgroundsPlugin::make()
+                    // ->remember(900)
+                    // ->imageProvider(
+                    //     MyImageProvider::make("images/swisnl/filament-backgrounds/curated-by-swis/12.jpg")
+                    // ),
                     CustomAuthUIEnhancerTeacher::make()
-                    ->emptyPanelBackgroundColor(Color::hex('#f0f0f0'))
-                    ->emptyPanelBackgroundImageUrl('https://images.pexels.com/photos/466685/pexels-photo-466685.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'),
-
+                    ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/12.jpg'))
+                    ->emptyPanelBackgroundImageOpacity('60%') // Optional: Adjust opacity
+                    ->formPanelPosition('right') // Form position
+                    ->formPanelWidth('40%') // Adjust form width
+                    ->showEmptyPanelOnMobile(false)
 
                 ]);
     }

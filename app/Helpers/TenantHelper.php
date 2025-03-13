@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 
 if(!function_exists('getAuthName')){
     function getAuthName(){
-        $auth = auth()->user();
+        $auth = Auth::user();
         return $auth->name?? "User";
     }
 

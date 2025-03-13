@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1d6897c8157fa0a393c68ce5c8473a1d",
+    "content-hash": "9d7f14e03f97c7adeb1e05ea7c342c2c",
     "packages": [
         {
             "name": "amidesfahani/filament-tinyeditor",
@@ -11534,6 +11534,82 @@
             "time": "2024-12-13T02:05:21+00:00"
         },
         {
+            "name": "swisnl/filament-backgrounds",
+            "version": "1.1.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/swisnl/filament-backgrounds.git",
+                "reference": "0841c391f51a6089a569c22647ee77ae1cdd0eea"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/swisnl/filament-backgrounds/zipball/0841c391f51a6089a569c22647ee77ae1cdd0eea",
+                "reference": "0841c391f51a6089a569c22647ee77ae1cdd0eea",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0.100",
+                "illuminate/contracts": "^10.21|^11.0|^12.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^2.9|^3.0",
+                "laravel/pint": "^1.13",
+                "nunomaduro/collision": "^7.10|^8.1",
+                "orchestra/testbench": "^8.15|^9.0|^10.0",
+                "pestphp/pest": "^2.25|^3.7",
+                "pestphp/pest-plugin-arch": "^2.4|^3.0",
+                "pestphp/pest-plugin-laravel": "^2.2|^3.1",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan-deprecation-rules": "^1.2|^2.0",
+                "phpstan/phpstan-phpunit": "^1.4|^2.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Swis\\Filament\\Backgrounds\\FilamentBackgroundsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Swis\\Filament\\Backgrounds\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jasper Zonneveld",
+                    "email": "jasper@swis.nl",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Beautiful backgrounds for Filament auth pages",
+            "homepage": "https://github.com/swisnl/filament-backgrounds",
+            "keywords": [
+                "backgrounds",
+                "filament",
+                "laravel",
+                "swisnl"
+            ],
+            "support": {
+                "issues": "https://github.com/swisnl/filament-backgrounds/issues",
+                "source": "https://github.com/swisnl/filament-backgrounds"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/swisnl",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-02-25T09:16:21+00:00"
+        },
+        {
             "name": "symfony/clock",
             "version": "v7.2.0",
             "source": {
@@ -14152,6 +14228,78 @@
                 }
             ],
             "time": "2024-11-08T15:48:14+00:00"
+        },
+        {
+            "name": "thethunderturner/filament-latex",
+            "version": "v1.2.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thethunderturner/filament-latex.git",
+                "reference": "6f9c8002190716944051f41722a5e9fdc5e84153"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thethunderturner/filament-latex/zipball/6f9c8002190716944051f41722a5e9fdc5e84153",
+                "reference": "6f9c8002190716944051f41722a5e9fdc5e84153",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.2.43",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.15.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^2.9.12",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^7.0|^8.0",
+                "orchestra/testbench": "^8.0|^9.0",
+                "pestphp/pest": "^2.34",
+                "pestphp/pest-plugin-laravel": "^2.3",
+                "phpstan/extension-installer": "^1.3",
+                "phpstan/phpstan-deprecation-rules": "^1.1",
+                "phpstan/phpstan-phpunit": "^1.3",
+                "phpunit/phpunit": "^10.1",
+                "spatie/laravel-ray": "^1.37"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "TheThunderTurner\\FilamentLatex\\FilamentLatexServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "TheThunderTurner\\FilamentLatex\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "This is my package filament-latex",
+            "homepage": "https://github.com/thethunderturner/filament-latex",
+            "keywords": [
+                "filament",
+                "filament-latex",
+                "laravel",
+                "latex",
+                "pdf",
+                "pdf.js",
+                "thethunderturner"
+            ],
+            "support": {
+                "issues": "https://github.com/thethunderturner/filament-latex/issues",
+                "source": "https://github.com/thethunderturner/filament-latex"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/thethunderturner",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-01-03T16:07:15+00:00"
         },
         {
             "name": "tijsverkoyen/css-to-inline-styles",

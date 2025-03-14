@@ -36,6 +36,7 @@ use TomatoPHP\FilamentSettingsHub\Models\Setting;
 // use TomatoPHP\FilamentSettingsHub\Models\Setting;
 use TomatoPHP\FilamentSettingsHub\Services\Contracts\SettingHold;
 use Awcodes\LightSwitch\LightSwitchPlugin;
+use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
 
 class AppPanelProvider extends PanelProvider
 {
@@ -108,6 +109,7 @@ class AppPanelProvider extends PanelProvider
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
                 ])->plugins([
                     LightSwitchPlugin::make(),
+                    FilamentAuthenticationLogPlugin::make(),
                     CustomAuthUIEnhancerAdmin::make()
                     ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
                     ->emptyPanelBackgroundImageOpacity('90%') // Optional: Adjust opacity

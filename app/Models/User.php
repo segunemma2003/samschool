@@ -11,10 +11,11 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Sevenspan\LaravelChat\Traits\HasConversations;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, AuthenticationLoggable;
 
     protected $guarded = ['id'];
 

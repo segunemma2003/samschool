@@ -45,6 +45,7 @@
         "spatie/laravel-pdf": "^1.5",
         "stechstudio/laravel-zipstream": "^5.3",
         "swisnl/filament-backgrounds": "^1.1",
+        "tapp/filament-authentication-log": "^3.1",
         "thethunderturner/filament-latex": "^1.2",
         "tomatophp/filament-docs": "^1.0",
         "tomatophp/filament-invoices": "^1.0",

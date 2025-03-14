@@ -9,6 +9,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
+use Awcodes\LightSwitch\LightSwitchPlugin;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -54,6 +55,16 @@ class OurparentPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
                 FilamentUnauthorizedRedirect::class,
+            ])
+            ->plugins([
+                LightSwitchPlugin::make(),
+                    // CustomAuthUIEnhancerTeacher::make()
+                    // ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/12.jpg'))
+                    // ->emptyPanelBackgroundImageOpacity('60%') // Optional: Adjust opacity
+                    // ->formPanelPosition('right') // Form position
+                    // ->formPanelWidth('40%') // Adjust form width
+                    // ->showEmptyPanelOnMobile(false)
+
             ])
             ->authMiddleware([
                 Authenticate::class,

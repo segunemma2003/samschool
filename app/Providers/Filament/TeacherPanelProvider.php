@@ -35,7 +35,8 @@ use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
 use Swis\Filament\Backgrounds\ImageProviders\MyImages;
 use TheThunderTurner\FilamentLatex\FilamentLatexPlugin;
 use TomatoPHP\FilamentTenancy\FilamentTenancyAppPlugin;
-
+use Awcodes\LightSwitch\LightSwitchPlugin;
+use Njxqlus\FilamentProgressbar\FilamentProgressbarPlugin;
 
 
 class TeacherPanelProvider extends PanelProvider
@@ -83,30 +84,18 @@ class TeacherPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugin(
-
-
                 FilamentTenancyAppPlugin::make()
-
-
                 )
                 ->plugins([
-                    // FilamentLatexPlugin::make(),
-                    // FilamentBackgroundsPlugin::make()
-                    // ->remember(900)
-                    // ->imageProvider(
-                    //     MyImageProvider::make("images/swisnl/filament-backgrounds/curated-by-swis/12.jpg")
-                    // ),
+                    FilamentProgressbarPlugin::make()->color('#29b'),
+                    LightSwitchPlugin::make(),
                     CustomAuthUIEnhancerTeacher::make()
                     ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/12.jpg'))
-                    ->emptyPanelBackgroundImageOpacity('60%') // Optional: Adjust opacity
+                    ->emptyPanelBackgroundImageOpacity('90%') // Optional: Adjust opacity
                     ->formPanelPosition('right') // Form position
-                    ->formPanelWidth('40%') // Adjust form width
+                    ->formPanelWidth('45%') // Adjust form width
                     ->showEmptyPanelOnMobile(false)
 
-                ]);
+                ])->viteTheme('resources/css/filament/teacher/theme.css');
     }
-
-
-
-
 }

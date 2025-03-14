@@ -35,6 +35,7 @@ use Stancl\Tenancy\Facades\Tenancy;
 use TomatoPHP\FilamentSettingsHub\Models\Setting;
 // use TomatoPHP\FilamentSettingsHub\Models\Setting;
 use TomatoPHP\FilamentSettingsHub\Services\Contracts\SettingHold;
+use Awcodes\LightSwitch\LightSwitchPlugin;
 
 class AppPanelProvider extends PanelProvider
 {
@@ -106,7 +107,14 @@ class AppPanelProvider extends PanelProvider
                     \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
                 ])->plugins([
+                    LightSwitchPlugin::make(),
                     CustomAuthUIEnhancerAdmin::make()
-                ]);
+                    ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
+                    ->emptyPanelBackgroundImageOpacity('90%') // Optional: Adjust opacity
+                    ->formPanelPosition('right') // Form position
+                    ->formPanelWidth('45%') // Adjust form width
+                    ->showEmptyPanelOnMobile(false)
+
+                ])->viteTheme('resources/css/filament/app/theme.css');
     }
 }

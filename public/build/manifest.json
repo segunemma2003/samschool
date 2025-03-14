@@ -1,7 +1,27 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-Cv3WkS3x.css",
+    "file": "assets/app-BR3ryktP.css",
     "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/filament/app/theme.css": {
+    "file": "assets/theme-DqQv67_D.css",
+    "src": "resources/css/filament/teacher/theme.css",
+    "isEntry": true
+  },
+  "resources/css/filament/ourstudent/theme.css": {
+    "file": "assets/theme-DqQv67_D.css",
+    "src": "resources/css/filament/teacher/theme.css",
+    "isEntry": true
+  },
+  "resources/css/filament/student/theme.css": {
+    "file": "assets/theme-DqQv67_D.css",
+    "src": "resources/css/filament/teacher/theme.css",
+    "isEntry": true
+  },
+  "resources/css/filament/teacher/theme.css": {
+    "file": "assets/theme-DqQv67_D.css",
+    "src": "resources/css/filament/teacher/theme.css",
     "isEntry": true
   },
   "resources/js/app.js": {

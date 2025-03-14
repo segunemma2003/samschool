@@ -24,7 +24,7 @@ use App\Plugins\CustomFilamentTenancyPlugin;
 use Filament\Enums\ThemeMode;
 use TomatoPHP\FilamentSubscriptions\FilamentSubscriptionsProvider;
 use Joaopaulolndev\FilamentGeneralSettings\FilamentGeneralSettingsPlugin;
-
+use Awcodes\LightSwitch\LightSwitchPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -69,6 +69,7 @@ class AdminPanelProvider extends PanelProvider
             ])->plugin(CustomFilamentTenancyPlugin::make()->panel('app')
             ->allowImpersonate())
         ->plugins([
+            LightSwitchPlugin::make(),
         FilamentGeneralSettingsPlugin::make()->setIcon('heroicon-o-cog'),
             \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
             \TomatoPHP\FilamentSubscriptions\FilamentSubscriptionsPlugin::make(),

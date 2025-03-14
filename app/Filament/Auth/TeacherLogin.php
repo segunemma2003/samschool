@@ -25,11 +25,12 @@ use Filament\Panel;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use App\Filament\Layouts\HasMyCustomLayout;
 
 class TeacherLogin extends BaseLogin
 {
 
-    use HasCustomLayout;
+    use HasMyCustomLayout;
 
     public $remember = false;
    public $loginField; // ✅ Define this property

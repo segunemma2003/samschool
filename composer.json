@@ -37,6 +37,7 @@
         "njxqlus/filament-progressbar": "^1.1",
         "oriondevelops/filament-greeter": "^0.2.2",
         "predis/predis": "^2.2",
+        "rappasoft/laravel-authentication-log": "^4.0",
         "rickdbcn/filament-email": "^1.6",
         "savannabits/filament-signature-pad": "^2.0",
         "sevenspan/laravel-chat": "^1.5",

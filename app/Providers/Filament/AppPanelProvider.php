@@ -84,7 +84,7 @@ class AppPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                // FilamentUnauthorizedRedirect::class,
+                FilamentUnauthorizedRedirect::class,
 
             ])
             ->routes(fn() => FilamentMails::routes())

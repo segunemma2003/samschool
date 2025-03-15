@@ -32,8 +32,8 @@ class AdminLogin extends BaseLogin
     use HasCustomLayout;
 
     public $remember = false;
-   public $loginField; // ✅ Define this property
-   public $password;   // ✅ Also define password since it's used in form
+   public $loginField;
+   public $password;
 
 
     /**
@@ -74,11 +74,7 @@ class AdminLogin extends BaseLogin
                ($user instanceof FilamentUser) &&
                (! $user->canAccessPanel(Filament::getCurrentPanel()))
            ) {
-            // Notification::make()
-            // ->success()
-            // ->title('Success')
-            // ->body("Successfully Logged in ttttttttt ")
-            // ->send();
+
                Filament::auth()->logout();
 
                $this->throwFailureValidationException();
@@ -96,7 +92,7 @@ class AdminLogin extends BaseLogin
            ->body("Successfully Logged in ")
            ->send();
        session()->regenerate();
-    //    session()->save();
+       session()->save();
     Log::info('Redirecting to: ' . Filament::getUrl());
     return app(LoginResponse::class);
 

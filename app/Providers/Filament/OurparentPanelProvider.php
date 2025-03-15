@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\CustomLogin;
 use App\Filament\Auth\GuardianLogin;
+use App\Filament\Plugins\CustomAuthUIEnhancerGuardian;
 use App\Http\Middleware\FilamentUnauthorizedRedirect;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -31,11 +32,16 @@ class OurparentPanelProvider extends PanelProvider
             ->id('parent')
             ->path('parent')
             ->login(GuardianLogin::class)
+            ->brandLogo(getTenantLogo())
+            ->favicon(getTenantLogo())
+            ->brandLogoHeight('5rem')
             ->colors([
                 'primary' => Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/Ourparent/Resources'), for: 'App\\Filament\\Ourparent\\Resources')
             ->discoverPages(in: app_path('Filament/Ourparent/Pages'), for: 'App\\Filament\\Ourparent\\Pages')
+            ->discoverPages(in: app_path('Filament/Auth'), for: 'App\\Filament\\Auth')
+            ->discoverPages(in: app_path('Filament/Plugins'), for: 'App\\Filament\\Plugins')
             ->pages([
                 Pages\Dashboard::class,
             ])
@@ -58,17 +64,17 @@ class OurparentPanelProvider extends PanelProvider
             ])
             ->plugins([
                 LightSwitchPlugin::make(),
-                    // CustomAuthUIEnhancerTeacher::make()
-                    // ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/12.jpg'))
-                    // ->emptyPanelBackgroundImageOpacity('60%') // Optional: Adjust opacity
-                    // ->formPanelPosition('right') // Form position
-                    // ->formPanelWidth('40%') // Adjust form width
-                    // ->showEmptyPanelOnMobile(false)
+                    CustomAuthUIEnhancerGuardian::make()
+                    ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/7.jpg'))
+                    ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity
+                    ->formPanelPosition('right') // Form position
+                    ->formPanelWidth('45%') // Adjust form width
+                    ->showEmptyPanelOnMobile(false)
 
             ])
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(
-                FilamentTenancyAppPlugin::make())->plugins([]);
+                FilamentTenancyAppPlugin::make())->viteTheme('resources/css/filament/app/theme.css');
     }
 }

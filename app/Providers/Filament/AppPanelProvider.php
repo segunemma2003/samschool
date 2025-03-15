@@ -49,7 +49,7 @@ class AppPanelProvider extends PanelProvider
             ->login(AdminLogin::class)
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
-            ->brandLogoHeight('4rem')
+            ->brandLogoHeight('5rem')
             ->colors([
                 'primary' => Color::Amber,
             ])

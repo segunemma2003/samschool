@@ -22,7 +22,8 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         if ($panel->getId() === 'admin') {
-            return $this->email == "myadmin@admin.com";
+            return true;
+            // return $this->email == "myadmin@admin.com";
         }else if($panel->getId() === 'app'){
             return true;
             // $this->user_type==null|| is_null($this->user_type) || $this->user_type=="admin" ||  $this->email == "admin@admin.com" ||  $this->email == "myadmin@admin.com";

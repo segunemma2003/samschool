@@ -88,10 +88,11 @@ class AppPanelProvider extends PanelProvider
 
             ])
             ->routes(fn() => FilamentMails::routes())
-            ->plugin(FilamentMailsPlugin::make())
+
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(
+                FilamentMailsPlugin::make(),
                 \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
                 FilamentTenancyAppPlugin::make())->plugins([
                     FilamentGeneralSettingsPlugin::make(
@@ -109,7 +110,7 @@ class AppPanelProvider extends PanelProvider
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
                 ])->plugins([
                     LightSwitchPlugin::make(),
-                    FilamentAuthenticationLogPlugin::make(),
+                    // FilamentAuthenticationLogPlugin::make(),
                     CustomAuthUIEnhancerAdmin::make()
                     ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
                     ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity

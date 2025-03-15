@@ -48,7 +48,7 @@ class TeacherPanelProvider extends PanelProvider
             ->path('teacher')
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
-            ->brandLogoHeight('2rem')
+            ->brandLogoHeight('5rem')
             ->login(TeacherLogin::class)
             // ->profile()
             ->colors([

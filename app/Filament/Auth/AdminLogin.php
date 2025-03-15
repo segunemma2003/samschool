@@ -74,11 +74,11 @@ class AdminLogin extends BaseLogin
                ($user instanceof FilamentUser) &&
                (! $user->canAccessPanel(Filament::getCurrentPanel()))
            ) {
-            Notification::make()
-            ->success()
-            ->title('Success')
-            ->body("Successfully Logged in ttttttttt ")
-            ->send();
+            // Notification::make()
+            // ->success()
+            // ->title('Success')
+            // ->body("Successfully Logged in ttttttttt ")
+            // ->send();
                Filament::auth()->logout();
 
                $this->throwFailureValidationException();
@@ -96,7 +96,7 @@ class AdminLogin extends BaseLogin
            ->body("Successfully Logged in ")
            ->send();
        session()->regenerate();
-       session()->save();
+    //    session()->save();
     Log::info('Redirecting to: ' . Filament::getUrl());
     return app(LoginResponse::class);
 

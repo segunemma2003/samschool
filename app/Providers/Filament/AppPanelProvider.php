@@ -49,7 +49,7 @@ class AppPanelProvider extends PanelProvider
             ->login(AdminLogin::class)
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
-            ->brandLogoHeight('2rem')
+            ->brandLogoHeight('4rem')
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -112,7 +112,7 @@ class AppPanelProvider extends PanelProvider
                     FilamentAuthenticationLogPlugin::make(),
                     CustomAuthUIEnhancerAdmin::make()
                     ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
-                    ->emptyPanelBackgroundImageOpacity('90%') // Optional: Adjust opacity
+                    ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity
                     ->formPanelPosition('right') // Form position
                     ->formPanelWidth('45%') // Adjust form width
                     ->showEmptyPanelOnMobile(false)

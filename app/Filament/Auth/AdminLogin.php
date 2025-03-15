@@ -74,6 +74,11 @@ class AdminLogin extends BaseLogin
                ($user instanceof FilamentUser) &&
                (! $user->canAccessPanel(Filament::getCurrentPanel()))
            ) {
+            Notification::make()
+            ->success()
+            ->title('Success')
+            ->body("Successfully Logged in ttttttttt ")
+            ->send();
                Filament::auth()->logout();
 
                $this->throwFailureValidationException();

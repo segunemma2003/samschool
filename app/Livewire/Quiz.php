@@ -287,13 +287,16 @@ class Quiz extends Component
 
     public function render()
     {
-        return view('livewire.quiz', [
-            'isSubmitted' => $this->isSubmitted,
-            'timeRemaining' => $this->timeRemaining,
-            'isRecording' => $this->isRecording,
-            'loadingNext' => $this->loadingNext, // Pass loading state to the view
-            'loadingPrevious' => $this->loadingPrevious, // Pass loading state to the view
-            'finalScore' => $this->finalScore,
-        ]);
+        return view('livewire.quizes');
+
+
+        // return view('livewire.quiz', [
+        //     'isSubmitted' => $this->isSubmitted,
+        //     'timeRemaining' => $this->timeRemaining,
+        //     'isRecording' => $this->isRecording,
+        //     'loadingNext' => $this->loadingNext, // Pass loading state to the view
+        //     'loadingPrevious' => $this->loadingPrevious, // Pass loading state to the view
+        //     'finalScore' => $this->finalScore,
+        // ]);
     }
 }

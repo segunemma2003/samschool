@@ -10,6 +10,7 @@ use App\Filament\Teacher\Pages\AssignmentStudentView;
 use App\Filament\Teacher\Pages\SubmittedStudentsList;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
 use App\Filament\Teacher\Resources\ExamResource\Pages\ExamStudentDetails;
+use App\Http\Controllers\ExamController;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +45,11 @@ Route::middleware([
     Route::get('/exam/final-submission', ExamFinalSubmissionPage::class)->name('exam.final_submission');
     Route::get('/submitted-students/{assignment}', SubmittedStudentsList::class)->name('filament.pages.submitted-students-list');
     Route::get('/exam/{quizScoreId}/details', ExamStudentDetails::class)->name('student.details.exam');
+
+
+    Route::get('/exam/{exam}/student', [ExamController::class, 'takeExam'])->name('student.exam.take');
+
+
     // Route::get('/teacher/assignment/{assignment}/student/{student}', ViewSubmittedAssignmentTeacher::class)->name('filament.pages.assignment-student-view');
 }
     // Your Tenant routes here

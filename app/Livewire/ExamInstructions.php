@@ -53,7 +53,8 @@ class ExamInstructions extends Component
 
     public function confirmStart()
     {
-        return redirect()->route('exam.page', ['records'=> $this->records]); // Change this to your exam page URL
+        // return redirect()->route('exam.page', ['records'=> $this->records]); // Change this to your exam page URL
+        return redirect()->route('student.exam.take', ['exam'=>$this->records]);
     }
 
     public function cancelStart()

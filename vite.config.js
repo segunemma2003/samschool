@@ -1,12 +1,24 @@
 import { defineConfig } from 'vite'
 import laravel, { refreshPaths } from 'laravel-vite-plugin'
 import vue from '@vitejs/plugin-vue'
-
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
     plugins: [
+        react({
+            jsxRuntime: 'automatic', // Explicitly enable automatic JSX runtime
+
+        }),
+        vue({
+            template: {
+                transformAssetUrls: {
+                    base: null,
+                    includeAbsolute: false,
+                }
+            }
+        }),
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/css/filament/teacher/theme.css','resources/css/filament/app/theme.css','resources/css/filament/student/theme.css', 'resources/css/filament/ourstudent/theme.css' ],
+            input: ['resources/css/app.css', 'resources/js/react/src/react.css','resources/js/react/app.jsx', 'resources/js/app.js', 'resources/css/filament/teacher/theme.css','resources/css/filament/app/theme.css','resources/css/filament/student/theme.css', 'resources/css/filament/ourstudent/theme.css' ],
             refresh: [
                 ...refreshPaths,
                 'app/Filament/**',
@@ -17,13 +29,6 @@ export default defineConfig({
                 'app/Tables/Columns/**',
             ],
         }),
-        vue({
-            template: {
-                transformAssetUrls: {
-                    base: null,
-                    includeAbsolute: false,
-                }
-            }
-        }),
+
     ],
 })

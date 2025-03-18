@@ -46,7 +46,7 @@ class AppPanelProvider extends PanelProvider
         return $panel
             ->id('app')
             ->path('app')
-            ->login(AdminLogin::class)
+            // ->login(AdminLogin::class)
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
             ->brandLogoHeight('5rem')

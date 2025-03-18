@@ -35,7 +35,8 @@ const Results = () => {
 
 const handleReturnHome = () => {
     resetExam();
-    window.location.href = "/student/exams"; // Redirects to Laravel's route
+    return;
+    // window.location.href = "/student/exams"; // Redirects to Laravel's route
 };
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 px-4 py-12">

@@ -405,11 +405,19 @@ export const ExamProvider = ({ children }) => {
   };
 
   // Reset the exam
-  const resetExam = () => {
+  const resetExam = async() => {
+
+   await  saveExamData();
+   return;
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEY_EXAM);
     localStorage.removeItem(STORAGE_KEY_TIMER);
     localStorage.removeItem(STORAGE_KEY_ANSWERS);
+    localStorage.removeItem(STORAGE_KEY_EXAM_DATA);
+    localStorage.removeItem(STORAGE_KEY_STUDENT);
+    localStorage.removeItem(STORAGE_KEY_QUESTIONS);
+    localStorage.removeItem(STORAGE_KEY_ACADEMY);
+    localStorage.removeItem(STORAGE_KEY_TERM);
 
     // Reset all state
     setCurrentQuestionIndex(0);
@@ -502,6 +510,9 @@ export const ExamProvider = ({ children }) => {
     return { score, totalQuestions, correctAnswers };
   };
 
+
+
+
   // Toggle camera
   const toggleCamera = () => {
     const newState = !isCameraActive;
@@ -510,6 +521,58 @@ export const ExamProvider = ({ children }) => {
     // Reset verification when camera is turned off
     if (!newState) {
       setIsCameraVerified(false);
+    }
+  };
+
+
+  const saveExamData = async () => {
+    if (!exam || !userData) return;
+
+    // Get calculated score
+    const { score } = calculateScore();
+
+    // Dynamically get the root URL
+    const rootUrl = window.location.origin; // Automatically gets the current root domain
+
+    const payload = {
+      exam_id: exam.id,
+      student_id: userData.id,
+      course_form_id: exam.course_form_id, // Ensure this exists in exam data
+      recording_path: isCameraActive ? "uploads/exam_recordings/exam1.mp4" : null, // Use actual recording if camera was active
+      total_score: score, // Use calculated score
+      answers: answers.map((ans) => {
+        const question = exam?.questions?.find(q => q.id === ans.questionId);
+        const isCorrect = question && question.correctOptionId === ans.selectedOptionId;
+
+        return {
+          question_id: ans.questionId,
+          answer: ans.selectedOptionId || null,
+          score: isCorrect ? question.score : 0, // Assign question score if correct
+          correct: isCorrect, // Mark true/false
+          comments: ans.comments || "",
+        };
+      }),
+    };
+
+    try {
+      const response = await fetch(`${rootUrl}/api/save-exam-data`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to save exam data");
+      }
+
+      console.log("Exam data saved successfully:", data);
+    } catch (error) {
+      console.error("Error saving exam data:", error.message);
     }
   };
 
@@ -529,6 +592,7 @@ export const ExamProvider = ({ children }) => {
     completeExam,
     calculateScore,
     resetExam,
+    saveExamData,
     isCameraActive,
     toggleCamera,
     isCameraVerified,

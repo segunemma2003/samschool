@@ -94,7 +94,7 @@ class AppPanelProvider extends PanelProvider
                 Authenticate::class,
             ])->plugin(
                 FilamentMailsPlugin::make(),
-                \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
+                // \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
                 FilamentTenancyAppPlugin::make())
                 ->plugins([
                     FilamentGeneralSettingsPlugin::make(

@@ -46,8 +46,7 @@ class AppPanelProvider extends PanelProvider
         return $panel
             ->id('app')
             ->path('app')
-            ->login()
-            // ->login(AdminLogin::class)
+            ->login(AdminLogin::class)
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
             ->brandLogoHeight('5rem')
@@ -62,7 +61,13 @@ class AppPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
+            // ->brandLogo("https://res.cloudinary.com/iamdevmaniac/client_cat/".setting('site_logo'))
+            // ->favicon()
+            // ->brandLogo(fn () =>
+            //     Setting::where('name','site_logo')->first()
+            // )
             ->defaultThemeMode(ThemeMode::Dark)
+            // ->brandLogo(asset('latest/image/FSSLOGO1-1.png'))
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([
                 // Widgets\AccountWidget::class,
@@ -82,7 +87,7 @@ class AppPanelProvider extends PanelProvider
                 FilamentUnauthorizedRedirect::class,
 
             ])
-            // ->routes(fn() => FilamentMails::routes())
+            ->routes(fn() => FilamentMails::routes())
 
             ->authMiddleware([
                 Authenticate::class,
@@ -105,14 +110,14 @@ class AppPanelProvider extends PanelProvider
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
                 ])->plugins([
                     LightSwitchPlugin::make(),
-                    // CustomAuthUIEnhancerAdmin::make()
-                    // ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
-                    // ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity
-                    // ->formPanelPosition('right') // Form position
-                    // ->formPanelWidth('45%') // Adjust form width
-                    // ->showEmptyPanelOnMobile(false)
+                    // FilamentAuthenticationLogPlugin::make(),
+                    CustomAuthUIEnhancerAdmin::make()
+                    ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
+                    ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity
+                    ->formPanelPosition('right') // Form position
+                    ->formPanelWidth('45%') // Adjust form width
+                    ->showEmptyPanelOnMobile(false)
 
-                ]);
-                // ->viteTheme('resources/css/filament/app/theme.css');
+                ])->viteTheme('resources/css/filament/app/theme.css');
     }
 }

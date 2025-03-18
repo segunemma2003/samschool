@@ -30,7 +30,7 @@ use Illuminate\Validation\ValidationException;
 class AdminLogin extends BaseLogin
 {
 
-    // use HasMyCustomLayout;
+    use HasMyCustomLayout;
 
     public $remember = false;
    public $loginField;

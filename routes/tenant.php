@@ -54,4 +54,5 @@ Route::middleware([
 }
     // Your Tenant routes here
 
+    Route::post('/api/save-exam-data', [ExamController::class, 'saveExamData']);
 });

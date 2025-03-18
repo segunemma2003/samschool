@@ -72,6 +72,11 @@ const UserPanel = ({ userData }) => {
             <h5 className="text-xs font-medium text-muted-foreground mb-1">Passing Score</h5>
             <p className="text-sm">{exam.passingScore}%</p>
           </div>
+
+          <div>
+            <h5 className="text-xs font-medium text-muted-foreground mb-1">Class</h5>
+            <p className="text-sm">{userData.class.name}</p>
+          </div>
         </div>
       </div>
 

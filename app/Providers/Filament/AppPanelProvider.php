@@ -104,12 +104,12 @@ class AppPanelProvider extends PanelProvider
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
                 ])->plugins([
                     LightSwitchPlugin::make(),
-                    CustomAuthUIEnhancerAdmin::make()
-                    ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
-                    ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity
-                    ->formPanelPosition('right') // Form position
-                    ->formPanelWidth('45%') // Adjust form width
-                    ->showEmptyPanelOnMobile(false)
+                    // CustomAuthUIEnhancerAdmin::make()
+                    // ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
+                    // ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity
+                    // ->formPanelPosition('right') // Form position
+                    // ->formPanelWidth('45%') // Adjust form width
+                    // ->showEmptyPanelOnMobile(false)
 
                 ])->viteTheme('resources/css/filament/app/theme.css');
     }

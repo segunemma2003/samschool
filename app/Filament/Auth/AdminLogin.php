@@ -75,7 +75,7 @@ class AdminLogin extends BaseLogin
                ($user instanceof FilamentUser) &&
                (! $user->canAccessPanel(Filament::getCurrentPanel()))
            ) {
-                dd("i am stucked here");
+                // dd("i am stucked here");
                Filament::auth()->logout();
 
                $this->throwFailureValidationException();

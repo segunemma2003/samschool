@@ -111,6 +111,7 @@ class AppPanelProvider extends PanelProvider
                     // ->formPanelWidth('45%') // Adjust form width
                     // ->showEmptyPanelOnMobile(false)
 
-                ])->viteTheme('resources/css/filament/app/theme.css');
+                ]);
+                // ->viteTheme('resources/css/filament/app/theme.css');
     }
 }

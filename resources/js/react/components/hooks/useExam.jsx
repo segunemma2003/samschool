@@ -9,30 +9,200 @@ const ExamContext = createContext(undefined);
 // Constants
 const STORAGE_KEY_EXAM = 'cbt-exam-state';
 const STORAGE_KEY_TIMER = 'cbt-exam-timer';
+const STORAGE_KEY_EXAM_DATA = 'exam';
+const STORAGE_KEY_STUDENT = 'student';
+const STORAGE_KEY_QUESTIONS = 'questions';
+const STORAGE_KEY_ANSWERS = 'answers';
+const STORAGE_KEY_ACADEMY = 'academy';
+const STORAGE_KEY_TERM = 'term';
 
 export const ExamProvider = ({ children }) => {
   const navigate = useNavigate();
 
   // Load exam data
-  const [exam, setExam] = useState(mockExam);
-  const [userData, setUserData] = useState(mockUser);
+  const [exam, setExam] = useState(null);
+  const [userData, setUserData] = useState(null);
 
   // Exam state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
-  const [timeRemaining, setTimeRemaining] = useState(exam.timeLimit * 60); // Convert minutes to seconds
+  const [timeRemaining, setTimeRemaining] = useState(0); // Will be set based on exam duration
   const [isExamComplete, setIsExamComplete] = useState(false);
   const [examStartedAt, setExamStartedAt] = useState(null);
 
   // Camera state
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraVerified, setIsCameraVerified] = useState(false);
+  const [isCameraRequired, setIsCameraRequired] = useState(false);
 
   // Timer reference
   const timerRef = useRef(null);
 
   // Flag to track if timer has been initialized from localStorage
   const timerInitialized = useRef(false);
+
+  // Load exam and user data from localStorage on initial mount
+  useEffect(() => {
+    const loadExamData = () => {
+      try {
+        // Try to load student data
+        const studentJson = localStorage.getItem(STORAGE_KEY_STUDENT);
+        if (studentJson) {
+          const studentData = JSON.parse(studentJson);
+          console.log('Loaded student data:', studentData);
+          setUserData(studentData);
+        } else {
+          setUserData(mockUser);
+        }
+
+        // Try to load exam data
+        const examJson = localStorage.getItem(STORAGE_KEY_EXAM_DATA);
+        const questionsJson = localStorage.getItem(STORAGE_KEY_QUESTIONS);
+        const termJson = localStorage.getItem(STORAGE_KEY_TERM);
+        const academyJson = localStorage.getItem(STORAGE_KEY_ACADEMY);
+
+        if (examJson && questionsJson) {
+          const examData = JSON.parse(examJson);
+          const questionsData = JSON.parse(questionsJson);
+          console.log('Loaded exam data:', examData);
+          console.log('Loaded questions data:', questionsData);
+
+          // Transform the exam data to match our app's structure
+          const formattedQuestions = Array.isArray(questionsData) ? questionsData.map(q => {
+            // Find the correct option (the one with is_correct: true)
+            let correctOptionId = '';
+
+            // Format options and determine correct answer
+            const formattedOptions = Object.entries(q.options || {}).map(([key, value]) => {
+              // Check if the option has the new format with is_correct flag
+              if (Array.isArray(value) && value.length > 0) {
+                const optionObj = value[0];
+                if (optionObj.is_correct) {
+                  correctOptionId = key;
+                }
+
+                return {
+                  id: key, // A, B, C, etc.
+                  text: optionObj.option || optionObj.text || '',
+                  image: optionObj.image || null,
+                  is_correct: optionObj.is_correct || false
+                };
+              }
+              // If it's just a string or old format
+              else if (typeof value === 'object' && value !== null) {
+                if (value.is_correct) {
+                  correctOptionId = key;
+                }
+
+                return {
+                  id: key,
+                  text: value.text || value.option || value.toString(),
+                  image: value.image || null,
+                  is_correct: value.is_correct || false
+                };
+              }
+              // Simple string value
+              return {
+                id: key,
+                text: value,
+                is_correct: false // Default
+              };
+            });
+
+            // If we didn't find a correct option with is_correct flag, use the answer property
+            if (!correctOptionId && q.answer) {
+              correctOptionId = q.answer;
+            }
+
+            return {
+              id: q.id,
+              text: q.question,
+              type: q.question_type,
+              image: q.image, // Include question image if available
+              options: formattedOptions,
+              correctOptionId: correctOptionId // The correct answer (A, B, C, etc.)
+            };
+          }) : [];
+
+          // Format the exam data
+          const formattedExam = {
+            id: examData.id,
+            title: examData.subject?.subject_depot?.name || 'Exam',
+            timeLimit: examData.duration ? Math.ceil(examData.duration / 60) : 60, // Convert seconds to minutes
+            passingScore: examData.subject?.pass_mark || 60, // Default passing score
+            questions: formattedQuestions,
+            instructions: examData.instructions,
+            term: termJson ? JSON.parse(termJson) : null,
+            academy: academyJson ? JSON.parse(academyJson) : null
+          };
+
+          setExam(formattedExam);
+
+          // Set the time remaining based on the exam duration
+          if (!timerInitialized.current) {
+            setTimeRemaining(examData.duration);
+          }
+
+          // Try to load previous answers - first check localStorage, then window.answers
+          const previousAnswersJson = localStorage.getItem(STORAGE_KEY_ANSWERS);
+
+          if (previousAnswersJson) {
+            console.log('Found previous answers in localStorage');
+            try {
+              const previousAnswers = JSON.parse(previousAnswersJson);
+
+              // Map the answers to our expected format if needed
+              if (Array.isArray(previousAnswers)) {
+                const formattedAnswers = previousAnswers.map(answer => ({
+                  questionId: answer.question_id || answer.questionId,
+                  selectedOptionId: answer.answer || answer.selectedOptionId
+                }));
+
+                setAnswers(formattedAnswers);
+                console.log('Loaded previous answers from localStorage:', formattedAnswers);
+              }
+            } catch (error) {
+              console.error('Error parsing previous answers from localStorage:', error);
+            }
+          } else if (window.answers) {
+            console.log('Found previous answers in window.answers');
+            try {
+              // Map window.answers to our expected format
+              if (Array.isArray(window.answers)) {
+                const formattedAnswers = window.answers.map(answer => ({
+                  questionId: answer.question_id || answer.questionId,
+                  selectedOptionId: answer.answer || answer.selectedOptionId
+                }));
+
+                setAnswers(formattedAnswers);
+                console.log('Loaded previous answers from window.answers:', formattedAnswers);
+
+                // Save to localStorage for future use
+                localStorage.setItem(STORAGE_KEY_ANSWERS, JSON.stringify(window.answers));
+              }
+            } catch (error) {
+              console.error('Error processing window.answers:', error);
+            }
+          } else {
+            console.log('No previous answers found');
+          }
+        } else {
+          // Fall back to mock data if exam data isn't available
+          console.log('Using mock exam data');
+          setExam(mockExam);
+          setTimeRemaining(mockExam.timeLimit * 60);
+        }
+      } catch (error) {
+        console.error('Error loading exam data:', error);
+        // Fall back to mock data if there's an error
+        setExam(mockExam);
+        setUserData(mockUser);
+        setTimeRemaining(mockExam.timeLimit * 60);
+      }
+    };
+
+    loadExamData();
+  }, []);
 
   // Load saved state from localStorage on initial mount only
   useEffect(() => {
@@ -44,7 +214,12 @@ export const ExamProvider = ({ children }) => {
         try {
           const parsedState = JSON.parse(savedState);
           setCurrentQuestionIndex(parsedState.currentQuestionIndex || 0);
-          setAnswers(parsedState.answers || []);
+
+          // Only set answers from exam state if we haven't already loaded them
+          if (!answers.length && parsedState.answers && parsedState.answers.length) {
+            setAnswers(parsedState.answers);
+          }
+
           setIsExamComplete(parsedState.isExamComplete || false);
           setExamStartedAt(parsedState.examStartedAt || null);
         } catch (error) {
@@ -89,7 +264,7 @@ export const ExamProvider = ({ children }) => {
 
     // Load state only once on initial mount
     loadSavedState();
-  }, [navigate]); // Empty dependency array to run only once
+  }, [navigate, answers.length]); // Added answers.length as dependency
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -102,6 +277,9 @@ export const ExamProvider = ({ children }) => {
       };
 
       localStorage.setItem(STORAGE_KEY_EXAM, JSON.stringify(stateToSave));
+
+      // Also save answers separately for easier access
+      localStorage.setItem(STORAGE_KEY_ANSWERS, JSON.stringify(answers));
     }
   }, [currentQuestionIndex, answers, isExamComplete, examStartedAt]);
 
@@ -160,7 +338,7 @@ export const ExamProvider = ({ children }) => {
 
   // Start the exam
   const startExam = () => {
-    if (!isCameraActive || !isCameraVerified) {
+    if (isCameraRequired && (!isCameraActive || !isCameraVerified)) {
       toast({
         title: "Camera Verification Required",
         description: "Please enable your camera and verify your face before starting the exam.",
@@ -173,7 +351,7 @@ export const ExamProvider = ({ children }) => {
     setExamStartedAt(startTime);
 
     // Only reset timeRemaining if we're not restoring from a saved state
-    if (!timerInitialized.current) {
+    if (!timerInitialized.current && exam) {
       console.log('Setting initial time to', exam.timeLimit * 60, 'seconds');
       setTimeRemaining(exam.timeLimit * 60);
     } else {
@@ -184,7 +362,7 @@ export const ExamProvider = ({ children }) => {
     setIsExamComplete(false);
 
     // Initialize answers array if not already set
-    if (answers.length === 0) {
+    if (answers.length === 0 && exam?.questions) {
       const initialAnswers = exam.questions.map(q => ({
         questionId: q.id,
         selectedOptionId: null
@@ -195,18 +373,19 @@ export const ExamProvider = ({ children }) => {
     // Save initial state
     const initialState = {
       currentQuestionIndex: 0,
-      answers: answers.length ? answers : exam.questions.map(q => ({
+      answers: answers.length && exam?.questions ? answers : exam?.questions?.map(q => ({
         questionId: q.id,
         selectedOptionId: null
-      })),
+      })) || [],
       isExamComplete: false,
       examStartedAt: startTime
     };
 
     localStorage.setItem(STORAGE_KEY_EXAM, JSON.stringify(initialState));
+    localStorage.setItem(STORAGE_KEY_ANSWERS, JSON.stringify(answers.length ? answers : []));
 
     // Initialize timer state only if not already initialized
-    if (!timerInitialized.current) {
+    if (!timerInitialized.current && exam) {
       const timerState = {
         timeRemaining: exam.timeLimit * 60,
         timestamp: startTime
@@ -230,11 +409,14 @@ export const ExamProvider = ({ children }) => {
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEY_EXAM);
     localStorage.removeItem(STORAGE_KEY_TIMER);
+    localStorage.removeItem(STORAGE_KEY_ANSWERS);
 
     // Reset all state
     setCurrentQuestionIndex(0);
     setAnswers([]);
-    setTimeRemaining(exam.timeLimit * 60);
+    if (exam) {
+      setTimeRemaining(exam.timeLimit * 60);
+    }
     setIsExamComplete(false);
     setExamStartedAt(null);
     timerInitialized.current = false;
@@ -244,13 +426,13 @@ export const ExamProvider = ({ children }) => {
 
   // Navigation functions
   const goToQuestion = (index) => {
-    if (index >= 0 && index < exam.questions.length) {
+    if (exam?.questions && index >= 0 && index < exam.questions.length) {
       setCurrentQuestionIndex(index);
     }
   };
 
   const goToNextQuestion = () => {
-    if (currentQuestionIndex < exam.questions.length - 1) {
+    if (exam?.questions && currentQuestionIndex < exam.questions.length - 1) {
       setCurrentQuestionIndex(prevIndex => prevIndex + 1);
     } else {
       // At the last question, show the summary
@@ -276,6 +458,9 @@ export const ExamProvider = ({ children }) => {
         updatedAnswers.push({ questionId, selectedOptionId: optionId });
       }
 
+      // Save to localStorage immediately
+      localStorage.setItem(STORAGE_KEY_ANSWERS, JSON.stringify(updatedAnswers));
+
       return updatedAnswers;
     });
   };
@@ -296,6 +481,7 @@ export const ExamProvider = ({ children }) => {
       examStartedAt
     };
     localStorage.setItem(STORAGE_KEY_EXAM, JSON.stringify(finalState));
+    localStorage.setItem(STORAGE_KEY_ANSWERS, JSON.stringify(answers));
 
     navigate('/results');
   };
@@ -303,16 +489,16 @@ export const ExamProvider = ({ children }) => {
   // Calculate score
   const calculateScore = () => {
     let correctAnswers = 0;
-    const totalQuestions = exam.questions.length;
+    const totalQuestions = exam?.questions?.length || 0;
 
     answers.forEach(answer => {
-      const question = exam.questions.find(q => q.id === answer.questionId);
+      const question = exam?.questions?.find(q => q.id === answer.questionId);
       if (question && question.correctOptionId === answer.selectedOptionId) {
         correctAnswers++;
       }
     });
 
-    const score = Math.round((correctAnswers / totalQuestions) * 100);
+    const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
     return { score, totalQuestions, correctAnswers };
   };
 
@@ -346,7 +532,9 @@ export const ExamProvider = ({ children }) => {
     isCameraActive,
     toggleCamera,
     isCameraVerified,
-    setIsCameraVerified
+    setIsCameraVerified,
+    isCameraRequired,
+    setIsCameraRequired
   };
 
   return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

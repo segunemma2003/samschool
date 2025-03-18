@@ -8,7 +8,16 @@
 </head>
 <body>
 
-    <div id="quiz-root" data-exam="{{ json_encode($examData) }}"></div>
-
+    <div id="quiz-root"></div>
+<script>
+     window.student = @json($student);
+     window.exam = @json($exam);
+     window.course = @json($course);
+     window.questions = @json($questions);
+     window.answers = @json($answers);
+     window.quizScore = @json($quizScore);
+     window.term = @json($term);
+     window.academy = @json($academy)
+</script>
 </body>
 </html>

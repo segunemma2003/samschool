@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "./components/ui/toaster";
 import { createRoot } from 'react-dom/client';
 import { Toaster as Sonner } from "./components/ui/sonner";
@@ -25,28 +25,43 @@ const getExamId = () => {
 
   const ExamWrapper = () => {
     const examId = getExamId(); // Get exam ID from Laravel
+    console.log(examId);
     return <Exam examId={examId} />; // Pass to Exam component
   };
 
-  const App = () => (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <HashRouter> {/* HashRouter keeps routes inside `#/` */}
-          <ExamProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/exam" element={<ExamWrapper />} />
-              <Route path="/summary" element={<Summary />} />
-              <Route path="/results" element={<Results />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ExamProvider>
-        </HashRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
+  const App = () => {
+    useEffect(() =>{
+console.log(window.exam);
+    if (window.student) localStorage.setItem('student', JSON.stringify(window.student));
+  if (window.exam) localStorage.setItem('exam', JSON.stringify(window.exam));
+  if (window.term) localStorage.setItem('term', JSON.stringify(window.term));
+  if (window.academy) localStorage.setItem('academy', JSON.stringify(window.academy));
+  if (window.course) localStorage.setItem('course', JSON.stringify(window.course));
+  if (window.questions) localStorage.setItem('questions', JSON.stringify(window.questions));
+  if (window.answers) localStorage.setItem('answers', JSON.stringify(window.answers));
+  if (window.quizScore) localStorage.setItem('quizScore', JSON.stringify(window.quizScore));
+    }, []);
+
+    return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <HashRouter>
+              <ExamProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/exam" element={<Exam examId={getExamId()} />} />
+                  <Route path="/summary" element={<Summary />} />
+                  <Route path="/results" element={<Results />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </ExamProvider>
+            </HashRouter>
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+  };
 
   // Mount React inside Filament Livewire Page
   document.addEventListener("DOMContentLoaded", () => {

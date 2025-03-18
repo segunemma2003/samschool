@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-BYxOG0cH.css",
+    "file": "assets/app-0TJVIBpl.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -31,18 +31,18 @@
     "isEntry": true
   },
   "resources/js/react/app.jsx": {
-    "file": "assets/app-VV7A9H_u.js",
+    "file": "assets/app-CrJ_O6by.js",
     "name": "app",
     "src": "resources/js/react/app.jsx",
     "isEntry": true,
     "css": [
       "assets/app-Bx9V9zN2.css",
-      "assets/app-BYxOG0cH.css",
-      "assets/react-CBhmBngD.css"
+      "assets/app-0TJVIBpl.css",
+      "assets/react-BpEv4pFc.css"
     ]
   },
   "resources/js/react/src/react.css": {
-    "file": "assets/react-CBhmBngD.css",
+    "file": "assets/react-BpEv4pFc.css",
     "src": "resources/js/react/src/react.css",
     "isEntry": true
   }

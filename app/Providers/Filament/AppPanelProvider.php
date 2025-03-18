@@ -36,6 +36,7 @@ use TomatoPHP\FilamentSettingsHub\Models\Setting;
 // use TomatoPHP\FilamentSettingsHub\Models\Setting;
 use TomatoPHP\FilamentSettingsHub\Services\Contracts\SettingHold;
 use Awcodes\LightSwitch\LightSwitchPlugin;
+use Njxqlus\FilamentProgressbar\FilamentProgressbarPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
 
 class AppPanelProvider extends PanelProvider
@@ -84,17 +85,18 @@ class AppPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                // FilamentUnauthorizedRedirect::class,
+                FilamentUnauthorizedRedirect::class,
 
             ])
-            ->routes(fn() => FilamentMails::routes())
+            // ->routes(fn() => FilamentMails::routes())
 
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(
-                FilamentMailsPlugin::make(),
-                \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
-                FilamentTenancyAppPlugin::make())->plugins([
+                // FilamentMailsPlugin::make(),
+                // \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
+                FilamentTenancyAppPlugin::make())
+                ->plugins([
                     FilamentGeneralSettingsPlugin::make(
                         SettingHold::make()
                         ->order(1)
@@ -109,6 +111,7 @@ class AppPanelProvider extends PanelProvider
                     \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
                 ])->plugins([
+                    FilamentProgressbarPlugin::make()->color('#29b'),
                     LightSwitchPlugin::make(),
                     // FilamentAuthenticationLogPlugin::make(),
                     CustomAuthUIEnhancerAdmin::make()

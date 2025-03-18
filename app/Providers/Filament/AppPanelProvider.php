@@ -88,13 +88,13 @@ class AppPanelProvider extends PanelProvider
                 FilamentUnauthorizedRedirect::class,
 
             ])
-            // ->routes(fn() => FilamentMails::routes())
+            ->routes(fn() => FilamentMails::routes())
 
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(
-                // FilamentMailsPlugin::make(),
-                // \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
+                FilamentMailsPlugin::make(),
+                \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
                 FilamentTenancyAppPlugin::make())
                 ->plugins([
                     FilamentGeneralSettingsPlugin::make(

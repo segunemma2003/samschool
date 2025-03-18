@@ -56,7 +56,7 @@ public function saveExamData(Request $request)
             'recording_path' => 'nullable|string', // Optional field
             'total_score' => 'required|numeric',
             'answers' => 'required|array', // Array of answers
-            'answers.*.question_id' => 'required|exists:questions,id',
+            'answers.*.question_id' => 'required|exists:question_banks,id',
             'answers.*.answer' => 'nullable|string',
             'answers.*.score' => 'required|numeric',
             'answers.*.correct' => 'required|boolean',
@@ -98,7 +98,7 @@ public function saveExamData(Request $request)
                         'answer' => $answerData['answer'] ?? null,
                         'score' => $answerData['score'],
                         'correct' => $answerData['correct'],
-                        'comments' => $answerData['comments'] ?? null,
+                        'comments' => $answerData['comments'] ?? "submitted",
                     ]
                 );
             }

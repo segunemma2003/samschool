@@ -2,6 +2,7 @@
 
 namespace App\Filament\Auth;
 
+use App\Filament\Layouts\HasMyCustomLayout;
 use App\Models\School;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use DiogoGPinto\AuthUIEnhancer\Pages\Auth\AuthUiEnhancerLogin;
@@ -29,7 +30,7 @@ use Illuminate\Validation\ValidationException;
 class AdminLogin extends BaseLogin
 {
 
-    use HasCustomLayout;
+    use HasMyCustomLayout;
 
     public $remember = false;
    public $loginField;

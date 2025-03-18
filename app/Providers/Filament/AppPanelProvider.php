@@ -61,13 +61,7 @@ class AppPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            // ->brandLogo("https://res.cloudinary.com/iamdevmaniac/client_cat/".setting('site_logo'))
-            // ->favicon()
-            // ->brandLogo(fn () =>
-            //     Setting::where('name','site_logo')->first()
-            // )
             ->defaultThemeMode(ThemeMode::Dark)
-            // ->brandLogo(asset('latest/image/FSSLOGO1-1.png'))
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([
                 // Widgets\AccountWidget::class,
@@ -87,7 +81,7 @@ class AppPanelProvider extends PanelProvider
                 FilamentUnauthorizedRedirect::class,
 
             ])
-            ->routes(fn() => FilamentMails::routes())
+            // ->routes(fn() => FilamentMails::routes())
 
             ->authMiddleware([
                 Authenticate::class,
@@ -110,7 +104,6 @@ class AppPanelProvider extends PanelProvider
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
                 ])->plugins([
                     LightSwitchPlugin::make(),
-                    // FilamentAuthenticationLogPlugin::make(),
                     CustomAuthUIEnhancerAdmin::make()
                     ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
                     ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity

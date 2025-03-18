@@ -408,7 +408,7 @@ export const ExamProvider = ({ children }) => {
   const resetExam = async() => {
 
    await  saveExamData();
-   return;
+//    return;
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEY_EXAM);
     localStorage.removeItem(STORAGE_KEY_TIMER);
@@ -418,6 +418,7 @@ export const ExamProvider = ({ children }) => {
     localStorage.removeItem(STORAGE_KEY_QUESTIONS);
     localStorage.removeItem(STORAGE_KEY_ACADEMY);
     localStorage.removeItem(STORAGE_KEY_TERM);
+    localStorage.removeItem('course');
 
     // Reset all state
     setCurrentQuestionIndex(0);
@@ -533,21 +534,23 @@ export const ExamProvider = ({ children }) => {
 
     // Dynamically get the root URL
     const rootUrl = window.location.origin; // Automatically gets the current root domain
-
+    const courseform = localStorage.getItem('course');
+    const mcourse = JSON.parse(courseform);
     const payload = {
       exam_id: exam.id,
       student_id: userData.id,
-      course_form_id: exam.course_form_id, // Ensure this exists in exam data
+      course_form_id: mcourse.id, // Ensure this exists in exam data
       recording_path: isCameraActive ? "uploads/exam_recordings/exam1.mp4" : null, // Use actual recording if camera was active
       total_score: score, // Use calculated score
       answers: answers.map((ans) => {
         const question = exam?.questions?.find(q => q.id === ans.questionId);
         const isCorrect = question && question.correctOptionId === ans.selectedOptionId;
+        const questionScore = question?.score ?? 0; // Ensure score is always a number
 
         return {
           question_id: ans.questionId,
           answer: ans.selectedOptionId || null,
-          score: isCorrect ? question.score : 0, // Assign question score if correct
+          score: isCorrect ? questionScore : 0, // Assign question score if correct, otherwise 0
           correct: isCorrect, // Mark true/false
           comments: ans.comments || "",
         };

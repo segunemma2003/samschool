@@ -15,6 +15,7 @@ const STORAGE_KEY_QUESTIONS = 'questions';
 const STORAGE_KEY_ANSWERS = 'answers';
 const STORAGE_KEY_ACADEMY = 'academy';
 const STORAGE_KEY_TERM = 'term';
+const STORAGE_KEY_HAS_VIEWED_RESULTS = 'has-viewed-results';
 
 export const ExamProvider = ({ children }) => {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ export const ExamProvider = ({ children }) => {
   const [timeRemaining, setTimeRemaining] = useState(0); // Will be set based on exam duration
   const [isExamComplete, setIsExamComplete] = useState(false);
   const [examStartedAt, setExamStartedAt] = useState(null);
+  const [hasViewedResults, setHasViewedResults] = useState(false);
+  const [isSavingResults, setIsSavingResults] = useState(false);
 
   // Camera state
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -40,6 +43,14 @@ export const ExamProvider = ({ children }) => {
 
   // Flag to track if timer has been initialized from localStorage
   const timerInitialized = useRef(false);
+
+  // Check if user has already viewed results
+  useEffect(() => {
+    const hasViewed = localStorage.getItem(STORAGE_KEY_HAS_VIEWED_RESULTS);
+    if (hasViewed === 'true') {
+      setHasViewedResults(true);
+    }
+  }, []);
 
   // Load exam and user data from localStorage on initial mount
   useEffect(() => {
@@ -128,7 +139,7 @@ export const ExamProvider = ({ children }) => {
           const formattedExam = {
             id: examData.id,
             title: examData.subject?.subject_depot?.name || 'Exam',
-            timeLimit: examData.duration ? Math.ceil(examData.duration / 60) : 60, // Convert seconds to minutes
+            timeLimit: examData.duration ? Math.ceil(examData.duration / 60) : 60, // Convert seconds to minutes for display
             passingScore: examData.subject?.pass_mark || 60, // Default passing score
             questions: formattedQuestions,
             instructions: examData.instructions,
@@ -139,8 +150,10 @@ export const ExamProvider = ({ children }) => {
           setExam(formattedExam);
 
           // Set the time remaining based on the exam duration
+          // If duration is already in seconds, use it directly; if it's in minutes, convert to seconds
           if (!timerInitialized.current) {
-            setTimeRemaining(examData.duration);
+            // Always interpret examData.duration as seconds
+            setTimeRemaining(examData.duration || 3600); // Default to 1 hour if not specified
           }
 
           // Try to load previous answers - first check localStorage, then window.answers
@@ -190,6 +203,7 @@ export const ExamProvider = ({ children }) => {
           // Fall back to mock data if exam data isn't available
           console.log('Using mock exam data');
           setExam(mockExam);
+          // mockExam.timeLimit is in minutes, convert to seconds for the timer
           setTimeRemaining(mockExam.timeLimit * 60);
         }
       } catch (error) {
@@ -201,8 +215,19 @@ export const ExamProvider = ({ children }) => {
       }
     };
 
-    loadExamData();
-  }, []);
+    // Only load exam data if the user hasn't viewed results
+    if (!hasViewedResults) {
+      loadExamData();
+    } else {
+      // If they've already viewed results, show message and redirect
+      toast({
+        title: "Exam Already Completed",
+        description: "You have already completed this exam and cannot retake it.",
+        variant: "warning"
+      });
+      navigate('/');
+    }
+  }, [hasViewedResults, navigate]);
 
   // Load saved state from localStorage on initial mount only
   useEffect(() => {
@@ -263,8 +288,10 @@ export const ExamProvider = ({ children }) => {
     };
 
     // Load state only once on initial mount
-    loadSavedState();
-  }, [navigate, answers.length]); // Added answers.length as dependency
+    if (!hasViewedResults) {
+      loadSavedState();
+    }
+  }, [navigate, answers.length, hasViewedResults]);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -286,7 +313,7 @@ export const ExamProvider = ({ children }) => {
   // Timer effect - completely separated from localStorage loading
   useEffect(() => {
     // Only run the timer if exam has started, is not complete, and has time remaining
-    if (examStartedAt && !isExamComplete && timeRemaining > 0) {
+    if (examStartedAt && !isExamComplete && timeRemaining > 0 && !hasViewedResults) {
       console.log('Starting timer with', timeRemaining, 'seconds remaining');
 
       // Save current timer state to localStorage immediately
@@ -334,10 +361,20 @@ export const ExamProvider = ({ children }) => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [examStartedAt, isExamComplete, timeRemaining, navigate]);
+  }, [examStartedAt, isExamComplete, timeRemaining, navigate, hasViewedResults]);
 
   // Start the exam
   const startExam = () => {
+    // Prevent starting if already viewed results
+    if (hasViewedResults) {
+      toast({
+        title: "Exam Already Completed",
+        description: "You have already completed this exam and cannot retake it.",
+        variant: "warning"
+      });
+      return;
+    }
+
     if (isCameraRequired && (!isCameraActive || !isCameraVerified)) {
       toast({
         title: "Camera Verification Required",
@@ -352,8 +389,10 @@ export const ExamProvider = ({ children }) => {
 
     // Only reset timeRemaining if we're not restoring from a saved state
     if (!timerInitialized.current && exam) {
-      console.log('Setting initial time to', exam.timeLimit * 60, 'seconds');
-      setTimeRemaining(exam.timeLimit * 60);
+      // Convert minutes to seconds - exam.timeLimit is in minutes
+      const timeInSeconds = exam.timeLimit * 60;
+      console.log('Setting initial time to', timeInSeconds, 'seconds');
+      setTimeRemaining(timeInSeconds);
     } else {
       console.log('Continuing with existing time of', timeRemaining, 'seconds');
     }
@@ -406,19 +445,31 @@ export const ExamProvider = ({ children }) => {
 
   // Reset the exam
   const resetExam = async() => {
+    // If exam is complete, try to save results first
+    if (isExamComplete && !hasViewedResults) {
+      try {
+        await saveExamData();
+      } catch (error) {
+        console.error('Error saving exam data during reset:', error);
+      }
+    }
 
-   await  saveExamData();
-//    return;
-    // Clear localStorage
-    localStorage.removeItem(STORAGE_KEY_EXAM);
-    localStorage.removeItem(STORAGE_KEY_TIMER);
-    localStorage.removeItem(STORAGE_KEY_ANSWERS);
-    localStorage.removeItem(STORAGE_KEY_EXAM_DATA);
-    localStorage.removeItem(STORAGE_KEY_STUDENT);
-    localStorage.removeItem(STORAGE_KEY_QUESTIONS);
-    localStorage.removeItem(STORAGE_KEY_ACADEMY);
-    localStorage.removeItem(STORAGE_KEY_TERM);
-    localStorage.removeItem('course');
+    // Clear ALL localStorage items related to the exam
+    const keysToRemove = [
+      STORAGE_KEY_EXAM,
+      STORAGE_KEY_TIMER,
+      STORAGE_KEY_ANSWERS,
+      STORAGE_KEY_EXAM_DATA,
+      STORAGE_KEY_STUDENT,
+      STORAGE_KEY_QUESTIONS,
+      STORAGE_KEY_ACADEMY,
+      STORAGE_KEY_TERM,
+      'course',
+      'quizScore',
+      STORAGE_KEY_HAS_VIEWED_RESULTS
+    ];
+
+    keysToRemove.forEach(key => localStorage.removeItem(key));
 
     // Reset all state
     setCurrentQuestionIndex(0);
@@ -428,6 +479,7 @@ export const ExamProvider = ({ children }) => {
     }
     setIsExamComplete(false);
     setExamStartedAt(null);
+    setHasViewedResults(false);
     timerInitialized.current = false;
 
     navigate('/');
@@ -475,24 +527,49 @@ export const ExamProvider = ({ children }) => {
   };
 
   // Complete the exam
-  const completeExam = () => {
-    setIsExamComplete(true);
+  const completeExam = async () => {
+    // Set saving flag
+    setIsSavingResults(true);
 
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+    try {
+      // Save the exam data to API
+      await saveExamData();
+
+      // Only proceed after saving is successful
+      setIsExamComplete(true);
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
+      // Update local storage
+      const finalState = {
+        currentQuestionIndex,
+        answers,
+        isExamComplete: true,
+        examStartedAt
+      };
+      localStorage.setItem(STORAGE_KEY_EXAM, JSON.stringify(finalState));
+      localStorage.setItem(STORAGE_KEY_ANSWERS, JSON.stringify(answers));
+
+      // Navigate to results
+      navigate('/results');
+    } catch (error) {
+      console.error('Error saving exam results:', error);
+
+      // Show an error to the user
+      toast({
+        title: "Error Saving Results",
+        description: "There was a problem saving your exam results. Please try again.",
+        variant: "destructive"
+      });
+
+      // Still set exam as complete
+      setIsExamComplete(true);
+      navigate('/results');
+    } finally {
+      setIsSavingResults(false);
     }
-
-    // Update local storage
-    const finalState = {
-      currentQuestionIndex,
-      answers,
-      isExamComplete: true,
-      examStartedAt
-    };
-    localStorage.setItem(STORAGE_KEY_EXAM, JSON.stringify(finalState));
-    localStorage.setItem(STORAGE_KEY_ANSWERS, JSON.stringify(answers));
-
-    navigate('/results');
   };
 
   // Calculate score
@@ -511,9 +588,6 @@ export const ExamProvider = ({ children }) => {
     return { score, totalQuestions, correctAnswers };
   };
 
-
-
-
   // Toggle camera
   const toggleCamera = () => {
     const newState = !isCameraActive;
@@ -525,37 +599,50 @@ export const ExamProvider = ({ children }) => {
     }
   };
 
-
   const saveExamData = async () => {
-    if (!exam || !userData) return;
+    if (!exam || !userData) {
+      console.error('Missing exam or user data for API submission');
+      return Promise.reject('Missing exam or user data');
+    }
 
     // Get calculated score
     const { score } = calculateScore();
 
     // Dynamically get the root URL
     const rootUrl = window.location.origin; // Automatically gets the current root domain
-    const courseform = localStorage.getItem('course');
-    const mcourse = JSON.parse(courseform);
+    let mcourse = null;
+
+    try {
+      const courseform = localStorage.getItem('course');
+      if (courseform) {
+        mcourse = JSON.parse(courseform);
+      }
+    } catch (error) {
+      console.error('Error parsing course data:', error);
+    }
+
     const payload = {
       exam_id: exam.id,
       student_id: userData.id,
-      course_form_id: mcourse.id, // Ensure this exists in exam data
-      recording_path: isCameraActive ? "uploads/exam_recordings/exam1.mp4" : null, // Use actual recording if camera was active
-      total_score: score, // Use calculated score
+      course_form_id: mcourse?.id || null, // Use null if course_form_id doesn't exist
+      recording_path: isCameraActive ? "uploads/exam_recordings/exam1.mp4" : null,
+      total_score: score,
       answers: answers.map((ans) => {
         const question = exam?.questions?.find(q => q.id === ans.questionId);
         const isCorrect = question && question.correctOptionId === ans.selectedOptionId;
-        const questionScore = question?.score ?? 0; // Ensure score is always a number
+        const questionScore = question?.score ?? 1; // Default to 1 if no score is set
 
         return {
           question_id: ans.questionId,
           answer: ans.selectedOptionId || null,
-          score: isCorrect ? questionScore : 0, // Assign question score if correct, otherwise 0
-          correct: isCorrect, // Mark true/false
+          score: isCorrect ? questionScore : 0,
+          correct: isCorrect,
           comments: ans.comments || "",
         };
       }),
     };
+
+    console.log('Submitting exam data to API:', payload);
 
     try {
       const response = await fetch(`${rootUrl}/api/save-exam-data`, {
@@ -567,15 +654,30 @@ export const ExamProvider = ({ children }) => {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Failed to save exam data");
+        // Try to get error message from response
+        let errorMessage = 'Failed to save exam data';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If we can't parse the JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
+      const data = await response.json();
       console.log("Exam data saved successfully:", data);
+
+      // Mark as having viewed results
+      localStorage.setItem(STORAGE_KEY_HAS_VIEWED_RESULTS, 'true');
+      setHasViewedResults(true);
+
+      return data;
     } catch (error) {
       console.error("Error saving exam data:", error.message);
+      throw error; // Rethrow to handle in calling function
     }
   };
 
@@ -601,7 +703,9 @@ export const ExamProvider = ({ children }) => {
     isCameraVerified,
     setIsCameraVerified,
     isCameraRequired,
-    setIsCameraRequired
+    setIsCameraRequired,
+    hasViewedResults,
+    isSavingResults
   };
 
   return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

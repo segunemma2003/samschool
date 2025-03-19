@@ -8,7 +8,7 @@ const Timer = () => {
   const [isWarning, setIsWarning] = useState(false);
   const [isDanger, setIsDanger] = useState(false);
 
-  // Format the time remaining into minutes and seconds
+  // Format the time remaining into hours, minutes and seconds
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);

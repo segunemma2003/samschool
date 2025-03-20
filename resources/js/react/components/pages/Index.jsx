@@ -1,12 +1,16 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '../ui/button';
 import { useExam } from '../hooks/useExam';
 import { Card } from '../ui/card';
 import { Separator } from '../ui/separator';
-import { ArrowRight, Clock, ListChecks, Shield, Camera, ScanFace, Eye } from 'lucide-react';
+import { ArrowRight, Clock, ListChecks, Shield, Camera, ScanFace, Eye, RefreshCw } from 'lucide-react';
 import CameraFeed from '../component/CameraFeed';
 import { Switch } from '../ui/switch';
+import { shouldRefreshData } from '../hooks/examTimer';
+import ThemeToggle from '../component/ThemeToggle';
+import { useTheme } from '../hooks/useTheme';
+
 
 const Index = () => {
     const {
@@ -14,12 +18,31 @@ const Index = () => {
       startExam,
       isCameraActive,
       toggleCamera,
+      timeRemaining,
       isCameraVerified,
       setIsCameraVerified,
-      setIsCameraRequired
+      setIsCameraRequired,
+      reloadExamData,
+      attempts,
+      maxAttempts,
+      resetExamAttempts
     } = useExam();
 
+    const { theme } = useTheme();
     const [cameraRequired, setCameraRequired] = React.useState(false);
+
+    // Check if we need to reload on mount
+    useEffect(() => {
+      // If should refresh data is true, reload the data (not the page)
+      if (shouldRefreshData()) {
+        console.log("Data refresh needed, reloading exam data");
+        window.dataRefreshNeeded = false; // Reset flag
+        reloadExamData();
+      } else {
+        // Force reload exam data from localStorage
+        reloadExamData();
+      }
+    }, [reloadExamData]);
 
     const handleFaceDetected = (detected) => {
       setIsCameraVerified(detected);
@@ -31,8 +54,16 @@ const Index = () => {
       setIsCameraRequired(newValue);
     };
 
+    // Max attempts could come from exam data or be set manually
+    const attemptsRemaining = Math.max(0, maxAttempts - attempts);
+    const isExamAvailable = attemptsRemaining > 0;
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 p-6">
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <ThemeToggle />
+        </div>
+
         <div className="w-full max-w-4xl animate-fade-in">
           <div className="glass-panel p-8 md:p-10">
             <div className="flex flex-col items-center text-center mb-8">
@@ -49,7 +80,7 @@ const Index = () => {
 
             <Separator className="mb-8" />
 
-            <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="grid md:grid-cols-4 gap-6 mb-8">
               <Card className="p-4 flex flex-col items-center text-center">
                 <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
                   <Clock className="h-5 w-5" />
@@ -73,17 +104,28 @@ const Index = () => {
                 <h3 className="font-medium mb-1">Passing Score</h3>
                 <p className="text-sm text-muted-foreground">{exam?.passingScore || "--"}% or higher</p>
               </Card>
+
+              <Card className="p-4 flex flex-col items-center text-center">
+                <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3">
+                  <RefreshCw className="h-5 w-5" />
+                </div>
+                <h3 className="font-medium mb-1">Attempts</h3>
+                <p className="text-sm text-muted-foreground">
+                  {attemptsRemaining} of {maxAttempts} remaining
+                </p>
+              </Card>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 mb-8">
               <h3 className="font-medium mb-2">Instructions:</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• You have {exam?.timeLimit || "--"} minutes to complete the exam.</li>
+                <li>• You have {timeRemaining/60 || "--"} minutes to complete the exam.</li>
                 <li>• All questions are multiple choice with only one correct answer.</li>
                 <li>• You can navigate between questions using the navigation buttons.</li>
                 <li>• Your answers are saved automatically; you can revisit questions.</li>
                 <li>• The camera feature is optional for proctoring purposes.</li>
                 <li>• If you refresh the page, your progress and time will be preserved.</li>
+                <li>• You have {maxAttempts} attempt(s) for this exam, and you've used {attempts}.</li>
                 <li>• Click "Start Exam" when you're ready to begin.</li>
               </ul>
             </div>
@@ -162,29 +204,48 @@ const Index = () => {
                     </div>
                     <h3 className="text-xl font-medium mb-2">Ready to Begin?</h3>
                     <p className="text-sm text-muted-foreground mb-6">
-                      {cameraRequired
-                        ? "Once you enable your camera and verify your face, you can start the exam."
-                        : "You can start the exam immediately since camera verification is disabled."}
+                      {!isExamAvailable ? (
+                        "You have used all your attempts for this exam."
+                      ) : cameraRequired ? (
+                        "Once you enable your camera and verify your face, you can start the exam."
+                      ) : (
+                        "You can start the exam immediately since camera verification is disabled."
+                      )}
                     </p>
                   </div>
 
-                  <Button
-                    onClick={startExam}
-                    size="lg"
-                    className="w-full"
-                    disabled={cameraRequired && (!isCameraActive || !isCameraVerified)}
-                  >
-                    {cameraRequired && !isCameraActive ? (
-                      "Enable Camera First"
-                    ) : cameraRequired && !isCameraVerified ? (
-                      "Position Your Face"
-                    ) : (
-                      <>
-                        Start Exam
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
+                  {isExamAvailable ? (
+                    <Button
+                      onClick={startExam}
+                      size="lg"
+                      className="w-full"
+                      disabled={cameraRequired && (!isCameraActive || !isCameraVerified)}
+                    >
+                      {cameraRequired && !isCameraActive ? (
+                        "Enable Camera First"
+                      ) : cameraRequired && !isCameraVerified ? (
+                        "Position Your Face"
+                      ) : (
+                        <>
+                          Start Exam
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-amber-500 dark:text-amber-400 font-medium">
+                        You have used all {maxAttempts} attempts for this exam.
+                      </p>
+                      <Button
+                        onClick={resetExamAttempts}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Reset Attempts
+                      </Button>
+                    </div>
+                  )}
 
                   {cameraRequired && !isCameraActive && (
                     <p className="text-xs text-muted-foreground mt-2">

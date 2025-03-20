@@ -4,6 +4,7 @@ import { useExam } from '../hooks/useExam';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { AspectRatio } from '../ui/aspect-ratio';
 
 const QuestionCard = ({
     question,
@@ -37,7 +38,7 @@ const QuestionCard = ({
             <div className="mb-6">
               <AspectRatio ratio={16 / 9} className="bg-muted rounded-md overflow-hidden">
                 <img
-                  src={question.image}
+                  src={"https://schoolcompasse.s3.us-east-1.amazonaws.com/"+question.image}
                   alt="Question illustration"
                   className="w-full h-full object-contain"
                   onError={(e) => {
@@ -70,7 +71,7 @@ const QuestionCard = ({
                     <div className="mt-2">
                       <AspectRatio ratio={16 / 9} className="bg-muted rounded-md overflow-hidden max-w-[300px]">
                         <img
-                          src={option.image}
+                          src={"https://schoolcompasse.s3.us-east-1.amazonaws.com/"+option.image}
                           alt={`Option ${option.id}`}
                           className="w-full h-full object-contain"
                           onError={(e) => {

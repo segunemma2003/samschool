@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route , useLocation} from "react-router-dom";
 import { ExamProvider } from "./components/hooks/useExam";
 import Index from "./components/pages/Index";
 import Exam from "./components/pages/Exam";
@@ -15,8 +15,36 @@ import NotFound from "./components/pages/NotFound";
 import "../../css/app.css";
 import './src/App.css';
 import './src/react.css';
+import { STORAGE_KEYS, loadFromStorage, saveToStorage, clearAllExamData } from './components/hooks/examStorage';
+import { ThemeProvider } from "./components/hooks/useTheme";
 
 const queryClient = new QueryClient();
+
+
+const RouteObserver = () => {
+    clearAllExamData();
+
+    console.log(window.exam);
+    if (window.student) localStorage.setItem('student', JSON.stringify(window.student));
+  if (window.exam) localStorage.setItem('exam', JSON.stringify(window.exam));
+  if (window.term) localStorage.setItem('term', JSON.stringify(window.term));
+  if (window.academy) localStorage.setItem('academy', JSON.stringify(window.academy));
+  if (window.course) localStorage.setItem('course', JSON.stringify(window.course));
+  if (window.questions) localStorage.setItem('questions', JSON.stringify(window.questions));
+  if (window.answers) localStorage.setItem('answers', JSON.stringify(window.answers));
+  if (window.quizScore) localStorage.setItem('quizScore', JSON.stringify(window.quizScore));
+    const location = useLocation();
+
+    useEffect(() => {
+      // If navigating to index, set flag to check if data refresh needed
+      if (location.pathname === '/') {
+        // This flag will be checked by the Index component
+        window.dataRefreshNeeded = true;
+      }
+    }, [location]);
+
+    return null;
+  };
 
 const getExamId = () => {
     const element = document.getElementById("quiz-root");
@@ -44,11 +72,13 @@ console.log(window.exam);
 
     return (
         <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
             <HashRouter>
               <ExamProvider>
+              <RouteObserver />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/exam" element={<Exam examId={getExamId()} />} />
@@ -59,6 +89,7 @@ console.log(window.exam);
               </ExamProvider>
             </HashRouter>
           </TooltipProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       );
   };

@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\PyschomotorStudent;
 use App\Models\Psychomotor;
+use App\Models\Term;
 use Filament\Notifications\Notification;
 use Livewire\Component;
 
@@ -13,6 +14,7 @@ class PsychomotorStudentDetails extends Component
     public $psychomotors;
     public $ratings = [];
     public $hasInlineLabel = true;
+    public $term_id;
 
 
     public function mount($record)
@@ -20,11 +22,15 @@ class PsychomotorStudentDetails extends Component
         $this->record = $record;
 
         // Load all psychomotors and related student ratings
-        $this->psychomotors = Psychomotor::all();
 
+$term = Term::where('status',"true")->first();
+// dd($term);
+$this->psychomotors = Psychomotor::where('term_id', $term->id)->get();
+$this->term_id = $term->id;
         foreach ($this->psychomotors as $psychomotor) {
             $existingRating = PyschomotorStudent::where('student_id', $record)
                 ->where('psychomotor_id', $psychomotor->id)
+
                 ->first();
 
             $this->ratings[$psychomotor->id] = [

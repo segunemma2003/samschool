@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4e8c9949f09640c05e1a952801e0bbcf",
+    "content-hash": "aa76e408dbf4ef3476bf55d276f8f8ce",
     "packages": [
         {
             "name": "amidesfahani/filament-tinyeditor",
@@ -1660,16 +1660,16 @@
         },
         {
             "name": "diogogpinto/filament-auth-ui-enhancer",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/diogogpinto/filament-auth-ui-enhancer.git",
-                "reference": "e30109798c9e116aa5994087930bc815d2e302b6"
+                "reference": "9df96c389b823f987e90455f59f9904e60fcc590"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/diogogpinto/filament-auth-ui-enhancer/zipball/e30109798c9e116aa5994087930bc815d2e302b6",
-                "reference": "e30109798c9e116aa5994087930bc815d2e302b6",
+                "url": "https://api.github.com/repos/diogogpinto/filament-auth-ui-enhancer/zipball/9df96c389b823f987e90455f59f9904e60fcc590",
+                "reference": "9df96c389b823f987e90455f59f9904e60fcc590",
                 "shasum": ""
             },
             "require": {
@@ -1735,7 +1735,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-10-22T15:59:50+00:00"
+            "time": "2025-03-17T14:07:54+00:00"
         },
         {
             "name": "doctrine/dbal",

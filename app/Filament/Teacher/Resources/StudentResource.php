@@ -28,6 +28,7 @@ use App\Models\Term;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\Snappy\Facades\SnappyPdf;
+use Exception;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
@@ -46,12 +47,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Knp\Snappy\Pdf as KnpSnappyPdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Mpdf\Mpdf;
 use phpDocumentor\Reflection\PseudoTypes\LowercaseString;
+use Spatie\Browsershot\Browsershot;
 use Spatie\LaravelPdf\Facades\Pdf as FacadesPdf;
 
 class StudentResource extends Resource
@@ -382,146 +385,282 @@ class StudentResource extends Resource
                             ->searchable(),
                     ])
                     ->action(function (array $data, $record) {
-                        // Load all required data in a single query with eager loading
-                        $student = $record->load([
-                            'class.group',
-                            'class' => function ($query) {
-                                $query->select('id', 'name', 'group_id');
+                        try {
+                            // Load all required data in a single query with eager loading
+                            $student = $record->load([
+                                'class.group',
+                                'class' => function ($query) {
+                                    $query->select('id', 'name', 'group_id');
+                                }
+                            ]);
+
+                            if (!$student) {
+                                throw new \Exception('Student record not found.');
                             }
-                        ]);
 
-                        // Combine queries into a single operation using whereIn
-                        $termAndAcademy = collect([
-                            'term' => Term::find($data['term_id']),
-                            'academy' => AcademicYear::find($data['academic_id'])
-                        ]);
+                            if (!$student->class || !$student->class->group) {
+                                throw new \Exception('Student class or group information is missing.');
+                            }
 
-                        // Use a single query to fetch all related data
-                        $relatedData = collect([
-                            'school' => SchoolInformation::where([
-                                ['term_id', $data['term_id']],
-                                ['academic_id', $data['academic_id']]
-                            ]),
-                            'studentAttendance' => StudentAttendanceSummary::where([
-                                ['term_id', $data['term_id']],
-                                ['student_id', $student->id],
-                                ['academic_id', $data['academic_id']]
-                            ]),
-                            'studentComment' => StudentComment::where([
-                                ['student_id', $student->id],
-                                ['term_id', $data['term_id']],
-                                ['academic_id', $data['academic_id']]
+                            // Combine queries into a single operation using whereIn
+                            $termAndAcademy = collect([
+                                'term' => Term::find($data['term_id']),
+                                'academy' => AcademicYear::find($data['academic_id'])
+                            ]);
+
+                            // Check if term or academy is null
+                            if (!$termAndAcademy['term'] || !$termAndAcademy['academy']) {
+                                throw new \Exception('Term or Academic Year information is missing.');
+                            }
+
+                            // Use a single query to fetch all related data
+                            $relatedData = collect([
+                                'school' => SchoolInformation::where([
+                                    ['term_id', $data['term_id']],
+                                    ['academic_id', $data['academic_id']]
+                                ]),
+                                'studentAttendance' => StudentAttendanceSummary::where([
+                                    ['term_id', $data['term_id']],
+                                    ['student_id', $student->id],
+                                    ['academic_id', $data['academic_id']]
+                                ]),
+                                'studentComment' => StudentComment::where([
+                                    ['student_id', $student->id],
+                                    ['term_id', $data['term_id']],
+                                    ['academic_id', $data['academic_id']]
+                                ])
+                            ])->map(fn ($query) => $query->first());
+
+                            // Check for missing related data
+                            $missingData = [];
+                            if (!$relatedData['school']) $missingData[] = 'School Information';
+                            if (!$relatedData['studentAttendance']) $missingData[] = 'Student Attendance';
+                            if (!$relatedData['studentComment']) $missingData[] = 'Student Comment';
+
+                            if (count($missingData) > 0) {
+                                throw new \Exception('The following information is missing and must be filled before generating the PDF: ' . implode(', ', $missingData));
+                            }
+
+                            // Optimize course loading with single query and eager loading
+                            $courses = CourseForm::with([
+                                'subject.subjectDepot',
+                                'scoreBoard'
                             ])
-                        ])->map(fn ($query) => $query->first());
+                            ->where([
+                                ['student_id', $student->id],
+                                ['academic_year_id', $data['academic_id']],
+                                ['term_id', $data['term_id']]
+                            ])
+                            ->get();
 
-                        // Optimize course loading with single query and eager loading
-                        $courses = CourseForm::with([
-                            'subject.subjectDepot',
-                            'scoreBoard' => function ($query) {
-                                $query->select('id', 'course_form_id', 'result_section_type_id', 'score');
+                            if(count($courses) < 1){
+                                throw new \Exception('No courses found for this student in the selected term and academic year.');
                             }
-                        ])
-                        ->where([
-                            ['student_id', $student->id],
-                            ['academic_year_id', $data['academic_id']],
-                            ['term_id', $data['term_id']]
-                        ])
-                        ->get();
 
+                            // Validate course data completeness
+                            $invalidCourses = [];
+                            foreach ($courses as $course) {
+                                if (!$course->subject || !$course->subject->subjectDepot) {
+                                    $invalidCourses[] = $course->id;
+                                }
+                            }
 
-                        if(count($courses) < 1){
+                            if (count($invalidCourses) > 0) {
+                                throw new \Exception('Some courses have missing subject information. Please complete the data for course IDs: ' . implode(', ', $invalidCourses));
+                            }
+
+                            // Cache psychomotor categories
+                            $psychomotorCategory = cache()->remember('psychomotor_categories', 3600, function() {
+                                return PsychomotorCategory::all();
+                            });
+
+                            // Optimize headings query with caching
+                            $headings = cache()->remember(
+                                "result_section_types_{$student->class->group->id}",
+                                3600,
+                                function() use ($student, $data) {
+                                    return ResultSectionType::with('resultSection')
+                                        ->where('term_id', $data['term_id'])
+                                        ->whereHas('resultSection', function ($query) use ($student) {
+                                            $query->where('group_id', $student->class->group->id);
+                                        })
+                                        ->get();
+                                }
+                            );
+
+                            // Check if headings are available
+                            if ($headings->isEmpty()) {
+                                throw new \Exception('Result section types are not configured for this student\'s group.');
+                            }
+
+                            // Group headings efficiently
+                            $groupedHeadings = $headings->groupBy('calc_pattern');
+
+                            // Calculate scores efficiently using collection methods
+                            $totalHeadings = $headings->where('calc_pattern', 'total');
+
+                            $scoreData = $courses->reduce(function ($carry, $course) use ($totalHeadings) {
+                                $subject = strtolower($course->subject->subjectDepot->name);
+                                $score = $course->scoreBoard
+                                    ->whereIn('result_section_type_id', $totalHeadings->pluck('id'))
+                                    ->sum('score');
+
+                                $carry['totalScore'] += $score;
+
+                                if (str_starts_with($subject, 'english') || str_starts_with($subject, 'literacy')) {
+                                    $carry['englishScore'] = $score;
+                                } elseif (str_starts_with($subject, 'math') || str_starts_with($subject, 'numeracy')) {
+                                    $carry['mathScore'] = $score;
+                                }
+
+                                return $carry;
+                            }, ['totalScore' => 0, 'englishScore' => 0, 'mathScore' => 0]);
+
+                            $percent = round($scoreData['totalScore'] / $courses->count());
+
+                            // Prepare view data with proper encoding
+                            $viewData = [
+                                'class' => $student->class,
+                                'totalSubject' => $courses->count(),
+                                'totalScore' => $scoreData['totalScore'],
+                                'percent' => $percent,
+                                'markObtained' => $groupedHeadings->get('input', collect())->merge($groupedHeadings->get('total', collect())),
+                                'remarks' => $groupedHeadings->get('remarks', collect()),
+                                'studentSummary' => $groupedHeadings->get('position', collect())->merge($groupedHeadings->get('grade_level', collect())),
+                                'termSummary' => $groupedHeadings->get('class_average', collect())
+                                    ->merge($groupedHeadings->get('class_highest_score', collect()))
+                                    ->merge($groupedHeadings->get('class_lowest_score', collect())),
+                                'courses' => $courses,
+                                'student' => $student,
+                                'school' => $relatedData['school'],
+                                'academy' => $termAndAcademy['academy'],
+                                'studentAttendance' => $relatedData['studentAttendance'],
+                                'term' => $termAndAcademy['term'],
+                                'studentComment' => $relatedData['studentComment'],
+                                'principalComment' => self::getPerformanceComment($percent, $scoreData['englishScore'], $scoreData['mathScore']),
+                                'psychomotorCategory' => $psychomotorCategory
+                            ];
+
+                            try {
+                                // Sanitize and encode all string values
+                                $viewData = array_map(function($value) {
+                                    if (is_string($value)) {
+                                        // Remove any invalid UTF-8 characters
+                                        $value = preg_replace('/[\x00-\x08\x10\x0B\x0C\x0E-\x19\x7F]|[\x00-\x7F][\x80-\xBF]+|([\xC0\xC1]|[\xE0-\xFF])[\x80-\xBF]*|[\xC2-\xDF]((?![\x80-\xBF])|[\x80-\xBF]{2,})|[\xE0-\xEF](([\x80-\xBF](?![\x80-\xBF]))|(?![\x80-\xBF]{2})|[\x80-\xBF]{3,})/S', '', $value);
+                                        // Convert to UTF-8
+                                        $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                                    }
+                                    return $value;
+                                }, $viewData);
+
+                                // Generate HTML with proper encoding
+                                $html = view('results.template', $viewData)->render();
+
+                                // Remove any invalid UTF-8 characters from the HTML
+                                $html = preg_replace('/[\x00-\x08\x10\x0B\x0C\x0E-\x19\x7F]|[\x00-\x7F][\x80-\xBF]+|([\xC0\xC1]|[\xE0-\xFF])[\x80-\xBF]*|[\xC2-\xDF]((?![\x80-\xBF])|[\x80-\xBF]{2,})|[\xE0-\xEF](([\x80-\xBF](?![\x80-\xBF]))|(?![\x80-\xBF]{2})|[\x80-\xBF]{3,})/S', '', $html);
+
+                                // Convert to UTF-8
+                                $html = mb_convert_encoding($html, 'UTF-8', 'UTF-8');
+
+                                if (stripos($html, 'null') !== false) {
+                                    throw new \Exception('Some data is missing in the template. Please check all required fields.');
+                                }
+
+                                try {
+                                    // Generate PDF using KnpSnappy
+                                    $pdf = SnappyPdf::loadHTML($html)
+                                        ->setOption('encoding', 'UTF-8')
+                                        ->setOption('margin-top', 10)
+                                        ->setOption('margin-right', 10)
+                                        ->setOption('margin-bottom', 10)
+                                        ->setOption('margin-left', 10)
+                                        ->setOption('page-size', 'A4')
+                                        ->setOption('enable-local-file-access', true)
+                                        ->setOption('enable-smart-shrinking', true)
+                                        ->setOption('print-media-type', true)
+                                        ->setOption('dpi', 150)
+                                        ->setOption('image-quality', 100)
+                                        ->setOption('enable-javascript', true)
+                                        ->setOption('javascript-delay', 1000)
+                                        ->setOption('no-stop-slow-scripts', true)
+                                        ->setOption('no-sandbox', true)
+                                        ->setOption('disable-web-security', true)
+                                        ->setOption('allow-running-insecure-content', true)
+                                        ->setOption('enable-local-file-access', true)
+                                        ->setOption('enable-smart-shrinking', true)
+                                        ->setOption('print-media-type', true)
+                                        ->setOption('dpi', 150)
+                                        ->setOption('image-quality', 100)
+                                        ->setOption('enable-javascript', true)
+                                        ->setOption('javascript-delay', 1000)
+                                        ->setOption('no-stop-slow-scripts', true)
+                                        ->setOption('no-sandbox', true)
+                                        ->setOption('disable-web-security', true)
+                                        ->setOption('allow-running-insecure-content', true)
+                                        ->setOption('enable-local-file-access', true)
+                                        ->setOption('enable-smart-shrinking', true)
+                                        ->setOption('print-media-type', true)
+                                        ->setOption('dpi', 150)
+                                        ->setOption('image-quality', 100)
+                                        ->setOption('enable-javascript', true)
+                                        ->setOption('javascript-delay', 1000)
+                                        ->setOption('no-stop-slow-scripts', true)
+                                        ->setOption('no-sandbox', true)
+                                        ->setOption('disable-web-security', true)
+                                        ->setOption('allow-running-insecure-content', true);
+
+                                    // Return response with proper headers
+                                    return response($pdf->output())
+                                        ->header('Content-Type', 'application/pdf')
+                                        ->header('Content-Disposition', 'inline; filename="result-' . urlencode($record->name) . '.pdf"')
+                                        ->header('Content-Transfer-Encoding', 'binary')
+                                        ->header('Accept-Ranges', 'bytes');
+
+                                } catch (\Exception $e) {
+                                    Log::error('PDF generation error: ' . $e->getMessage(), [
+                                        'student_id' => $student->id,
+                                        'term_id' => $data['term_id'],
+                                        'academic_id' => $data['academic_id']
+                                    ]);
+
+                                    Notification::make()
+                                        ->title('PDF Generation Error')
+                                        ->body('Error: ' . $e->getMessage())
+                                        ->danger()
+                                        ->send();
+
+                                    return;
+                                }
+                            } catch (\Exception $e) {
+                                Log::error('Result generation error: ' . $e->getMessage(), [
+                                    'student_id' => $record->id,
+                                    'term_id' => $data['term_id'] ?? null,
+                                    'academic_id' => $data['academic_id'] ?? null
+                                ]);
+
+                                Notification::make()
+                                    ->title('Error')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Result generation error: ' . $e->getMessage(), [
+                                'student_id' => $record->id,
+                                'term_id' => $data['term_id'] ?? null,
+                                'academic_id' => $data['academic_id'] ?? null
+                            ]);
+
                             Notification::make()
-                            ->title('Error')
-                            ->body('No courses found for this student in the selected term and academic year.')
-                            ->danger()
-                            ->send();
+                                ->title('Error')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
 
                             return;
                         }
-
-                        // Cache psychomotor categories
-                        $psychomotorCategory = cache()->remember('psychomotor_categories', 3600, function() {
-                            return PsychomotorCategory::all();
-                        });
-
-                        // Optimize headings query with caching
-                        $headings = cache()->remember(
-                            "result_section_types_{$student->class->group->id}",
-                            3600,
-                            function() use ($student, $data) {
-                                return ResultSectionType::with('resultSection')
-                                    ->where('term_id',$data['term_id'])
-                                    ->whereHas('resultSection', function ($query) use ($student) {
-                                        $query->where('group_id', $student->class->group->id);
-                                    })
-                                    ->get();
-                            }
-                        );
-
-                        // Group headings efficiently
-                        $groupedHeadings = $headings->groupBy('calc_pattern');
-
-                        // Calculate scores efficiently using collection methods
-                        $totalHeadings = $headings->where('calc_pattern', 'total');
-                        $scoreData = $courses->reduce(function ($carry, $course) use ($totalHeadings) {
-                            $subject = strtolower($course->subject->subjectDepot->name);
-                            $score = $course->scoreBoard
-                                ->whereIn('result_section_type_id', $totalHeadings->pluck('id'))
-                                ->sum('score');
-
-                            $carry['totalScore'] += $score;
-
-                            if (str_starts_with($subject, 'english') || str_starts_with($subject, 'literacy')) {
-                                $carry['englishScore'] = $score;
-                            } elseif (str_starts_with($subject, 'math') || str_starts_with($subject, 'numeracy')) {
-                                $carry['mathScore'] = $score;
-                            }
-
-                            return $carry;
-                        }, ['totalScore' => 0, 'englishScore' => 0, 'mathScore' => 0]);
-
-                        $percent = round($scoreData['totalScore'] / $courses->count());
-
-                        // Prepare view data
-                        $viewData = [
-                            'class' => $student->class,
-                            'totalSubject' => $courses->count(),
-                            'totalScore' => $scoreData['totalScore'],
-                            'percent' => $percent,
-                            'markObtained' => $groupedHeadings->get('input', collect())->merge($groupedHeadings->get('total', collect())),
-                            'remarks' => $groupedHeadings->get('remarks', collect()),
-                            'studentSummary' => $groupedHeadings->get('position', collect())->merge($groupedHeadings->get('grade_level', collect())),
-                            'termSummary' => $groupedHeadings->get('class_average', collect())
-                                ->merge($groupedHeadings->get('class_highest_score', collect()))
-                                ->merge($groupedHeadings->get('class_lowest_score', collect())),
-                            'courses' => $courses,
-                            'student' => $student,
-                            'school' => $relatedData['school'],
-                            'academy' => $termAndAcademy['academy'],
-                            'studentAttendance' => $relatedData['studentAttendance'],
-                            'term' => $termAndAcademy['term'],
-                            'studentComment' => $relatedData['studentComment'],
-                            'principalComment' => self::getPerformanceComment($percent, $scoreData['englishScore'], $scoreData['mathScore']),
-                            'psychomotorCategory' => $psychomotorCategory
-                        ];
-
-                        // Generate PDF efficiently
-                        // $pdf = SnappyPdf::loadView('results.template', $viewData);
-                        // return response()->streamDownload(
-                        //     fn () => print($pdf->output()),
-                        //     "result-{$record->name}.pdf"
-                        // );
-
-                        $pdf = Pdf::loadView('results.template', $viewData);
-
-        // Optional: Configure PDF settings if needed
-        $pdf->setPaper('a4', 'portrait');
-        $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
-
-        return response()->streamDownload(
-            fn () => print($pdf->output()),
-            "result-{$record->name}.pdf"
-        );
                     })
 
             ])

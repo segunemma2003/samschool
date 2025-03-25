@@ -44,6 +44,7 @@
         "savannabits/filament-signature-pad": "^2.0",
         "sevenspan/laravel-chat": "^1.5",
         "shuchkin/simplexlsx": "^1.1",
+        "spatie/browsershot": "^5.0",
         "spatie/laravel-google-calendar": "^3.8",
         "spatie/laravel-pdf": "^1.5",
         "stechstudio/laravel-zipstream": "^5.3",

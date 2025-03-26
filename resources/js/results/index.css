@@ -1,0 +1,197 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Report card specific styles */
+@layer components {
+  .report-container {
+    @apply w-full max-w-[1170px] mx-auto bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300 animate-fade-in;
+    page-break-inside: avoid;
+  }
+  
+  .report-header {
+    @apply relative overflow-hidden bg-gradient-to-r from-report-blue/90 to-report-dark p-4 text-white;
+  }
+  
+  .report-table th {
+    @apply bg-report-blue/10 text-report-dark font-medium px-1 py-2 border border-gray-300;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  .report-table td {
+    @apply px-1 py-1 border border-gray-300 text-center;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  .report-table.text-xxs th,
+  .report-table.text-xxs td {
+    font-size: 0.65rem;
+    padding: 0.15rem;
+  }
+  
+  .report-table.text-xs th,
+  .report-table.text-xs td {
+    font-size: 0.75rem;
+    padding: 0.25rem;
+  }
+  
+  .report-table tr:nth-child(even) {
+    @apply bg-gray-50;
+  }
+  
+  .report-table tr:hover {
+    @apply bg-report-light transition-colors duration-150;
+  }
+  
+  .download-btn {
+    @apply fixed top-4 right-4 z-10 bg-report-blue hover:bg-report-dark text-white rounded-lg px-4 py-2 
+    shadow-lg transition-all duration-300 flex items-center gap-2 
+    hover:scale-105 active:scale-95 disabled:opacity-70 disabled:hover:scale-100;
+  }
+  
+  .print-only {
+    @apply hidden;
+  }
+  
+  @media print {
+    .report-container {
+      @apply shadow-none max-w-none w-full mx-0 my-0;
+    }
+    
+    .download-btn {
+      @apply hidden;
+    }
+    
+    .print-only {
+      @apply block;
+    }
+    
+    .no-print {
+      @apply hidden;
+    }
+  }
+}
+
+/* Data cells animations */
+.cell-animate-in {
+  animation: cellFadeIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes cellFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation delays for cells - manual definition instead of Sass loop */
+.cell-animate-delay-1 { animation-delay: 0.03s; }
+.cell-animate-delay-2 { animation-delay: 0.06s; }
+.cell-animate-delay-3 { animation-delay: 0.09s; }
+.cell-animate-delay-4 { animation-delay: 0.12s; }
+.cell-animate-delay-5 { animation-delay: 0.15s; }
+.cell-animate-delay-6 { animation-delay: 0.18s; }
+.cell-animate-delay-7 { animation-delay: 0.21s; }
+.cell-animate-delay-8 { animation-delay: 0.24s; }
+.cell-animate-delay-9 { animation-delay: 0.27s; }
+.cell-animate-delay-10 { animation-delay: 0.30s; }
+.cell-animate-delay-11 { animation-delay: 0.33s; }
+.cell-animate-delay-12 { animation-delay: 0.36s; }
+.cell-animate-delay-13 { animation-delay: 0.39s; }
+.cell-animate-delay-14 { animation-delay: 0.42s; }
+.cell-animate-delay-15 { animation-delay: 0.45s; }
+.cell-animate-delay-16 { animation-delay: 0.48s; }
+.cell-animate-delay-17 { animation-delay: 0.51s; }
+.cell-animate-delay-18 { animation-delay: 0.54s; }
+.cell-animate-delay-19 { animation-delay: 0.57s; }
+.cell-animate-delay-20 { animation-delay: 0.60s; }
+.cell-animate-delay-21 { animation-delay: 0.63s; }
+.cell-animate-delay-22 { animation-delay: 0.66s; }
+.cell-animate-delay-23 { animation-delay: 0.69s; }
+.cell-animate-delay-24 { animation-delay: 0.72s; }
+.cell-animate-delay-25 { animation-delay: 0.75s; }
+.cell-animate-delay-26 { animation-delay: 0.78s; }
+.cell-animate-delay-27 { animation-delay: 0.81s; }
+.cell-animate-delay-28 { animation-delay: 0.84s; }
+.cell-animate-delay-29 { animation-delay: 0.87s; }
+.cell-animate-delay-30 { animation-delay: 0.90s; }
+
+/* Custom watermark style */
+.watermark {
+  @apply absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.02] -rotate-12 select-none;
+}
+.watermark-text {
+  @apply text-[15rem] font-black text-report-dark;
+}
+
+/* Print layout adjustments */
+@page {
+  size: A4;
+  margin: 10mm;
+}

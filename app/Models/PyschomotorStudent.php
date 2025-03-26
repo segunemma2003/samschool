@@ -10,5 +10,10 @@ class PyschomotorStudent extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
+    public function psychomotor()
+    {
+        return $this->belongsTo(Psychomotor::class, 'psychomotor_id');
+    }
+
 
 }

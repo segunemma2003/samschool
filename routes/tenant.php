@@ -49,6 +49,8 @@ Route::middleware([
 
     Route::get('/exam/{exam}/student', [ExamController::class, 'takeExam'])->name('student.exam.take');
 
+    Route::get('/result/{studentId}/student/{termId}/term/{academyId}', [ExamController::class, 'generatePdf'])->name('student.result.check');
+
 
     // Route::get('/teacher/assignment/{assignment}/student/{student}', ViewSubmittedAssignmentTeacher::class)->name('filament.pages.assignment-student-view');
 }

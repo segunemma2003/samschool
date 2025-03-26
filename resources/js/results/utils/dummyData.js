@@ -1,0 +1,226 @@
+
+export const reportData = {
+  school: {
+    name: "LYS ACADEMY BAUCHI",
+    location: "Behind Yarima Glades",
+    motto: "Building Leaders",
+    email: "lysacademybauchi018@gmail.com",
+    website: "www.lysacademy.com.ng",
+    logo: "/lovable-uploads/713ca330-6a41-4b73-b14b-1f1d7e0d3b29.png"
+  },
+  student: {
+    name: "Micheal Temidayo Ayegbusi",
+    admissionNo: "LYSB/1063",
+    class: "Nursery 1A",
+    session: "2024/2025",
+    term: "First Term",
+    grade: "A1"
+  },
+  attendance: {
+    daysSchoolOpen: 132,
+    daysPresent: 120,
+    daysAbsent: 12,
+    percentagePresent: 91
+  },
+  subjects: [
+    {
+      name: "LITERACY",
+      ca1: 9,
+      ca2: 5,
+      ca3: 5,
+      behavioralAssessment: 5,
+      exam: 40,
+      total: 64,
+      grade: "C4",
+      classAverage: 83.41,
+      lowestScore: 55,
+      highestScore: 100,
+      position: "29th",
+      teacherRemark: "UPPER CREDIT"
+    },
+    {
+      name: "NUMERACY",
+      ca1: 10,
+      ca2: 10,
+      ca3: 4,
+      behavioralAssessment: 0,
+      exam: 50,
+      total: 74,
+      grade: "B2",
+      classAverage: 87.38,
+      lowestScore: 48,
+      highestScore: 100,
+      position: "25th",
+      teacherRemark: "VERY GOOD"
+    },
+    {
+      name: "PRACTICAL LIFE EXERCISE",
+      ca1: 10,
+      ca2: 10,
+      ca3: 8,
+      behavioralAssessment: 0,
+      exam: 62,
+      total: 90,
+      grade: "A1",
+      classAverage: 89.38,
+      lowestScore: 28,
+      highestScore: 100,
+      position: "18th",
+      teacherRemark: "EXCELLENT"
+    },
+    {
+      name: "SENSORIAL EDUCATION",
+      ca1: 10,
+      ca2: 10,
+      ca3: 10,
+      behavioralAssessment: 0,
+      exam: 61,
+      total: 91,
+      grade: "A1",
+      classAverage: 90.45,
+      lowestScore: 65,
+      highestScore: 100,
+      position: "17th",
+      teacherRemark: "EXCELLENT"
+    },
+    {
+      name: "CULTURAL SUBJECT",
+      ca1: 10,
+      ca2: 10,
+      ca3: 5,
+      behavioralAssessment: 0,
+      exam: 68,
+      total: 93,
+      grade: "A1",
+      classAverage: 83.59,
+      lowestScore: 30,
+      highestScore: 97,
+      position: "7th",
+      teacherRemark: "EXCELLENT"
+    },
+    {
+      name: "CULTURAL AND CREATIVE ART",
+      ca1: 10,
+      ca2: 10,
+      ca3: 7,
+      behavioralAssessment: 0,
+      exam: 65,
+      total: 92,
+      grade: "A1",
+      classAverage: 90.76,
+      lowestScore: 27,
+      highestScore: 100,
+      position: "18th",
+      teacherRemark: "EXCELLENT"
+    },
+    {
+      name: "MORAL INSTRUCTION",
+      ca1: 10,
+      ca2: 10,
+      ca3: 10,
+      behavioralAssessment: 0,
+      exam: 61,
+      total: 91,
+      grade: "A1",
+      classAverage: 89.86,
+      lowestScore: 27,
+      highestScore: 100,
+      position: "15th",
+      teacherRemark: "EXCELLENT"
+    },
+    {
+      name: "RHYMES",
+      ca1: 10,
+      ca2: 10,
+      ca3: 10,
+      behavioralAssessment: 0,
+      exam: 60,
+      total: 88,
+      grade: "A1",
+      classAverage: 89.21,
+      lowestScore: 25,
+      highestScore: 99,
+      position: "20th",
+      teacherRemark: "EXCELLENT"
+    },
+    {
+      name: "COMPUTER STUDIES",
+      ca1: 10,
+      ca2: 10,
+      ca3: 6,
+      behavioralAssessment: 0,
+      exam: 60,
+      total: 86,
+      grade: "A1",
+      classAverage: 87.76,
+      lowestScore: 63,
+      highestScore: 100,
+      position: "17th",
+      teacherRemark: "EXCELLENT"
+    },
+    {
+      name: "HAND WRITING",
+      ca1: 10,
+      ca2: 10,
+      ca3: 6,
+      behavioralAssessment: 0,
+      exam: 30,
+      total: 56,
+      grade: "C5",
+      classAverage: 79.38,
+      lowestScore: 27,
+      highestScore: 99,
+      position: "27th",
+      teacherRemark: "CREDIT"
+    }
+  ],
+  analysis: {
+    subjectsOffered: 10,
+    marksObtained: 825,
+    marksObtainable: 1000,
+    classAverage: 86.72,
+    studentAverage: 82.50
+  },
+  affectiveDomain: {
+    honesty: 4,
+    neatness: 3,
+    punctuality: 3,
+    reliability: 4,
+    cooperation: 4,
+    games: 4,
+    creativity: 3,
+    handwriting: 3,
+    verbalFluency: 3,
+    perceptualAbility: 3
+  },
+  gradingScale: [
+    { grade: "A1", range: "75 - 100", description: "Excellent" },
+    { grade: "B2", range: "70 - 74", description: "Very Good" },
+    { grade: "B3", range: "65 - 69", description: "Good" },
+    { grade: "C4", range: "60 - 64", description: "Upper Credit" },
+    { grade: "C5", range: "55 - 59", description: "Credit" },
+    { grade: "C6", range: "50 - 54", description: "Lower Credit" },
+    { grade: "D7", range: "45 - 49", description: "Pass" },
+    { grade: "E8", range: "40 - 44", description: "Weak Pass" },
+    { grade: "F9", range: "0 - 39", description: "Fail" }
+  ],
+  keyToRatings: [
+    { key: 1, description: "No Observable Trait" },
+    { key: 2, description: "Poor Level of Observable Trait" },
+    { key: 3, description: "Fair But Acceptable Level Observable Trait" },
+    { key: 4, description: "Good Level of Observable Trait" },
+    { key: 5, description: "Excellence Range of Observable Trait" }
+  ],
+  comments: {
+    formTeacher: "V.Good",
+    headMaster: "An Excellent Result, Keep it up"
+  },
+  decision: "PASS",
+  nextTerm: {
+    resumptionDate: "2025-01-06",
+    fees: "₦0",
+    otherCharges: "-"
+  },
+  date: "3/21/25, 3:20 PM",
+  code: "LYSB"
+};

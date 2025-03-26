@@ -10,6 +10,7 @@ class Psychomotor extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
+
     public function group()
     {
         return $this->belongsTo(StudentGroup::class, 'group_id');
@@ -22,5 +23,10 @@ class Psychomotor extends Model
     public function term()
     {
         return $this->belongsTo(Term::class, 'term_id');
+    }
+
+    public function psychomotorStudent()
+    {
+        return $this->hasMany(PyschomotorStudent::class);
     }
 }

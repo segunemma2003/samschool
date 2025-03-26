@@ -1,26 +1,56 @@
 {
+  "_chunk-K6CSEXPM-BthqvbaO.js": {
+    "file": "assets/chunk-K6CSEXPM-BthqvbaO.js",
+    "name": "chunk-K6CSEXPM"
+  },
+  "node_modules/canvg/lib/index.es.js": {
+    "file": "assets/index.es-By2shY3j.js",
+    "name": "index.es",
+    "src": "node_modules/canvg/lib/index.es.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chunk-K6CSEXPM-BthqvbaO.js",
+      "resources/js/results/app.jsx"
+    ],
+    "css": [
+      "assets/App-Bx9V9zN2.css",
+      "assets/index-C2e0jDEs.css"
+    ]
+  },
+  "node_modules/dompurify/dist/purify.es.mjs": {
+    "file": "assets/purify.es-D-QPbZEk.js",
+    "name": "purify.es",
+    "src": "node_modules/dompurify/dist/purify.es.mjs",
+    "isDynamicEntry": true
+  },
+  "node_modules/react-to-pdf/node_modules/dompurify/dist/purify.es.js": {
+    "file": "assets/purify.es-C_uT9hQ1.js",
+    "name": "purify.es",
+    "src": "node_modules/react-to-pdf/node_modules/dompurify/dist/purify.es.js",
+    "isDynamicEntry": true
+  },
   "resources/css/app.css": {
-    "file": "assets/app-Dj-1gs6d.css",
+    "file": "assets/app-DU7mnEY0.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/css/filament/app/theme.css": {
-    "file": "assets/theme-CF0yggSf.css",
+    "file": "assets/theme-DaV9hWrk.css",
     "src": "resources/css/filament/teacher/theme.css",
     "isEntry": true
   },
   "resources/css/filament/ourstudent/theme.css": {
-    "file": "assets/theme-CF0yggSf.css",
+    "file": "assets/theme-DaV9hWrk.css",
     "src": "resources/css/filament/teacher/theme.css",
     "isEntry": true
   },
   "resources/css/filament/student/theme.css": {
-    "file": "assets/theme-CF0yggSf.css",
+    "file": "assets/theme-DaV9hWrk.css",
     "src": "resources/css/filament/teacher/theme.css",
     "isEntry": true
   },
   "resources/css/filament/teacher/theme.css": {
-    "file": "assets/theme-CF0yggSf.css",
+    "file": "assets/theme-DaV9hWrk.css",
     "src": "resources/css/filament/teacher/theme.css",
     "isEntry": true
   },
@@ -31,19 +61,51 @@
     "isEntry": true
   },
   "resources/js/react/app.jsx": {
-    "file": "assets/app-BUZPeHLv.js",
+    "file": "assets/app-SA7IrG3Y.js",
     "name": "app",
     "src": "resources/js/react/app.jsx",
     "isEntry": true,
+    "imports": [
+      "_chunk-K6CSEXPM-BthqvbaO.js"
+    ],
     "css": [
-      "assets/app-Bx9V9zN2.css",
-      "assets/app-Dj-1gs6d.css",
-      "assets/react-rUo2TRY-.css"
+      "assets/App-Bx9V9zN2.css",
+      "assets/app-DU7mnEY0.css",
+      "assets/react-DKSWMFc9.css"
     ]
   },
   "resources/js/react/src/react.css": {
-    "file": "assets/react-rUo2TRY-.css",
+    "file": "assets/react-DKSWMFc9.css",
     "src": "resources/js/react/src/react.css",
+    "isEntry": true
+  },
+  "resources/js/results/App.css": {
+    "file": "assets/App-Bx9V9zN2.css",
+    "src": "resources/js/results/App.css",
+    "isEntry": true
+  },
+  "resources/js/results/app.jsx": {
+    "file": "assets/app-DEtBqrZG.js",
+    "name": "app",
+    "src": "resources/js/results/app.jsx",
+    "isEntry": true,
+    "imports": [
+      "_chunk-K6CSEXPM-BthqvbaO.js"
+    ],
+    "dynamicImports": [
+      "node_modules/dompurify/dist/purify.es.mjs",
+      "node_modules/canvg/lib/index.es.js",
+      "node_modules/react-to-pdf/node_modules/dompurify/dist/purify.es.js",
+      "node_modules/canvg/lib/index.es.js"
+    ],
+    "css": [
+      "assets/App-Bx9V9zN2.css",
+      "assets/index-C2e0jDEs.css"
+    ]
+  },
+  "resources/js/results/index.css": {
+    "file": "assets/index-C2e0jDEs.css",
+    "src": "resources/js/results/index.css",
     "isEntry": true
   }
 }

@@ -51,6 +51,14 @@ class PsychomotorResource extends Resource
                     ->options(PsychomotorCategory::all()->pluck('name', 'id'))
                     ->preload()
                     ->searchable(),
+                    Forms\Components\Select::make('type')
+                    ->label('Type')
+                    ->options([
+                        "affective"=>"affective",
+                        "psychomotor"=>"psychomotor"
+                    ])
+
+                    ->searchable(),
                 Forms\Components\TextInput::make('skill')
                     ->required()
                     ->maxLength(255),
@@ -70,6 +78,7 @@ class PsychomotorResource extends Resource
                 ->searchable(),
                 Tables\Columns\TextColumn::make('skill')
                 ->searchable(),
+                Tables\Columns\TextColumn::make('type')
             ])
             ->filters([
                 //

@@ -15,6 +15,7 @@ class PsychomotorStudentDetails extends Component
     public $ratings = [];
     public $hasInlineLabel = true;
     public $term_id;
+    public $term;
 
 
     public function mount($record)
@@ -24,6 +25,7 @@ class PsychomotorStudentDetails extends Component
         // Load all psychomotors and related student ratings
 
 $term = Term::where('status',"true")->first();
+$this->term = $term;
 // dd($term);
 $this->psychomotors = Psychomotor::where('term_id', $term->id)->get();
 $this->term_id = $term->id;
@@ -50,7 +52,7 @@ $this->term_id = $term->id;
                 ],
                 [
                     'rating' => $data['rating'],
-                    'comment' => $data['comment'],
+                    'comment' => $data['comment'] ?? " ",
                 ]
             );
         }

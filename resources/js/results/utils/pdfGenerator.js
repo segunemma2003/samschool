@@ -7,105 +7,86 @@ export const generatePDF = async () => {
   const reportElement = document.getElementById('report-card');
   if (!reportElement) return;
 
-  // Create a deep clone of the report card for PDF generation
-  const reportClone = reportElement.cloneNode(true);
-  reportClone.classList.add('print-mode');
-
   try {
-    // Hide elements that shouldn't be in the PDF
-    const noPrintElements = reportClone.querySelectorAll('.no-print');
-    noPrintElements.forEach(el => {
-      if (el && el.style) el.style.display = 'none';
+    // Create a deep clone of the report card for PDF generation
+    const reportClone = reportElement.cloneNode(true);
+
+    // Force all images to load properly with crossOrigin attributes
+    const allImages = reportClone.querySelectorAll('img');
+    allImages.forEach(img => {
+    //   img.setAttribute('crossOrigin', 'anonymous');
+
+      // Set proper error handling for images
+      img.onerror = function() {
+        this.onerror = null;
+        if (this.src.includes('schoolcompasse.s3.us-east-1.amazonaws.com')) {
+          // Try direct URL if S3 URL fails
+          const fileName = this.src.split('/').pop();
+          this.src = `https://schoolcompasse.s3.us-east-1.amazonaws.com/${fileName}`;
+        } else {
+          // Use placeholder if all attempts fail
+          this.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YwZjBmMCIvPjwvc3ZnPg==";
+        }
+      };
+
+      // For Amazon S3 URLs, ensure they're properly loaded
+      if (img.src && img.src.includes('schoolcompasse.s3.us-east-1.amazonaws.com')) {
+        // Make a copy of the current source
+        const currentSrc = img.src;
+        // Set crossOrigin before setting src to avoid CORS issues
+        // img.setAttribute('crossOrigin', 'anonymous');
+        img.src = currentSrc;
+      }
     });
 
-    // Show elements that should only be in the PDF
-    const printOnlyElements = reportClone.querySelectorAll('.print-only');
-    printOnlyElements.forEach(el => {
-      if (el && el.style) el.style.display = 'block';
-    });
+    // Force all elements to have solid colors and full opacity
+    function enforceVisibility(element) {
+      if (element.style) {
+        // Force full opacity and solid colors
+        element.style.opacity = '1';
+        element.style.color = element.style.color || '#000000';
 
-    // Force solid backgrounds to ensure nothing looks faded
-    reportClone.style.backgroundColor = 'white';
-    reportClone.style.color = 'black';
+        // Make backgrounds solid
+        if (element.style.backgroundColor && element.style.backgroundColor.includes('rgba')) {
+          element.style.backgroundColor = element.style.backgroundColor.replace(/rgba?\(([^,]+),([^,]+),([^,]+),?[^)]*\)/, 'rgb($1,$2,$3)');
+        }
 
-    // Force all text elements to have maximum opacity
-    const allTextElements = reportClone.querySelectorAll('*');
-    allTextElements.forEach(el => {
-      if (el.style) {
-        el.style.opacity = '1';
-        // Ensure all text has good contrast
-        if (el.tagName === 'TD' || el.tagName === 'TH' ||
-            el.tagName === 'P' || el.tagName === 'DIV' ||
-            el.tagName === 'SPAN' || el.tagName === 'H1' ||
-            el.tagName === 'H2' || el.tagName === 'H3') {
-          if (!el.style.color || el.style.color === 'rgba(0, 0, 0, 0)') {
-            el.style.color = '#000000';
-          }
-          // Increase font weight for better visibility in PDF
-          if (el.style.fontWeight === '' || parseInt(el.style.fontWeight) < 400) {
-            el.style.fontWeight = '400';
-          }
+        // Increase contrast
+        if (element.tagName === 'TD' || element.tagName === 'TH' ||
+            element.tagName === 'P' || element.tagName === 'DIV' ||
+            element.tagName === 'SPAN' || element.tagName === 'H1' ||
+            element.tagName === 'H2' || element.tagName === 'H3' ||
+            element.tagName === 'H4' || element.tagName === 'H5' ||
+            element.tagName === 'STRONG' || element.tagName === 'B') {
+          element.style.color = '#000000';
+          element.style.fontWeight = element.style.fontWeight || '500';
+        }
+
+        // Ensure table borders are solid
+        if (element.tagName === 'TABLE') {
+          element.style.borderCollapse = 'collapse';
+          element.style.border = '2px solid #000';
+        }
+
+        if (element.tagName === 'TH') {
+          element.style.backgroundColor = '#e6f2ff';
+          element.style.color = '#000000';
+          element.style.fontWeight = 'bold';
+          element.style.border = '1px solid #000';
+        }
+
+        if (element.tagName === 'TD') {
+          element.style.border = '1px solid #000';
         }
       }
-    });
 
-    // Find header and ensure its background color is applied
-    const reportHeader = reportClone.querySelector('.report-header');
-    if (reportHeader) {
-      reportHeader.style.backgroundColor = '#2471A3'; // Match the blue background
-      reportHeader.style.color = 'white';
-      reportHeader.style.fontWeight = 'bold';
-    }
-
-    // Ensure all table cells have visible borders and proper backgrounds
-    const tableCells = reportClone.querySelectorAll('td, th');
-    tableCells.forEach(cell => {
-      if (cell && cell.style) {
-        cell.style.border = '1px solid #000';
-        cell.style.boxShadow = 'inset 0 0 0 1px #ddd';
-        cell.style.backgroundColor = cell.style.backgroundColor || '#ffffff';
-        cell.style.color = cell.style.color || '#000000';
-      }
-    });
-
-    // Special styling for grades to make them stand out
-    const gradeElements = reportClone.querySelectorAll('.report-table td');
-    gradeElements.forEach(cell => {
-      if (cell && cell.textContent) {
-        const text = cell.textContent.trim();
-        if (text === 'A1') {
-          cell.style.color = '#00a651'; // Make A1 grades green
-          cell.style.fontWeight = 'bold';
-        } else if (text.startsWith('A') || text === 'EXCELLENT') {
-          cell.style.color = '#008000'; // Green for excellent grades
-          cell.style.fontWeight = 'bold';
-        } else if (text.startsWith('F') || text === 'FAIL') {
-          cell.style.color = '#ff0000'; // Red for failing grades
-          cell.style.fontWeight = 'bold';
-        }
-      }
-    });
-
-    // Ensure background colors on data tables with stronger colors
-    const tableRows = reportClone.querySelectorAll('.report-table tr:nth-child(even)');
-    tableRows.forEach(row => {
-      if (row && row.style) {
-        row.style.backgroundColor = '#e6e6e6'; // Darker background for even rows
-      }
-    });
-
-    // Dynamic font sizing based on number of columns
-    const tableElement = reportClone.querySelector('.report-table');
-    if (tableElement) {
-      const columnCount = tableElement.querySelectorAll('thead th').length;
-
-      // Apply dynamic font sizing
-      if (columnCount > 20) {
-        if (reportClone.style) reportClone.style.fontSize = '0.7rem';
-      } else if (columnCount > 15) {
-        if (reportClone.style) reportClone.style.fontSize = '0.8rem';
-      } else if (columnCount > 10) {
-        if (reportClone.style) reportClone.style.fontSize = '0.85rem';
+      // Process child elements
+      if (element.childNodes) {
+        Array.from(element.childNodes).forEach(child => {
+          if (child.nodeType === 1) { // Element node
+            enforceVisibility(child);
+          }
+        });
       }
     }
 
@@ -114,62 +95,92 @@ export const generatePDF = async () => {
     tempContainer.style.position = 'absolute';
     tempContainer.style.left = '-9999px';
     tempContainer.style.height = 'auto';
-    tempContainer.style.width = 'auto';
+    tempContainer.style.width = reportElement.offsetWidth + 'px';
     tempContainer.appendChild(reportClone);
-
     document.body.appendChild(tempContainer);
 
-    // Generate canvas from the cloned element with improved settings
+    // Apply visibility enforcement to all elements
+    enforceVisibility(reportClone);
+
+    // Force image loading before canvas generation by creating promises for each image
+    const images = reportClone.querySelectorAll('img');
+    const imagePromises = Array.from(images).map(img => {
+      // Make sure crossOrigin is set before loading
+    //   img.setAttribute('crossOrigin', 'anonymous');
+
+      // For images that are already complete, resolve immediately
+      if (img.complete) return Promise.resolve();
+
+      // For images still loading, create a promise that resolves on load or error
+      return new Promise(resolve => {
+        const originalSrc = img.src;
+
+        img.onload = () => {
+          console.log(`Image loaded successfully: ${img.src}`);
+          resolve();
+        };
+
+        img.onerror = () => {
+          console.error(`Failed to load image: ${originalSrc}, trying direct URL`);
+          // If loading from S3 fails, try a direct URL approach
+          if (originalSrc.includes('schoolcompasse.s3.us-east-1.amazonaws.com')) {
+            const fileName = originalSrc.split('/').pop();
+            img.src = `https://schoolcompasse.s3.us-east-1.amazonaws.com/${fileName}`;
+            // Resolve regardless - we'll use a placeholder if this also fails
+            setTimeout(resolve, 500);
+          } else {
+            // Use placeholder and resolve
+            img.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YwZjBmMCIvPjwvc3ZnPg==";
+            resolve();
+          }
+        };
+
+        // Trigger loading if needed by resetting the src
+        if (!img.complete) {
+          const currentSrc = img.src;
+          img.src = currentSrc;
+        }
+      });
+    });
+
+    // Wait for all images to be processed
+    await Promise.all(imagePromises);
+
+    // Generate canvas with significantly increased quality settings
     const canvas = await html2canvas(reportClone, {
-      scale: 5, // Higher scale for best quality (increased from 4)
+      scale: 5, // Higher scale = better quality
       useCORS: true,
       allowTaint: true,
-      logging: false,
-      letterRendering: true,
+      logging: true, // Enable logging for debugging
       backgroundColor: '#ffffff',
-      removeContainer: false, // We'll handle removal ourselves
+      imageTimeout: 15000, // Longer timeout for images
+      removeContainer: false, // We'll handle removal
       onclone: (clonedDoc, element) => {
-        // Additional styling can be applied to the cloned document here
-        const tables = element.querySelectorAll('table');
-        tables.forEach(table => {
-          table.style.borderCollapse = 'collapse';
-          table.style.width = '100%';
-          table.style.border = '2px solid #000';
-        });
-
-        // Force maximum contrast for all text elements
+        // Add any additional styling to ensure visibility
         const allElements = element.querySelectorAll('*');
         allElements.forEach(el => {
-          if (el.style) {
+          if (el.tagName === 'IMG') {
+            // el.crossOrigin = 'Anonymous';
+            // Force image display
+            el.style.display = 'block';
+            el.style.visibility = 'visible';
             el.style.opacity = '1';
 
-            // Ensure headers and cells have proper styling
-            if (el.tagName === 'TH') {
-              el.style.backgroundColor = '#e6f2ff';
-              el.style.color = '#000000';
-              el.style.fontWeight = 'bold';
-              el.style.border = '1px solid #000';
-            }
-
-            if (el.tagName === 'TD') {
-              if (!el.style.color || el.style.color === 'rgba(0, 0, 0, 0)') {
-                el.style.color = '#000000';
-              }
-              el.style.border = '1px solid #000';
+            // If image is from AWS S3, ensure we use the correct URL
+            if (el.src && el.src.includes('s3.us-east-1.amazonaws.com')) {
+              // Make sure the image is loaded with proper headers
+            //   el.setAttribute('crossorigin', 'anonymous');
             }
           }
         });
       }
     });
 
-    // Calculate content width to height ratio to determine orientation
+    // Determine if content is wide (landscape) or tall (portrait)
     const contentRatio = canvas.width / canvas.height;
-    const isLandscape = contentRatio > 1.2; // Switch to landscape if content is wide
+    const orientation = contentRatio > 0.9 ? 'landscape' : 'portrait';
 
-    // Set orientation based on content
-    const orientation = isLandscape ? 'landscape' : 'portrait';
-
-    // Create PDF document with proper orientation and high quality settings
+    // Create PDF with high quality settings
     const pdf = new jsPDF({
       orientation: orientation,
       unit: 'mm',
@@ -182,53 +193,53 @@ export const generatePDF = async () => {
     const pdfWidth = orientation === 'landscape' ? 297 : 210; // A4 width in mm
     const pdfHeight = orientation === 'landscape' ? 210 : 297; // A4 height in mm
 
-    // Calculate image dimensions with better margins
-    const imgWidth = pdfWidth - 10; // Add smaller margins
+    // Calculate image dimensions to fit the page
+    const imgWidth = pdfWidth - 20; // 10mm margins on each side
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     // Calculate number of pages needed
     let heightLeft = imgHeight;
-    let position = 5; // Start position with smaller margin
+    let position = 10; // Initial margin
 
-    // First page - using highest quality settings
+    // Add first page
     pdf.addImage(
       canvas.toDataURL('image/png', 1.0), // Use highest quality
       'PNG',
-      5, // Left margin
+      10, // Left margin
       position,
       imgWidth,
       imgHeight,
       undefined,
       'FAST'
     );
-    heightLeft -= (pdfHeight - 10); // Account for margins
+    heightLeft -= pdfHeight - 20; // Subtract first page (with margins)
 
-    // Add additional pages if needed
+    // Add additional pages if content overflows
     while (heightLeft > 0) {
-      position = heightLeft - imgHeight + 5; // Add margin
       pdf.addPage();
+      position = heightLeft - imgHeight + 10; // Calculate position for next page
       pdf.addImage(
-        canvas.toDataURL('image/png', 1.0), // Use highest quality
+        canvas.toDataURL('image/png', 1.0),
         'PNG',
-        5, // Left margin
+        10,
         position,
         imgWidth,
         imgHeight,
         undefined,
         'FAST'
       );
-      heightLeft -= (pdfHeight - 10); // Account for margins
+      heightLeft -= (pdfHeight - 20);
     }
 
-    // Generate filename with timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    // Generate filename with student name if available
     const studentName = document.querySelector('#student-name')?.textContent.trim().replace(/\s+/g, '_') || 'Student';
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `${studentName}_Report_${timestamp}.pdf`;
 
     // Save the PDF
     pdf.save(filename);
 
-    // Clean up - safely remove from DOM
+    // Clean up - remove temp container
     if (tempContainer && document.body.contains(tempContainer)) {
       document.body.removeChild(tempContainer);
     }

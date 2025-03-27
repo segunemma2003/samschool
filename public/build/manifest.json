@@ -4,7 +4,7 @@
     "name": "chunk-K6CSEXPM"
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-By2shY3j.js",
+    "file": "assets/index.es-BSUkseJg.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,
@@ -14,7 +14,7 @@
     ],
     "css": [
       "assets/App-Bx9V9zN2.css",
-      "assets/index-C2e0jDEs.css"
+      "assets/index-BlxzHPNw.css"
     ]
   },
   "node_modules/dompurify/dist/purify.es.mjs": {
@@ -23,14 +23,8 @@
     "src": "node_modules/dompurify/dist/purify.es.mjs",
     "isDynamicEntry": true
   },
-  "node_modules/react-to-pdf/node_modules/dompurify/dist/purify.es.js": {
-    "file": "assets/purify.es-C_uT9hQ1.js",
-    "name": "purify.es",
-    "src": "node_modules/react-to-pdf/node_modules/dompurify/dist/purify.es.js",
-    "isDynamicEntry": true
-  },
   "resources/css/app.css": {
-    "file": "assets/app-DU7mnEY0.css",
+    "file": "assets/app-d3zdG5fE.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -61,7 +55,7 @@
     "isEntry": true
   },
   "resources/js/react/app.jsx": {
-    "file": "assets/app-SA7IrG3Y.js",
+    "file": "assets/app-D4UwlOme.js",
     "name": "app",
     "src": "resources/js/react/app.jsx",
     "isEntry": true,
@@ -70,12 +64,12 @@
     ],
     "css": [
       "assets/App-Bx9V9zN2.css",
-      "assets/app-DU7mnEY0.css",
-      "assets/react-DKSWMFc9.css"
+      "assets/app-d3zdG5fE.css",
+      "assets/react-6cPyFqa9.css"
     ]
   },
   "resources/js/react/src/react.css": {
-    "file": "assets/react-DKSWMFc9.css",
+    "file": "assets/react-6cPyFqa9.css",
     "src": "resources/js/react/src/react.css",
     "isEntry": true
   },
@@ -85,7 +79,7 @@
     "isEntry": true
   },
   "resources/js/results/app.jsx": {
-    "file": "assets/app-DEtBqrZG.js",
+    "file": "assets/app-BR2Kw3BJ.js",
     "name": "app",
     "src": "resources/js/results/app.jsx",
     "isEntry": true,
@@ -94,17 +88,15 @@
     ],
     "dynamicImports": [
       "node_modules/dompurify/dist/purify.es.mjs",
-      "node_modules/canvg/lib/index.es.js",
-      "node_modules/react-to-pdf/node_modules/dompurify/dist/purify.es.js",
       "node_modules/canvg/lib/index.es.js"
     ],
     "css": [
       "assets/App-Bx9V9zN2.css",
-      "assets/index-C2e0jDEs.css"
+      "assets/index-BlxzHPNw.css"
     ]
   },
   "resources/js/results/index.css": {
-    "file": "assets/index-C2e0jDEs.css",
+    "file": "assets/index-BlxzHPNw.css",
     "src": "resources/js/results/index.css",
     "isEntry": true
   }

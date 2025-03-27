@@ -1,39 +1,15 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import ReportHeader from './ReportHeader';
 import SubjectsTable from './SubjectsTable';
 import AffectiveDomain from './AffectiveDomain';
 import CommentsSection from './CommentsSection';
 import GradingInfo from './GradingInfo';
-import { generatePDF } from '../utils/pdfGenerator';
 import Psychomotor from './Psychomotor';
 
-const ReportCard = ({ data, targetRef }) => {
-  const [isPrinting, setIsPrinting] = useState(false);
-
-
-  useEffect(() => {
-    // Add print-specific styles when printing
-    const handleBeforePrint = () => {
-      setIsPrinting(true);
-      document.body.classList.add('printing');
-    };
-
-    const handleAfterPrint = () => {
-      setIsPrinting(false);
-      document.body.classList.remove('printing');
-    };
-
-    window.addEventListener('beforeprint', handleBeforePrint);
-    window.addEventListener('afterprint', handleAfterPrint);
-
-    return () => {
-      window.removeEventListener('beforeprint', handleBeforePrint);
-      window.removeEventListener('afterprint', handleAfterPrint);
-    };
-  }, []);
-
+const ReportCard = ({ data }) => {
   return (
-    <div ref={targetRef} id="report-card" className="report-container">
+    <div id="report-card" className="report-container">
       <ReportHeader
         school={data.school}
         student={data.student}
@@ -41,6 +17,7 @@ const ReportCard = ({ data, targetRef }) => {
         date={data.date}
         code={data.code}
       />
+
       <div className="p-2 md:p-4 bg-white">
         <SubjectsTable
           resultData={data.resultData}

@@ -38,7 +38,7 @@
                             <strong class="text-sm">Options:</strong>
                             @if(!is_null($question->question->options))
                                 <ul class="mt-2 text-gray-500 list-disc list-inside dark:text-gray-300">
-                                    @foreach(json_decode($question->question->options, true) as $key => $option)
+                                    @foreach($question->question->options as $key => $option)
                                         <li>{{ $key }}: {{ $option }}</li>
                                     @endforeach
                                 </ul>

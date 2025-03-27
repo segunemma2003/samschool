@@ -4,10 +4,8 @@ import { Download } from 'lucide-react';
 import { generatePDF } from '../utils/pdfGenerator';
 import { useToast } from "../hooks/use-toast";
 
-
-const DownloadButton = ({ toPDF }) => {
+const DownloadButton = () => {
   const [isGenerating, setIsGenerating] = useState(false);
-
   const { toast } = useToast();
 
   const handleDownload = async () => {
@@ -24,8 +22,7 @@ const DownloadButton = ({ toPDF }) => {
     try {
       // Add a slight delay to ensure toast is shown
       await new Promise(resolve => setTimeout(resolve, 300));
-    //   await generatePDF();
-    await toPDF();
+      await generatePDF();
       toast({
         title: "Success",
         description: "PDF has been downloaded successfully with all content visible and high quality",

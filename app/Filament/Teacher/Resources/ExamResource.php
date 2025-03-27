@@ -10,6 +10,8 @@ use App\Models\ResultSectionType;
 use App\Models\SchoolSection;
 use App\Models\Subject;
 use App\Models\Term;
+use App\Models\QuizScore;
+use App\Models\QuizSubmission;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
@@ -21,6 +23,8 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -158,6 +162,42 @@ class ExamResource extends Resource
                     ->label('View Students')
                     ->url(fn ($record) => static::getUrl('view-students', ['record' => $record->getKey()]))
                     ->icon('heroicon-o-user-group'),
+                Tables\Actions\Action::make('regenerate_results')
+                    ->label('Regenerate Results')
+                    ->icon('heroicon-o-arrow-path')
+                    ->action(function ($record) {
+                        // Get all students who have attempted the exam
+                        $quizScores = QuizScore::where('exam_id', $record->id)->get();
+
+                        $updatedCount = 0;
+
+                        foreach ($quizScores as $quizScore) {
+                            // Get all scores for this student and exam
+                            $scores = QuizSubmission::where('quiz_score_id', $quizScore->id)
+                                ->get();
+
+                            // Calculate total score
+                            $totalScore = $scores->sum('score');
+
+                            // Update the total score
+                            $quizScore->update([
+                                'total_score' => $totalScore
+                            ]);
+
+                            $updatedCount++;
+                        }
+
+                        Notification::make()
+                            ->title('Success')
+                            ->body("Updated {$updatedCount} student results")
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Regenerate Results')
+                    ->modalDescription('This will recalculate and update the total scores for all students who have attempted this exam.')
+                    ->modalSubmitActionLabel('Yes, regenerate results')
+                    ->modalCancelActionLabel('No, cancel')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

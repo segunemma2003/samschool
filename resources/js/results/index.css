@@ -25,6 +25,10 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    --report-blue: #2471A3;
+    --report-dark: #1A1F2C;
+    --report-light: #F1F5F9;
+    --report-accent: #3498DB;
   }
 
   .dark {
@@ -64,71 +68,134 @@
 /* Report card specific styles */
 @layer components {
   .report-container {
-    @apply w-full max-w-[1170px] mx-auto bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300 animate-fade-in;
+    @apply w-full max-w-[1170px] mx-auto bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300;
     page-break-inside: avoid;
   }
-  
+
   .report-header {
-    @apply relative overflow-hidden bg-gradient-to-r from-report-blue/90 to-report-dark p-4 text-white;
+    @apply relative overflow-hidden bg-gradient-to-r from-report-blue to-report-dark p-4 text-white;
   }
-  
+
   .report-table th {
-    @apply bg-report-blue/10 text-report-dark font-medium px-1 py-2 border border-gray-300;
+    @apply bg-gray-100 text-gray-800 font-semibold px-2 py-2 border border-gray-300;
     font-size: 0.75rem;
     line-height: 1rem;
   }
-  
+
   .report-table td {
-    @apply px-1 py-1 border border-gray-300 text-center;
+    @apply px-2 py-1 border border-gray-300 text-center;
     font-size: 0.75rem;
     line-height: 1rem;
   }
-  
+
   .report-table.text-xxs th,
   .report-table.text-xxs td {
     font-size: 0.65rem;
     padding: 0.15rem;
   }
-  
+
   .report-table.text-xs th,
   .report-table.text-xs td {
     font-size: 0.75rem;
     padding: 0.25rem;
   }
-  
+
   .report-table tr:nth-child(even) {
     @apply bg-gray-50;
   }
-  
+
   .report-table tr:hover {
-    @apply bg-report-light transition-colors duration-150;
+    @apply bg-blue-50 transition-colors duration-150;
   }
-  
+
   .download-btn {
-    @apply fixed top-4 right-4 z-10 bg-report-blue hover:bg-report-dark text-white rounded-lg px-4 py-2 
-    shadow-lg transition-all duration-300 flex items-center gap-2 
+    @apply fixed top-4 right-4 z-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2
+    shadow-lg transition-all duration-300 flex items-center gap-2
     hover:scale-105 active:scale-95 disabled:opacity-70 disabled:hover:scale-100;
   }
-  
+
   .print-only {
     @apply hidden;
   }
-  
+
+  /* Ensure text-xxs is defined */
+  .text-xxs {
+    font-size: 0.65rem;
+    line-height: 0.9rem;
+  }
+
+  /* Override animations for PDF generation */
+  .print-mode .animate-fade-in,
+  .print-mode .animate-pulse-soft,
+  .print-mode .animate-fade-in-right,
+  .print-mode .cell-animate-in {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
   @media print {
-    .report-container {
-      @apply shadow-none max-w-none w-full mx-0 my-0;
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
     }
-    
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+    }
+
+    body * {
+      visibility: hidden;
+    }
+
+    .report-container, .report-container * {
+      visibility: visible;
+      color-adjust: exact !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .report-container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+      @apply shadow-none max-w-none;
+    }
+
     .download-btn {
       @apply hidden;
     }
-    
+
     .print-only {
       @apply block;
     }
-    
+
     .no-print {
       @apply hidden;
+    }
+
+    /* Force all images to load */
+    img {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    /* Ensure table borders are visible */
+    table, th, td {
+      border: 1px solid black !important;
+    }
+
+    /* Force font colors */
+    p, span, div, h1, h2, h3, h4, h5, h6, td, th {
+      color: black !important;
+      opacity: 1 !important;
     }
   }
 }
@@ -150,48 +217,68 @@
   }
 }
 
-/* Animation delays for cells - manual definition instead of Sass loop */
-.cell-animate-delay-1 { animation-delay: 0.03s; }
-.cell-animate-delay-2 { animation-delay: 0.06s; }
-.cell-animate-delay-3 { animation-delay: 0.09s; }
-.cell-animate-delay-4 { animation-delay: 0.12s; }
-.cell-animate-delay-5 { animation-delay: 0.15s; }
-.cell-animate-delay-6 { animation-delay: 0.18s; }
-.cell-animate-delay-7 { animation-delay: 0.21s; }
-.cell-animate-delay-8 { animation-delay: 0.24s; }
-.cell-animate-delay-9 { animation-delay: 0.27s; }
-.cell-animate-delay-10 { animation-delay: 0.30s; }
-.cell-animate-delay-11 { animation-delay: 0.33s; }
-.cell-animate-delay-12 { animation-delay: 0.36s; }
-.cell-animate-delay-13 { animation-delay: 0.39s; }
-.cell-animate-delay-14 { animation-delay: 0.42s; }
-.cell-animate-delay-15 { animation-delay: 0.45s; }
-.cell-animate-delay-16 { animation-delay: 0.48s; }
-.cell-animate-delay-17 { animation-delay: 0.51s; }
-.cell-animate-delay-18 { animation-delay: 0.54s; }
-.cell-animate-delay-19 { animation-delay: 0.57s; }
-.cell-animate-delay-20 { animation-delay: 0.60s; }
-.cell-animate-delay-21 { animation-delay: 0.63s; }
-.cell-animate-delay-22 { animation-delay: 0.66s; }
-.cell-animate-delay-23 { animation-delay: 0.69s; }
-.cell-animate-delay-24 { animation-delay: 0.72s; }
-.cell-animate-delay-25 { animation-delay: 0.75s; }
-.cell-animate-delay-26 { animation-delay: 0.78s; }
-.cell-animate-delay-27 { animation-delay: 0.81s; }
-.cell-animate-delay-28 { animation-delay: 0.84s; }
-.cell-animate-delay-29 { animation-delay: 0.87s; }
-.cell-animate-delay-30 { animation-delay: 0.90s; }
+/* Fade in animation */
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Soft pulse animation */
+.animate-pulse-soft {
+  animation: pulseSoft 2s infinite;
+}
+
+@keyframes pulseSoft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Animation with right motion */
+.animate-fade-in-right {
+  animation: fadeInRight 0.8s ease-out forwards;
+}
+
+@keyframes fadeInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
 /* Custom watermark style */
 .watermark {
-  @apply absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.02] -rotate-12 select-none;
+  @apply absolute inset-0 flex items-center justify-center pointer-events-none select-none -rotate-12;
+  z-index: 0;
 }
+
 .watermark-text {
   @apply text-[15rem] font-black text-report-dark;
 }
 
-/* Print layout adjustments */
-@page {
-  size: A4;
-  margin: 10mm;
+/* Force borders in PDF */
+.pdf-mode table,
+.pdf-mode th,
+.pdf-mode td {
+  border: 1px solid black !important;
+}
+
+.pdf-mode * {
+  opacity: 1 !important;
+  color: black !important;
 }

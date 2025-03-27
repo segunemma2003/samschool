@@ -153,17 +153,23 @@ class ExamController extends Controller
 
             $groupedHeadings = $headings->groupBy('calc_pattern');
             $totalHeadings = $headings->where('calc_pattern', 'total');
+
             $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
+
             $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
+
             $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
 
             $remarks = $headings->whereIn('calc_pattern', ['remarks']) ?? collect([]);
             $class = SchoolClass::with('teacher')->where('id', $student->class->id)->first() ?? collect([]);
             $scoreData = $courses->reduce(function ($carry, $course) use ($totalHeadings) {
                 $subject = strtolower($course->subject->subjectDepot->name);
+                // dd($course->scoreBoard);
                 $score = $course->scoreBoard
                     ->whereIn('result_section_type_id', $totalHeadings->pluck('id'))
-                    ->sum('score');
+                    ->sum(function($item) {
+                        return (int) $item->score;
+                    });
 
                 $carry['totalScore'] += $score;
 
@@ -181,7 +187,7 @@ class ExamController extends Controller
                 $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings, &$englishScore, &$mathScore) {
                     foreach ($totalHeadings as $heading) {
                         $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
-                        $scoreValue = $score->score ?? 0;
+                        $scoreValue = (int) ($score->score ?? 0);
 
                         // Add to the total score
                         $carry += $scoreValue;

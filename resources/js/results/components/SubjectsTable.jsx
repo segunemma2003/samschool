@@ -1,6 +1,8 @@
 import React from 'react';
 
 const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, remarks, analysis }) => {
+    console.log(markObtained);
+    console.log(typeof markObtained);
   // Safely get score from the score_board
   const getScore = (course, markId) => {
     if (!course || !course.score_board) return 'N/A';
@@ -37,44 +39,44 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                     SUBJECTS
                   </th>
 
-                  {Array.isArray(markObtained) && markObtained.length > 0 && (
-                    <th className="px-2 py-1 border border-gray-400 whitespace-nowrap" colSpan={markObtained.length}>
+                  {markObtained && Object.keys(markObtained).length > 0 && (
+                    <th  className="px-2 py-1 border border-gray-400 whitespace-nowrap" colSpan={Object.values(markObtained).length}>
                       MARKS OBTAINED
                     </th>
                   )}
 
-                  {Array.isArray(studentSummary) && studentSummary.length > 0 && studentSummary.map((mark) => (
+                  {studentSummary && Object.keys(studentSummary).length > 0 && Object.values(studentSummary).map((mark) => (
                     <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '100px' }}>
                       {mark.name}
                     </th>
                   ))}
 
-                  {Array.isArray(termSummary) && termSummary.length > 0 && (
-                    <th className="px-2 py-1 border border-gray-400 whitespace-nowrap" colSpan={termSummary.length}>
+                  {termSummary && Object.keys(termSummary).length > 0 &&  (
+                    <th  className="px-2 py-1 border border-gray-400 whitespace-nowrap" colSpan={Object.values(termSummary).length}>
                       TERM SUMMARY
                     </th>
                   )}
 
-                  {Array.isArray(remarks) && remarks.length > 0 && remarks.map((mark) => (
-                    <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '100px' }}>
-                      {mark.name}
+                  {remarks && Object.keys(remarks).length > 0 && (
+                    <th className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '100px' }}>
+                      Remarks
                     </th>
-                  ))}
+                  )}
 
                   <th className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '80px' }}>
                     Sign.
                   </th>
                 </tr>
                 <tr className="bg-gray-200">
-                  {Array.isArray(markObtained) && markObtained.length > 0 && markObtained.map((mark) => (
-                    <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" style={{ minWidth: '80px' }}>
-                      {mark.name}
+                  {markObtained && Object.keys(markObtained).length > 0 && Object.values(markObtained).map((heading) => (
+                    <th key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" style={{ minWidth: '80px' }}>
+                      {heading.name}
                     </th>
                   ))}
 
-                  {Array.isArray(termSummary) && termSummary.length > 0 && termSummary.map((mark) => (
-                    <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" style={{ minWidth: '80px' }}>
-                      {mark.name}
+                  {termSummary && Object.keys(termSummary).length > 0 && Object.values(termSummary).map((heading) => (
+                    <th key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" style={{ minWidth: '80px' }}>
+                      {heading.name}
                     </th>
                   ))}
                 </tr>
@@ -86,25 +88,25 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                       {course.subject?.subject_depot?.name || 'Unknown Subject'}
                     </td>
 
-                    {Array.isArray(markObtained) && markObtained.map((heading) => (
+                    {markObtained && Object.keys(markObtained).length > 0 && Object.values(markObtained).map((heading) => (
                       <td key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center">
                         {getScore(course, heading.id)}
                       </td>
                     ))}
 
-                    {Array.isArray(studentSummary) && studentSummary.map((heading) => (
+                    {studentSummary && Object.keys(studentSummary).length > 0 && Object.values(studentSummary).map((heading) => (
                       <td key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center">
                         {getScore(course, heading.id)}
                       </td>
                     ))}
 
-                    {Array.isArray(termSummary) && termSummary.map((heading) => (
+                    {termSummary && Object.keys(termSummary).length > 0 && Object.values(termSummary).map((heading) => (
                       <td key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center">
                         {getScore(course, heading.id)}
                       </td>
                     ))}
 
-                    {Array.isArray(remarks) && remarks.map((heading) => (
+                    {remarks && Object.keys(remarks).length > 0 && Object.values(remarks).map((heading) => (
                       <td key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center">
                         {getScore(course, heading.id)}
                       </td>
@@ -120,7 +122,7 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                             : `https://schoolcompasse.s3.us-east-1.amazonaws.com/${course.subject.teacher.signature}`}
                           alt="Teacher Signature"
                           className="mx-auto rounded-md w-[20px] h-[20px] object-cover"
-                          crossOrigin="anonymous"
+                        //   crossOrigin="anonymous"
                         />
                       )}
                     </td>

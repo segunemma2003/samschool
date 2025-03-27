@@ -179,6 +179,8 @@ class ExamResource extends Resource
                             // Calculate total score
                             $totalScore = $scores->sum('score');
 
+
+
                             // Update the total score
                             $quizScore->update([
                                 'total_score' => $totalScore

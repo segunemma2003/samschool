@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, remarks, analysis }) => {
@@ -38,25 +37,25 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                     SUBJECTS
                   </th>
 
-                  {markObtained && markObtained.length > 0 && (
+                  {Array.isArray(markObtained) && markObtained.length > 0 && (
                     <th className="px-2 py-1 border border-gray-400 whitespace-nowrap" colSpan={markObtained.length}>
                       MARKS OBTAINED
                     </th>
                   )}
 
-                  {studentSummary && studentSummary.length > 0 && ( studentSummary.map((mark) => (
+                  {Array.isArray(studentSummary) && studentSummary.length > 0 && studentSummary.map((mark) => (
                     <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '100px' }}>
                       {mark.name}
                     </th>
-                  )))}
+                  ))}
 
-                  {termSummary && termSummary.length > 0 && (
+                  {Array.isArray(termSummary) && termSummary.length > 0 && (
                     <th className="px-2 py-1 border border-gray-400 whitespace-nowrap" colSpan={termSummary.length}>
                       TERM SUMMARY
                     </th>
                   )}
 
-                  {remarks && remarks.length > 0 && remarks.map((mark) => (
+                  {Array.isArray(remarks) && remarks.length > 0 && remarks.map((mark) => (
                     <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '100px' }}>
                       {mark.name}
                     </th>
@@ -67,13 +66,13 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                   </th>
                 </tr>
                 <tr className="bg-gray-200">
-                  {markObtained &&  markObtained.length > 0 && markObtained.map((mark) => (
+                  {Array.isArray(markObtained) && markObtained.length > 0 && markObtained.map((mark) => (
                     <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" style={{ minWidth: '80px' }}>
                       {mark.name}
                     </th>
                   ))}
 
-                  {termSummary && termSummary.length > 0 && termSummary.map((mark) => (
+                  {Array.isArray(termSummary) && termSummary.length > 0 && termSummary.map((mark) => (
                     <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" style={{ minWidth: '80px' }}>
                       {mark.name}
                     </th>
@@ -87,25 +86,25 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                       {course.subject?.subject_depot?.name || 'Unknown Subject'}
                     </td>
 
-                    {markObtained && markObtained.map((heading) => (
+                    {Array.isArray(markObtained) && markObtained.map((heading) => (
                       <td key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center">
                         {getScore(course, heading.id)}
                       </td>
                     ))}
 
-                    {studentSummary && studentSummary.map((heading) => (
+                    {Array.isArray(studentSummary) && studentSummary.map((heading) => (
                       <td key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center">
                         {getScore(course, heading.id)}
                       </td>
                     ))}
 
-                    {termSummary && termSummary.map((heading) => (
+                    {Array.isArray(termSummary) && termSummary.map((heading) => (
                       <td key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center">
                         {getScore(course, heading.id)}
                       </td>
                     ))}
 
-                    {remarks && remarks.map((heading) => (
+                    {Array.isArray(remarks) && remarks.map((heading) => (
                       <td key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center">
                         {getScore(course, heading.id)}
                       </td>

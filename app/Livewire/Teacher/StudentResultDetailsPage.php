@@ -46,20 +46,26 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         $this->record = $record;
         $this->terms = Term::all();
         $this->academicYears = AcademicYear::all();
-        $this->termId = Term::query()->where('status', true)->first()?->id; // Default to the first term
+        $termId = Term::where('status', "true")->first();
+
+        $this->termId = $termId?->id; // Default to the first term
+        // dd($this->termId);
         $this->academic = AcademicYear::query()->where('status', "true")->first()?->id; // Default to active academic year
         $this->student = Student::where('id', $record)->first();
         $this->classId = $this->student->class->group->id;
 
        $this->loadComment();
+       $this->getDynamicScoreBoardColumns($this->termId);
     }
 
-    public function loadComment()
+    public function loadComment($termId=null)
     {
+        $termId = is_null($termId) ? $this->termId : $termId;
+        $academicId = is_null($this->academic) ? AcademicYear::where('status', "true")->first()?->id : $this->academic;
         // dd($this->termId);
         $studentComment = StudentComment::query()
             ->where('student_id', $this->student->id)
-            ->where('term_id', $this->termId)
+            ->where('term_id', $termId)
             ->where('academic_id', $this->academic)
             ->first();
 
@@ -151,6 +157,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         // dd($this->termId);
         if (in_array($property, ['termId', 'academic'])) {
 
+            $this->getDynamicScoreBoardColumns();
             $this->calculateTotals();
             $this->loadComment();
         }
@@ -158,24 +165,35 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
     public function updatedTableFilters($filters)
     {
-        $updates = request('components.0.updates', []);
-        // dd($updates);
-        if (isset($updates['tableFilters.term_id.value'])) {
-            $this->termId = $updates['tableFilters.term_id.value'];
+        if (isset($filters['term_id']['value'])) {
+            $this->termId = $filters['term_id']['value'];
         }
 
-        if (isset($updates['tableFilters.academic_year_id.value'])) {
-            $this->academic = $updates['tableFilters.academic_year_id.value'];
+        if (isset($filters['academic_year_id']['value'])) {
+            $this->academic = $filters['academic_year_id']['value'];
         }
 
-        $this->loadComment(); // Reload comment when filters change
+        // Update the table query to include the filters
+        $this->table->query(
+            CourseForm::query()
+                ->where('student_id', $this->record)
+                ->where('term_id', $this->termId)
+                ->where('academic_year_id', $this->academic)
+        );
+
+        // Update dynamic columns and other data
+        $this->getDynamicScoreBoardColumns();
+        $this->calculateTotals();
+        $this->loadComment();
     }
 
-    public function calculateTotals()
+    public function calculateTotals($termId=null)
     {
+        $termId = is_null($termId) ? $this->termId : $termId;
+        $academicId = is_null($this->academic) ? AcademicYear::where('status', "true")->first()?->id : $this->academic;
         $courseForms = CourseForm::query()
             ->where('student_id', $this->record)
-            ->where('term_id', $this->termId)
+            ->where('term_id', $termId)
             ->where('academic_year_id', $this->academic)
             ->get();
 
@@ -204,26 +222,28 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         return 'FAIL';
     }
 
-    protected function getDynamicScoreBoardColumns(): array
+    protected function getDynamicScoreBoardColumns($termId=null): array
     {
-        $dynamicFields = ResultSectionType::where('term_id', $this->termId)
+        $termId = is_null($termId) ? $this->termId : $termId;
+        $academicId = is_null($this->academic) ? AcademicYear::where('status', "true")->first()?->id : $this->academic;
+
+        $dynamicFields = ResultSectionType::where('term_id', $termId)
             ->whereHas('resultSection', function ($query) {
                 $query->where('group_id', $this->classId);
             })
+
             ->get(['id', 'name']);
 
         return $dynamicFields->map(function ($field) {
             return TextColumn::make("scoreBoard.{$field->id}")
                 ->label($field->name)
                 ->state(function ($record) use ($field) {
-                    // Retrieve the score for the current field
-
                     $score = $record->scoreBoard
                         ->where('result_section_type_id', $field->id)
-                        ->pluck('score') // Fetch the scores
-                        ->first();      // Get the first score or adjust as needed
+                        ->pluck('score')
+                        ->first();
 
-                    return $score ?? 'N/A'; // Default if no score found
+                    return $score ?? 'N/A';
                 });
         })->toArray();
     }

@@ -206,7 +206,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
     protected function getDynamicScoreBoardColumns(): array
     {
-        $dynamicFields = ResultSectionType::query()
+        $dynamicFields = ResultSectionType::where('term_id', $this->termId)
             ->whereHas('resultSection', function ($query) {
                 $query->where('group_id', $this->classId);
             })

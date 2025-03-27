@@ -44,7 +44,7 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                     </th>
                   )}
 
-                  {studentSummary && markObtained.length > 0 && ( studentSummary.map((mark) => (
+                  {studentSummary && studentSummary.length > 0 && ( studentSummary.map((mark) => (
                     <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '100px' }}>
                       {mark.name}
                     </th>

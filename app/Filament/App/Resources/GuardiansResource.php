@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources;
 
+use App\Exports\GuardiansExport;
 use App\Filament\App\Resources\GuardiansResource\Pages;
 use App\Filament\App\Resources\GuardiansResource\RelationManagers;
 use App\Models\Guardians;
@@ -13,6 +14,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Jobs\MigrateImagesToS3;
+use Filament\Notifications\Notification;
 
 class GuardiansResource extends Resource
 {
@@ -85,6 +89,25 @@ class GuardiansResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->headerActions([
+            Tables\Actions\Action::make('export')
+                    ->label('Export Guardians')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(function () {
+                        return Excel::download(new GuardiansExport, 'guardians.xlsx');
+                    }),
+            Tables\Actions\Action::make('migrate_images')
+                ->label('Migrate Images to S3')
+                ->icon('heroicon-o-arrow-path')
+                ->action(function () {
+                    MigrateImagesToS3::dispatch(Guardians::class, 'photo');
+                    Notification::make()
+                        ->title('Migration Started')
+                        ->body('Image migration to S3 has been queued')
+                        ->success()
+                        ->send();
+                })
+        ])
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),

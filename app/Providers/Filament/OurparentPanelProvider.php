@@ -32,6 +32,7 @@ class OurparentPanelProvider extends PanelProvider
             ->id('parent')
             ->path('parent')
             ->login(GuardianLogin::class)
+            ->passwordReset()
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
             ->brandLogoHeight('5rem')

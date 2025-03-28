@@ -34,6 +34,7 @@ class OurstudentPanelProvider extends PanelProvider
             ->path('student')
             ->login(StudentLogin::class)
             ->brandLogo(getTenantLogo())
+            ->passwordReset()
             ->favicon(getTenantLogo())
             ->brandLogoHeight('5rem')
             ->colors([

@@ -12,6 +12,8 @@ use App\Models\Subject;
 use App\Models\Term;
 use App\Models\QuizScore;
 use App\Models\QuizSubmission;
+use App\Models\Teacher;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
@@ -27,6 +29,7 @@ use Filament\Tables\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class ExamResource extends Resource
 {
@@ -115,7 +118,9 @@ class ExamResource extends Resource
     {
         $academy = AcademicYear::whereStatus('true')->first();
         $term = Term::whereStatus('true')->first();
-
+        $userId = Auth::id();
+        $user = User::whereId($userId)->first();
+        $teacher = Teacher::where("email",$user->email)->first();
         // Start with the base query
         $query = Exam::query();
 
@@ -129,7 +134,11 @@ class ExamResource extends Resource
         // }
 
         return $table
-            ->query($query) // Apply the filtered query to the table
+            ->query($query->whereHas('subject', function($q) use ($teacher) {
+                $q->whereHas('teacher', function($subQ) use ($teacher) {
+                    $subQ->where('id', $teacher->id);
+                });
+            })) // Apply the filtered query to the table
             ->columns([
                 TextColumn::make('academic.title')->searchable(),
                 TextColumn::make('term.name')->searchable()->default('Term 1'),

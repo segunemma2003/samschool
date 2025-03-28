@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash;
+use App\Jobs\MigrateImagesToS3;
 
 class TeacherResource extends Resource
 {
@@ -135,6 +136,19 @@ class TeacherResource extends Resource
                 ->modalHeading('Change Password')
                 ->modalSubmitActionLabel('Save')
                 ->requiresConfirmation(),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('migrate_images')
+                    ->label('Migrate Images to S3')
+                    ->icon('heroicon-o-arrow-path')
+                    ->action(function () {
+                        MigrateImagesToS3::dispatch(Teacher::class, 'avatar');
+                        Notification::make()
+                            ->title('Migration Started')
+                            ->body('Image migration to S3 has been queued')
+                            ->success()
+                            ->send();
+                    })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -35,7 +35,6 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\HtmlString;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Jobs\MigrateImagesToS3;
 
 class StudentResource extends Resource
 {
@@ -421,19 +420,6 @@ class StudentResource extends Resource
                             ->color('success'),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->headerActions([
-                Tables\Actions\Action::make('migrate_images')
-                    ->label('Migrate Images to S3')
-                    ->icon('heroicon-o-arrow-path')
-                    ->action(function () {
-                        MigrateImagesToS3::dispatch(Student::class, 'avatar');
-                        Notification::make()
-                            ->title('Migration Started')
-                            ->body('Image migration to S3 has been queued')
-                            ->success()
-                            ->send();
-                    })
             ]);
     }
 

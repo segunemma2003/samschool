@@ -1,5 +1,5 @@
-
 import React from 'react';
+import Watermark from './Watermark';
 
 const ReportHeader = ({ school, student, attendance, date, code }) => {
   // Helper function to handle image loading with proper attributes
@@ -13,9 +13,7 @@ const ReportHeader = ({ school, student, attendance, date, code }) => {
   return (
     <div className="report-header print:break-inside-avoid animate-fade-in">
       {/* Watermark - visible only on print */}
-      {/* <div className="watermark print-only opacity-[0.05]">
-        <div className="watermark-text">{code}</div>
-      </div> */}
+      {/* <Watermark logoUrl={school.school_logo} opacity={0.05} /> */}
 
       {/* Date and Code */}
       <div className="flex justify-between text-xs text-white">
@@ -32,7 +30,6 @@ const ReportHeader = ({ school, student, attendance, date, code }) => {
               src={getImageSrc(school.school_logo)}
               alt={`${school.name} Logo`}
               className="w-full h-full object-contain"
-            //   crossOrigin="anonymous"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOWE5YTlhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5Mb2dvPC90ZXh0Pjwvc3ZnPg==";
@@ -62,7 +59,6 @@ const ReportHeader = ({ school, student, attendance, date, code }) => {
               src={getImageSrc(student.data.avatar)}
               alt="Student Photo"
               className="w-full h-full object-cover"
-            //   crossOrigin="anonymous"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOWE5YTlhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5QaG90bzwvdGV4dD48L3N2Zz4=";
@@ -145,7 +141,3 @@ const ReportHeader = ({ school, student, attendance, date, code }) => {
 };
 
 export default ReportHeader;
-
-
-
-

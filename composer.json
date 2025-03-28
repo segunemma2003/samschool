@@ -21,6 +21,7 @@
         "filament/forms": "^3.2",
         "filament/spatie-laravel-media-library-plugin": "^3.2",
         "filament/tables": "^3.2",
+        "filament/widgets": "*",
         "h4cc/wkhtmltoimage-amd64": "0.12.x",
         "h4cc/wkhtmltoimage-i386": "0.12.x",
         "h4cc/wkhtmltopdf-i386": "0.12.x",

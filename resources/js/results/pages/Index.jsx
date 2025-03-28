@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
-import ReportCard from '../components/ReportCard';
-import DownloadButton from '../components/DownloadButton';
+import ReportCard from '../components/ReportCard.jsx';
+import DownloadButton from '../components/DownloadButton.jsx';
 import { reportData } from '../utils/dummyData';
 
 const Index = () => {
@@ -94,22 +93,22 @@ const Index = () => {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
-          <p className="text-gray-600">Please wait while we load your report card.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Loading...</h2>
+          <p className="text-gray-600 dark:text-gray-400">Please wait while we load your report card.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
       <DownloadButton />
 
       <div className="max-w-[1170px] mx-auto mb-8">
         {/* Page title */}
-        <h1 className="text-2xl md:text-3xl font-bold text-report-dark text-center mb-6 animate-fade-in">
+        <h1 className="text-2xl md:text-3xl font-bold text-report-dark dark:text-white text-center mb-6 animate-fade-in">
           Student Report Card
         </h1>
 

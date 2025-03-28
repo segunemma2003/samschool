@@ -165,26 +165,21 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
     public function updatedTableFilters($filters)
     {
-        if (isset($filters['term_id']['value'])) {
-            $this->termId = $filters['term_id']['value'];
+        $updates = request('components.0.updates', []);
+        // dd($updates);
+        if (isset($updates['tableFilters.term_id.value'])) {
+            $this->termId = $updates['tableFilters.term_id.value'];
+
         }
 
-        if (isset($filters['academic_year_id']['value'])) {
-            $this->academic = $filters['academic_year_id']['value'];
+        if (isset($updates['tableFilters.academic_year_id.value'])) {
+            $this->academic = $updates['tableFilters.academic_year_id.value'];
         }
 
-        // Update the table query to include the filters
-        $this->table->query(
-            CourseForm::query()
-                ->where('student_id', $this->record)
-                ->where('term_id', $this->termId)
-                ->where('academic_year_id', $this->academic)
-        );
 
-        // Update dynamic columns and other data
-        $this->getDynamicScoreBoardColumns();
-        $this->calculateTotals();
-        $this->loadComment();
+        $this->getDynamicScoreBoardColumns($updates['tableFilters.term_id.value']);
+        $this->calculateTotals($updates['tableFilters.term_id.value']);
+        $this->loadComment($updates['tableFilters.term_id.value']); // Reload comment when filters change
     }
 
     public function calculateTotals($termId=null)

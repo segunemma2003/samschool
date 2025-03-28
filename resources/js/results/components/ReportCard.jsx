@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReportHeader from './ReportHeader';
 import SubjectsTable from './SubjectsTable';

@@ -1,8 +1,6 @@
 import React from 'react';
 
 const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, remarks, analysis }) => {
-    console.log(markObtained);
-    console.log(typeof markObtained);
   // Safely get score from the score_board
   const getScore = (course, markId) => {
     if (!course || !course.score_board) return 'N/A';
@@ -40,42 +38,42 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                   </th>
 
                   {markObtained && Object.keys(markObtained).length > 0 && (
-                    <th  className="px-2 py-1 border border-gray-400 whitespace-nowrap" colSpan={Object.values(markObtained).length}>
+                    <th className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center" colSpan={Object.values(markObtained).length}>
                       MARKS OBTAINED
                     </th>
                   )}
 
                   {studentSummary && Object.keys(studentSummary).length > 0 && Object.values(studentSummary).map((mark) => (
-                    <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '100px' }}>
+                    <th key={mark.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center" rowSpan="2" style={{ minWidth: '100px' }}>
                       {mark.name}
                     </th>
                   ))}
 
                   {termSummary && Object.keys(termSummary).length > 0 &&  (
-                    <th  className="px-2 py-1 border border-gray-400 whitespace-nowrap" colSpan={Object.values(termSummary).length}>
+                    <th className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center" colSpan={Object.values(termSummary).length}>
                       TERM SUMMARY
                     </th>
                   )}
 
                   {remarks && Object.keys(remarks).length > 0 && (
-                    <th className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '100px' }}>
+                    <th className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center" rowSpan="2" style={{ minWidth: '100px' }}>
                       Remarks
                     </th>
                   )}
 
-                  <th className="px-2 py-1 border border-gray-400 whitespace-nowrap" rowSpan="2" style={{ minWidth: '80px' }}>
+                  <th className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center" rowSpan="2" style={{ minWidth: '80px' }}>
                     Sign.
                   </th>
                 </tr>
                 <tr className="bg-gray-200">
                   {markObtained && Object.keys(markObtained).length > 0 && Object.values(markObtained).map((heading) => (
-                    <th key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" style={{ minWidth: '80px' }}>
+                    <th key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center" style={{ minWidth: '80px' }}>
                       {heading.name}
                     </th>
                   ))}
 
                   {termSummary && Object.keys(termSummary).length > 0 && Object.values(termSummary).map((heading) => (
-                    <th key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap" style={{ minWidth: '80px' }}>
+                    <th key={heading.id} className="px-2 py-1 border border-gray-400 whitespace-nowrap text-center" style={{ minWidth: '80px' }}>
                       {heading.name}
                     </th>
                   ))}
@@ -84,7 +82,7 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
               <tbody className="divide-y divide-gray-400">
                 {resultData.courses.map((course, index) => (
                   <tr key={course.id || index} className="hover:bg-gray-50">
-                    <td className="px-2 py-1 border border-gray-400 whitespace-nowrap font-medium">
+                    <td className="px-2 py-1 border border-gray-400 whitespace-nowrap font-medium text-left">
                       {course.subject?.subject_depot?.name || 'Unknown Subject'}
                     </td>
 
@@ -122,7 +120,6 @@ const SubjectsTable = ({ resultData, markObtained, studentSummary, termSummary, 
                             : `https://schoolcompasse.s3.us-east-1.amazonaws.com/${course.subject.teacher.signature}`}
                           alt="Teacher Signature"
                           className="mx-auto rounded-md w-[20px] h-[20px] object-cover"
-                        //   crossOrigin="anonymous"
                         />
                       )}
                     </td>

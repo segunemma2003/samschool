@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Download } from 'lucide-react';
 import { generatePDF } from '../utils/pdfGenerator';

@@ -1,4 +1,3 @@
-
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -21,7 +20,9 @@ export const generatePDF = async () => {
         this.onerror = null;
         if (this.src.includes('schoolcompasse.s3.us-east-1.amazonaws.com')) {
           // Try direct URL if S3 URL fails
+
           const fileName = this.src.split('/').pop();
+          console.log(fileName);
           this.src = `https://schoolcompasse.s3.us-east-1.amazonaws.com/${fileName}`;
         } else {
           // Use placeholder if all attempts fail
@@ -39,8 +40,8 @@ export const generatePDF = async () => {
       }
     });
 
-    // Force all elements to have solid colors and full opacity
-    function enforceVisibility(element) {
+    // Enhance visibility for PDF conversion
+    const enforceVisibility = (element) => {
       if (element.style) {
         // Force full opacity and solid colors
         element.style.opacity = '1';
@@ -62,10 +63,12 @@ export const generatePDF = async () => {
           element.style.fontWeight = element.style.fontWeight || '500';
         }
 
-        // Ensure table borders are solid
+        // Ensure table borders are solid and content is centered
         if (element.tagName === 'TABLE') {
           element.style.borderCollapse = 'collapse';
           element.style.border = '2px solid #000';
+          element.style.width = '100%';
+          element.style.marginBottom = '20px';
         }
 
         if (element.tagName === 'TH') {
@@ -73,10 +76,34 @@ export const generatePDF = async () => {
           element.style.color = '#000000';
           element.style.fontWeight = 'bold';
           element.style.border = '1px solid #000';
+          element.style.textAlign = 'center';
+          element.style.padding = '8px';
         }
 
         if (element.tagName === 'TD') {
           element.style.border = '1px solid #000';
+          element.style.textAlign = 'center';
+          element.style.padding = '8px';
+        }
+
+        // Style psychomotor tables differently from affective domain tables
+        if (element.tagName === 'TABLE') {
+          const tableTitle = element.previousElementSibling?.textContent || '';
+          if (tableTitle.includes('Psychomotor Domain')) {
+            element.style.backgroundColor = '#f8f9fa';
+            element.style.borderColor = '#2c5282';
+            element.querySelectorAll('th').forEach(th => {
+              th.style.backgroundColor = '#2c5282';
+              th.style.color = '#ffffff';
+            });
+          } else if (tableTitle.includes('Affective Domain')) {
+            element.style.backgroundColor = '#fff5f5';
+            element.style.borderColor = '#c53030';
+            element.querySelectorAll('th').forEach(th => {
+              th.style.backgroundColor = '#c53030';
+              th.style.color = '#ffffff';
+            });
+          }
         }
       }
 
@@ -88,19 +115,25 @@ export const generatePDF = async () => {
           }
         });
       }
-    }
+    };
 
-    // Create a temporary container and append clone to document (off-screen)
+    // Create a temporary container to work with the clone
     const tempContainer = document.createElement('div');
     tempContainer.style.position = 'absolute';
     tempContainer.style.left = '-9999px';
-    tempContainer.style.height = 'auto';
     tempContainer.style.width = reportElement.offsetWidth + 'px';
     tempContainer.appendChild(reportClone);
     document.body.appendChild(tempContainer);
 
-    // Apply visibility enforcement to all elements
+    // Apply visibility enforcement
     enforceVisibility(reportClone);
+
+    // Show watermark for PDF (already in print-only class, but enforce visibility)
+    // const watermark = reportClone.querySelector('.watermark');
+    // if (watermark) {
+    //   watermark.style.display = 'flex';
+    //   watermark.style.opacity = '0.05';
+    // }
 
     // Force image loading before canvas generation by creating promises for each image
     const images = reportClone.querySelectorAll('img');
@@ -143,97 +176,103 @@ export const generatePDF = async () => {
       });
     });
 
-    // Wait for all images to be processed
     await Promise.all(imagePromises);
 
-    // Generate canvas with significantly increased quality settings
+    // Generate high-quality canvas
     const canvas = await html2canvas(reportClone, {
-      scale: 5, // Higher scale = better quality
+      scale: 5, // Higher scale for better quality
       useCORS: true,
       allowTaint: true,
-      logging: true, // Enable logging for debugging
+      logging: false,
       backgroundColor: '#ffffff',
-      imageTimeout: 15000, // Longer timeout for images
-      removeContainer: false, // We'll handle removal
       onclone: (clonedDoc, element) => {
-        // Add any additional styling to ensure visibility
-        const allElements = element.querySelectorAll('*');
-        allElements.forEach(el => {
-          if (el.tagName === 'IMG') {
-            // el.crossOrigin = 'Anonymous';
-            // Force image display
-            el.style.display = 'block';
-            el.style.visibility = 'visible';
-            el.style.opacity = '1';
+        // Ensure watermark is visible in PDF
+        // const watermark = element.querySelector('.watermark');
+        // if (watermark) {
+        //   watermark.style.display = 'flex';
+        //   watermark.style.opacity = '0.05';
+        // }
 
-            // If image is from AWS S3, ensure we use the correct URL
-            if (el.src && el.src.includes('s3.us-east-1.amazonaws.com')) {
-              // Make sure the image is loaded with proper headers
-            //   el.setAttribute('crossorigin', 'anonymous');
-            }
-          }
+        // Ensure all table cells are properly centered
+        const tableCells = element.querySelectorAll('td, th');
+        tableCells.forEach(cell => {
+            cell.style.paddingBottom= "0.25rem";
+            cell.style.paddingTop = "0.25rem";
+          cell.style.textAlign = 'center';
+        });
+
+        // Left-align first column cells (subject names)
+        const subjectCells = element.querySelectorAll('tr td');
+        subjectCells.forEach(cell => {
+            cell.style.paddingBottom= "0.25rem";
+            cell.style.paddingTop= "0.25rem";
+          cell.style.textAlign = 'center';
         });
       }
     });
 
-    // Determine if content is wide (landscape) or tall (portrait)
-    const contentRatio = canvas.width / canvas.height;
-    const orientation = contentRatio > 0.9 ? 'landscape' : 'portrait';
+    // Determine orientation based on content dimensions
+    const orientation = canvas.width / canvas.height > 1 ? 'landscape' : 'portrait';
 
-    // Create PDF with high quality settings
+    // Create PDF with high-quality settings
     const pdf = new jsPDF({
       orientation: orientation,
       unit: 'mm',
       format: 'a4',
-      compress: false, // Disable compression for better quality
-      hotfixes: ["px_scaling"]
+      compress: false // Better quality without compression
     });
 
     // Get dimensions based on orientation
     const pdfWidth = orientation === 'landscape' ? 297 : 210; // A4 width in mm
     const pdfHeight = orientation === 'landscape' ? 210 : 297; // A4 height in mm
 
-    // Calculate image dimensions to fit the page
+    // Calculate image dimensions to fit the page with proper margins
     const imgWidth = pdfWidth - 20; // 10mm margins on each side
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    // Calculate number of pages needed
-    let heightLeft = imgHeight;
-    let position = 10; // Initial margin
-
-    // Add first page
+    // Add image to PDF
     pdf.addImage(
-      canvas.toDataURL('image/png', 1.0), // Use highest quality
+      canvas.toDataURL('image/png', 1.0), // Maximum quality
       'PNG',
       10, // Left margin
-      position,
+      10, // Top margin
       imgWidth,
       imgHeight,
       undefined,
       'FAST'
     );
-    heightLeft -= pdfHeight - 20; // Subtract first page (with margins)
 
-    // Add additional pages if content overflows
-    while (heightLeft > 0) {
-      pdf.addPage();
-      position = heightLeft - imgHeight + 10; // Calculate position for next page
-      pdf.addImage(
-        canvas.toDataURL('image/png', 1.0),
-        'PNG',
-        10,
-        position,
-        imgWidth,
-        imgHeight,
-        undefined,
-        'FAST'
-      );
+    // If content needs multiple pages
+    if (imgHeight > pdfHeight - 20) {
+      let heightLeft = imgHeight;
+      let position = 10;
+
+      // First page is already added above
       heightLeft -= (pdfHeight - 20);
+
+      // Add additional pages as needed
+      while (heightLeft > 0) {
+        position = -(pdfHeight - 20 - position);
+        pdf.addPage();
+
+        pdf.addImage(
+          canvas.toDataURL('image/png', 1.0),
+          'PNG',
+          10,
+          position,
+          imgWidth,
+          imgHeight,
+          undefined,
+          'FAST'
+        );
+
+        heightLeft -= (pdfHeight - 20);
+      }
     }
 
     // Generate filename with student name if available
     const studentName = document.querySelector('#student-name')?.textContent.trim().replace(/\s+/g, '_') || 'Student';
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const filename = `${studentName}_Report_${timestamp}.pdf`;
 
     // Save the PDF
@@ -247,11 +286,13 @@ export const generatePDF = async () => {
     return true; // Return success
   } catch (error) {
     console.error('Error generating PDF:', error);
+
     // Clean up in case of error
     const tempContainer = document.querySelector('div[style*="-9999px"]');
     if (tempContainer && document.body.contains(tempContainer)) {
       document.body.removeChild(tempContainer);
     }
-    throw error; // Rethrow to allow the component to handle the error
+
+    throw error; // Rethrow to allow caller to handle
   }
 };

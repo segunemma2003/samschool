@@ -19,16 +19,17 @@ const ScoreSummary = ({
             <TableCell className="border border-gray-300 p-0.5 text-center">{subjectsOffered}</TableCell>
             <TableCell className="border border-gray-300 p-0.5 font-semibold">Class Average</TableCell>
             <TableCell className="border border-gray-300 p-0.5 text-center">{classAverage.toFixed(2)}%</TableCell>
-            <TableCell className="border border-gray-300 p-0.5 font-semibold"></TableCell>
-            <TableCell className="border border-gray-300 p-0.5 text-center"></TableCell>
+            {/* <TableCell className="border border-gray-300 p-0.5 font-semibold"></TableCell>
+            <TableCell className="border border-gray-300 p-0.5 text-center"></TableCell> */}
+             <TableCell className="border border-gray-300 p-0.5 font-semibold" rowSpan={2}>Student Average</TableCell>
+             <TableCell className="border border-gray-300 p-0.5 text-center" rowSpan={2}>{studentAverage.toFixed(2)}%</TableCell>
           </TableRow>
           <TableRow className="border border-gray-300">
             <TableCell className="border border-gray-300 p-0.5 font-semibold">Marks Obtained</TableCell>
             <TableCell className="border border-gray-300 p-0.5 text-center">{marksObtained}</TableCell>
             <TableCell className="border border-gray-300 p-0.5 font-semibold">Marks Obtainable</TableCell>
             <TableCell className="border border-gray-300 p-0.5 text-center">{marksObtainable}</TableCell>
-            <TableCell className="border border-gray-300 p-0.5 font-semibold">Student Average</TableCell>
-            <TableCell className="border border-gray-300 p-0.5 text-center">{studentAverage.toFixed(2)}%</TableCell>
+
           </TableRow>
         </TableBody>
       </Table>

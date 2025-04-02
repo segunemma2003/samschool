@@ -68,7 +68,7 @@ const Result = () => {
                position: scoreData.position || '',
                grade: scoreData.grade || '',
                marksObtainable: (resultData.totalSubject || 0) * 100,
-               classAverage: resultData.classAverage || '-',
+               classAverage: resultData.classAverage || 0,
                studentAverage: percent || 0
              },
              affectiveDomain: psychomotorAffective.map(item => ({
@@ -107,11 +107,11 @@ const Result = () => {
   return (
     <div className="result-container">
       <div className="no-print p-4">
-        <Link to="/">
+        {/* <Link to="/">
           <Button variant="outline" size="sm" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" /> Back to Home
           </Button>
-        </Link>
+        </Link> */}
       </div>
 
       <ResultPage

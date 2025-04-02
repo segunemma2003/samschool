@@ -218,6 +218,7 @@ $resultData =[
             'studentSummary'=> $studentSummary,
             'termSummary'=>$termSummary,
             'courses'=>$courses,
+            'classAverage'=>0,
             'student'=>$student,
             'principalComment' => $principalComment,
         ];

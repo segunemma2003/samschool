@@ -3,12 +3,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 
 const Comments = ({
-  teacherComments,
-  headmasterComments,
-  decision,
-  nextTermFees,
-  resumptionDate,
-  otherCharges
+    comments, decision, nextTerm, classTeacher, resultData, school
 }) => {
   return (
     <div className="mb-1">
@@ -17,21 +12,30 @@ const Comments = ({
           <TableRow>
             <TableCell className="border border-gray-300 p-0.5">
               <div className="font-semibold mb-0.5">Class Teacher's Comments:</div>
-              <div className="pl-1">{teacherComments}</div>
+              <div className="pl-1">{comments?.teacherComment || 'No comment provided'}</div>
             </TableCell>
             <TableCell className="border border-gray-300 p-0.5">
               <div className="font-semibold mb-0.5">Headmaster/Principal's Comments:</div>
-              <div className="pl-1">{headmasterComments}</div>
+              <div className="pl-1">{comments?.principalComment || 'No comment provided'}</div>
             </TableCell>
-            <TableCell className="border border-gray-300 p-0.5 flex justify-end items-end h-4">
-              <div className="text-right">
-                <div className="font-semibold mb-0.5">Headmaster/Principal's Signature:</div>
-                <div className="h-3 w-12">
-                  <img
-                    src="/lovable-uploads/54f7313f-28a5-4c5d-9f58-1c11d7d32dc5.png"
-                    alt="Principal's Signature"
+            <TableCell className="border border-gray-300 p-0.5 flex justify-center items-center">
+              <div className="text-center">
+                <div className="font-semibold mb-0.5">School Stamp:</div>
+                <div className="h-16 w-16 mx-auto">
+                {school?.school_stamp ? (
+            <img
+              src={school.school_stamp.startsWith('data:image')
+                ? school.school_stamp
+                : `https://schoolcompasse.s3.us-east-1.amazonaws.com/${school.school_stamp}`}
+              alt="School Stamp"
+              className="w-full h-full object-contain"
+            />
+          ) : (  <img
+                    src="https://images.unsplash.com/photo-1459767129954-1b1c1f9b9ace"
+                    alt="School Stamp"
                     className="h-full w-full object-contain"
                   />
+                )}
                 </div>
               </div>
             </TableCell>
@@ -39,17 +43,13 @@ const Comments = ({
           <TableRow>
             <TableCell className="border border-gray-300 p-0.5">
               <div className="font-semibold mb-0.5">DECISION:</div>
-              <div className="pl-1">{decision}</div>
+              <div className="pl-1">{""}</div>
             </TableCell>
             <TableCell className="border border-gray-300 p-0.5">
               <div className="font-semibold mb-0.5">RESUMPTION DATE FOR SECOND TERM:</div>
-              <div className="pl-1">{resumptionDate}</div>
+              <div className="pl-1">{nextTerm}</div>
             </TableCell>
             <TableCell className="border border-gray-300 p-0.5">
-              <div className="font-semibold mb-0.5">OTHER CHARGES:</div>
-              <div className="pl-1">{otherCharges}</div>
-              <div className="font-semibold mb-0.5 mt-1">NEXT TERM SCHOOL FEES:</div>
-              <div className="pl-1">{nextTermFees}</div>
             </TableCell>
           </TableRow>
           <TableRow>

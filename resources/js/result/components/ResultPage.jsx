@@ -61,23 +61,23 @@ const ResultPage = ({
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Watermark Opacity: {watermarkOpacity}%</label>
-            <Slider
+            {/* <Slider
               value={[watermarkOpacity]}
               onValueChange={(values) => setWatermarkOpacity(values[0])}
               min={5}
               max={30}
               step={1}
-            />
+            /> */}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Watermark Size: {watermarkScale}%</label>
-            <Slider
+            {/* <Slider
               value={[watermarkScale]}
               onValueChange={(values) => setWatermarkScale(values[0])}
               min={50}
               max={200}
               step={5}
-            />
+            /> */}
           </div>
           <div className="flex flex-wrap gap-4">
             <Button onClick={handlePrint} className="flex items-center gap-2">

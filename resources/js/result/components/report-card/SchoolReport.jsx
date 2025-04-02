@@ -45,27 +45,27 @@ const SchoolReport = ({
       />
 
       <ScoreSummary
-        subjectsOffered={data.summary.subjectsOffered}
-        marksObtained={data.summary.marksObtained}
-        marksObtainable={data.summary.marksObtainable}
-        classAverage={data.summary.classAverage}
-        studentAverage={data.summary.studentAverage}
+        subjectsOffered={mdata.resultData.totalSubject}
+        marksObtained={mdata.analysis.totalScore}
+        marksObtainable={mdata.analysis.marksObtainable}
+        classAverage={mdata.analysis.classAverage}
+        studentAverage={mdata.analysis.studentAverage || 0.000}
       />
 
       <DomainRatings
-        affectiveDomain={data.affectiveDomain}
-        psychomotor={data.psychomotor}
+        affectiveDomain={mdata.affectiveDomain}
+        psychomotor={mdata.psychomotorNormal}
       />
 
       <GradingScale />
 
       <Comments
-        teacherComments={data.comments.teacher}
-        headmasterComments={data.comments.headmaster}
-        decision={data.comments.decision}
-        nextTermFees={data.comments.nextTermFees}
-        resumptionDate={data.comments.resumptionDate}
-        otherCharges={data.comments.otherCharges}
+       comments={mdata.comments}
+       decision={mdata.decision}
+       nextTerm={mdata.nextTerm}
+       classTeacher={mdata.classTeacher}
+       resultData={mdata.resultData}
+       school={mdata.school}
       />
 
       <Footer />

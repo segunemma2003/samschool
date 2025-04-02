@@ -1,0 +1,284 @@
+
+@media print {
+  /* Hide elements we don't want to print */
+  .no-print, .no-print * {
+    display: none !important;
+  }
+
+  /* Ensure the page prints with background images and colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Reset page margins and set to portrait by default */
+  @page {
+    margin: 0.3cm;
+    size: A4 portrait; 
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: white !important;
+  }
+
+  /* Preserve exact layout shown on screen */
+  .report-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important; 
+    box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Make sure the watermark shows in print exactly as on screen */
+  .watermark {
+    display: flex !important;
+    position: absolute !important;
+    z-index: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    top: 0 !important;
+    left: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure the watermark image prints as shown on screen */
+  .watermark img {
+    max-width: inherit !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+
+  /* Ensure the content container maintains exact dimensions */
+  .result-page-content {
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    position: relative !important;
+    z-index: 1 !important;
+    border: none !important;
+    background-color: white !important;
+    padding: 0.3cm !important;
+    margin: 0 !important;
+  }
+
+  /* Ensure school logo and student avatar print correctly */
+  .report-card img, .avatar {
+    print-color-adjust: exact !important;
+  }
+
+  /* Preserve layouts in print */
+  .report-card .flex {
+    display: flex !important;
+  }
+
+  /* Make sure the header elements maintain their original sizes */
+  .report-card .h-32 {
+    height: 6rem !important;
+  }
+  
+  .report-card .w-32 {
+    width: 6rem !important;
+  }
+
+  /* Ensure the student details three-column layout prints correctly */
+  .report-card .w-1/3 {
+    width: 33.333333% !important;
+  }
+
+  .report-card .justify-between {
+    justify-content: space-between !important;
+  }
+
+  .report-card .items-start {
+    align-items: flex-start !important;
+  }
+
+  /* Student information and session info alignment */
+  .report-card .student-info-section {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    min-height: 100px !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Force min-height in print */
+  .report-card [style*="min-height: 100px"] {
+    min-height: 100px !important;
+    height: 100px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
+  /* Ensure all tables print with consistent styling */
+  .report-card table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Table border and cell styles */
+  .report-card td, .report-card th {
+    border: 0.5px solid #333 !important;
+    line-height: normal !important;
+    padding: 1px !important;
+  }
+
+  /* Keep all font sizes exactly as they appear on screen */
+  .report-card .text-xs {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+  
+  .report-card .text-[10px] {
+    font-size: 10px !important;
+  }
+  
+  .report-card .text-[9px] {
+    font-size: 9px !important;
+  }
+  
+  .report-card .text-[8px] {
+    font-size: 8px !important;
+  }
+
+  .report-card .text-[7px] {
+    font-size: 7px !important;
+  }
+
+  .report-card .text-[6px] {
+    font-size: 6px !important;
+  }
+  
+  /* Score summary table - fixed the negative margin that was causing overlap */
+  .report-card .score-summary table,
+  .report-card .mb-1.mt-1 table {
+    font-size: 7px !important;
+    line-height: 1 !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Preserve margin spacing */
+  .report-card .mb-5 {
+    margin-bottom: 0.8rem !important;
+  }
+  
+  .report-card .mb-2 {
+    margin-bottom: 0.3rem !important;
+  }
+  
+  .report-card .mb-1 {
+    margin-bottom: 0.2rem !important;
+  }
+
+  .report-card .mt-1 {
+    margin-top: 0.2rem !important;
+  }
+  
+  .report-card .mb-0.5 {
+    margin-bottom: 0.1rem !important;
+  }
+  
+  .report-card .mt-2 {
+    margin-top: 0.3rem !important;
+  }
+  
+  .report-card .my-2 {
+    margin-top: 0.3rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+  
+  /* Fix for the overlap: ensure proper spacing between tables */
+  .report-card > div {
+    margin-bottom: 0.2rem !important;
+    clear: both !important;
+    position: relative !important;
+  }
+  
+  /* Grading scale - maintain exact spacing and font size */
+  .report-card .grid.grid-cols-3.gap-0.5 {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.1rem !important;
+  }
+  
+  /* Make headmaster signature visible */
+  .report-card .h-3.w-12 {
+    height: 0.75rem !important;
+    width: 3rem !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .report-card .h-3.w-12 img {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Preserve domain ratings grid layout */
+  .report-card .domains-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  
+  /* Preserve the exact appearance of the footer */
+  .report-card .text-[7px].text-center.text-gray-600.mt-0.5 {
+    font-size: 7px !important;
+    text-align: center !important;
+    margin-top: 0.125rem !important;
+  }
+  
+  /* Comments section - maintain font sizes */
+  .report-card .text-[12px] {
+    font-size: 12px !important;
+  }
+  
+  /* Ensure page breaks don't occur within components */
+  .report-card > div {
+    page-break-inside: avoid !important;
+  }
+  
+  /* No scaling to ensure everything fits on a single page naturally */
+  .report-card {
+    transform: scale(1) !important;
+  }
+
+  /* Reduce padding for table cells */
+  .report-card table td, 
+  .report-card table th {
+    padding: 1px !important;
+  }
+
+  /* Reduce space around separator */
+  .report-card .separator {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* Decrease height of rows */
+  .report-card tr {
+    height: auto !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Adjust vertical spacing in the student info section */
+  .report-card .space-y-3 > * {
+    margin-top: 0 !important;
+    margin-bottom: 0.3rem !important;
+  }
+
+  /* Adjust letter spacing to save space */
+  .report-card {
+    letter-spacing: -0.01em !important;
+  }
+}

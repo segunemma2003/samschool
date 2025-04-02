@@ -6,6 +6,7 @@ use App\Exports\StudentExport;
 use App\Filament\App\Resources\StudentResource\Pages;
 use App\Filament\App\Resources\StudentResource\RelationManagers;
 use App\Filament\Exports\StudentExporter;
+use App\Jobs\MigrateImagesToS3;
 use App\Models\AcademicYear;
 use App\Models\Arm;
 use App\Models\Guardians;
@@ -153,6 +154,19 @@ class StudentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->headerActions([
+            Tables\Actions\Action::make('migrate_images')
+                ->label('Migrate Images to S3')
+                ->icon('heroicon-o-arrow-path')
+                ->action(function () {
+                    MigrateImagesToS3::dispatch(Student::class, 'avatar');
+                    Notification::make()
+                        ->title('Migration Started')
+                        ->body('Image migration to S3 has been queued')
+                        ->success()
+                        ->send();
+                })
+        ])
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),

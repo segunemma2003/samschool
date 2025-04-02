@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources;
 
 use App\Filament\App\Resources\TeacherResource\Pages;
 use App\Filament\App\Resources\TeacherResource\RelationManagers;
+use App\Jobs\MigrateImagesToS3;
 use App\Models\Teacher;
 use App\Models\User;
 use Filament\Forms;
@@ -80,6 +81,19 @@ class TeacherResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->headerActions([
+            Tables\Actions\Action::make('migrate_images')
+                ->label('Migrate Images to S3')
+                ->icon('heroicon-o-arrow-path')
+                ->action(function () {
+                    MigrateImagesToS3::dispatch(Teacher::class, 'avatar');
+                    Notification::make()
+                        ->title('Migration Started')
+                        ->body('Image migration to S3 has been queued')
+                        ->success()
+                        ->send();
+                })
+        ])
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),

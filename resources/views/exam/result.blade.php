@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Card</title>
-    @vite(['resources/js/results/app.jsx'])
+    @vite(['resources/js/result/App.jsx'])
 </head>
 <body>
 

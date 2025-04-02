@@ -2,6 +2,7 @@
 import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
 import { FileText } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 const Index = () => {
      const [data, setData] = useState(null);

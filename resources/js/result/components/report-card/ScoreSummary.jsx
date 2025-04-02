@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Table, TableBody, TableCell, TableRow } from "./ui/table";
+import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 
 const ScoreSummary = ({
   subjectsOffered,

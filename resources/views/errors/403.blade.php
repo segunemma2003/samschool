@@ -54,7 +54,7 @@
                      $referer = request()->header('referer');
                      $refererPath = parse_url($referer, PHP_URL_PATH);
                      $segments = explode('/', trim($refererPath, '/'));
-                     dd($segments);
+                    //  dd($segments);
                      // Check if the first segment is a valid panel
                      if (in_array($segments[0], ['app', 'teacher', 'student', 'parent'])) {
                          $previousPanel = $segments[0];

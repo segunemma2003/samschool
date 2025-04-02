@@ -11,6 +11,7 @@ import { Printer, Download } from "lucide-react";
 
 const ResultPage = ({
   content,
+  data,
   title = "NURSERY REPORT SHEET"
 }) => {
   const [watermarkOpacity, setWatermarkOpacity] = useState(15);
@@ -51,8 +52,8 @@ const ResultPage = ({
     }
   };
 
-  const watermarkSrc = "https://lysacademy.com.ng/images/logo.png";
-
+//   const watermarkSrc = "https://lysacademy.com.ng/images/logo.png";
+  const watermarkSrc =  `https://schoolcompasse.s3.us-east-1.amazonaws.com/${data.school.school_logo}`;
   return (
     <div className="min-h-screen px-4 py-6 bg-gray-50 sm:px-6 lg:px-8">
       <div className="max-w-4xl p-4 mx-auto mb-6 bg-white rounded-lg shadow no-print">
@@ -100,6 +101,7 @@ const ResultPage = ({
               watermarkOpacity={watermarkOpacity}
               watermarkScale={watermarkScale}
               data={modifiedReportData}
+              mdata={data}
             />
           )}
         </Card>

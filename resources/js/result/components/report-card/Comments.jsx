@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "../ui/table";
 
 const Comments = ({
   teacherComments,
@@ -27,8 +27,8 @@ const Comments = ({
               <div className="text-right">
                 <div className="font-semibold mb-0.5">Headmaster/Principal's Signature:</div>
                 <div className="h-3 w-12">
-                  <img 
-                    src="/lovable-uploads/54f7313f-28a5-4c5d-9f58-1c11d7d32dc5.png" 
+                  <img
+                    src="/lovable-uploads/54f7313f-28a5-4c5d-9f58-1c11d7d32dc5.png"
                     alt="Principal's Signature"
                     className="h-full w-full object-contain"
                   />

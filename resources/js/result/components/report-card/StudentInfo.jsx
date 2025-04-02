@@ -1,14 +1,14 @@
 
 import React from 'react';
 
-const StudentInfo = ({ 
-  name, 
-  admissionNo, 
-  className, 
-  session, 
-  term, 
-  grade, 
-  attendanceData 
+const StudentInfo = ({
+  name,
+  admissionNo,
+  className,
+  session,
+  term,
+  grade,
+  attendanceData
 }) => {
   return (
     <div className="flex justify-between items-start mb-2 student-info-section">
@@ -31,7 +31,7 @@ const StudentInfo = ({
           </div>
         </div>
       </div>
-      
+
       {/* Middle: Session, Term, Grade - Text aligned to left */}
       <div className="w-1/3 text-xs">
         <div className="h-full flex flex-col justify-between" style={{ minHeight: '80px' }}>
@@ -51,7 +51,7 @@ const StudentInfo = ({
           </div>
         </div>
       </div>
-      
+
       {/* Right: Attendance Table with added % column */}
       <div className="w-1/3 flex items-center justify-end">
         <div className="border border-gray-300 rounded w-4/5">
@@ -64,16 +64,16 @@ const StudentInfo = ({
             <tbody className="text-[8px]">
               <tr>
                 <td className="border border-gray-300 p-1">Days School Open</td>
-                <td className="border border-gray-300 p-1 text-center">{attendanceData.daysOpen}</td>
-                <td rowSpan={3} className="border border-gray-300 p-1 text-center align-middle">{attendanceData.percentage}%</td>
+                <td className="border border-gray-300 p-1 text-center">{attendanceData.expected_present}</td>
+                <td rowSpan={3} className="border border-gray-300 p-1 text-center align-middle">{(attendanceData.total_present/attendanceData.expected_present).toFixed(1)||"N/A"}%</td>
               </tr>
               <tr>
                 <td className="border border-gray-300 p-1">Days Present</td>
-                <td className="border border-gray-300 p-1 text-center">{attendanceData.daysPresent}</td>
+                <td className="border border-gray-300 p-1 text-center">{attendanceData.total_present}</td>
               </tr>
               <tr>
                 <td className="border border-gray-300 p-1">Days Absent</td>
-                <td className="border border-gray-300 p-1 text-center">{attendanceData.daysAbsent}</td>
+                <td className="border border-gray-300 p-1 text-center">{attendanceData.total_absent}</td>
               </tr>
             </tbody>
           </table>

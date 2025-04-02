@@ -1,16 +1,31 @@
 {
-  "_chunk-K6CSEXPM-BthqvbaO.js": {
-    "file": "assets/chunk-K6CSEXPM-BthqvbaO.js",
-    "name": "chunk-K6CSEXPM"
+  "_client-BFsy8bn8.js": {
+    "file": "assets/client-BFsy8bn8.js",
+    "name": "client"
+  },
+  "_download-RkYWynoy.js": {
+    "file": "assets/download-RkYWynoy.js",
+    "name": "download",
+    "imports": [
+      "_client-BFsy8bn8.js"
+    ]
+  },
+  "_index-73IKM1MG.js": {
+    "file": "assets/index-73IKM1MG.js",
+    "name": "index",
+    "imports": [
+      "_client-BFsy8bn8.js"
+    ]
   },
   "node_modules/canvg/lib/index.es.js": {
-    "file": "assets/index.es-CENV8Fke.js",
+    "file": "assets/index.es-C9P_p_mn.js",
     "name": "index.es",
     "src": "node_modules/canvg/lib/index.es.js",
     "isDynamicEntry": true,
     "imports": [
-      "_chunk-K6CSEXPM-BthqvbaO.js",
-      "resources/js/results/app.jsx"
+      "_client-BFsy8bn8.js",
+      "resources/js/results/app.jsx",
+      "_download-RkYWynoy.js"
     ],
     "css": [
       "assets/App-Bx9V9zN2.css",
@@ -55,12 +70,13 @@
     "isEntry": true
   },
   "resources/js/react/app.jsx": {
-    "file": "assets/app-D_5s3zTZ.js",
+    "file": "assets/app-CEliqo1L.js",
     "name": "app",
     "src": "resources/js/react/app.jsx",
     "isEntry": true,
     "imports": [
-      "_chunk-K6CSEXPM-BthqvbaO.js"
+      "_client-BFsy8bn8.js",
+      "_index-73IKM1MG.js"
     ],
     "css": [
       "assets/App-Bx9V9zN2.css",
@@ -73,18 +89,44 @@
     "src": "resources/js/react/src/react.css",
     "isEntry": true
   },
+  "resources/js/result/App.css": {
+    "file": "assets/App-Bx9V9zN2.css",
+    "src": "resources/js/result/App.css",
+    "isEntry": true
+  },
+  "resources/js/result/App.jsx": {
+    "file": "assets/App-Bc_Po8dj.js",
+    "name": "App",
+    "src": "resources/js/result/App.jsx",
+    "isEntry": true,
+    "imports": [
+      "_client-BFsy8bn8.js",
+      "_index-73IKM1MG.js",
+      "_download-RkYWynoy.js"
+    ],
+    "css": [
+      "assets/App-pAn6qyi8.css",
+      "assets/index-DojAutvv.css"
+    ]
+  },
+  "resources/js/result/index.css": {
+    "file": "assets/index-DojAutvv.css",
+    "src": "resources/js/result/index.css",
+    "isEntry": true
+  },
   "resources/js/results/App.css": {
     "file": "assets/App-Bx9V9zN2.css",
-    "src": "resources/js/results/App.css",
+    "src": "resources/js/result/App.css",
     "isEntry": true
   },
   "resources/js/results/app.jsx": {
-    "file": "assets/app-BGRG2_k7.js",
+    "file": "assets/app-DdQzsUVN.js",
     "name": "app",
     "src": "resources/js/results/app.jsx",
     "isEntry": true,
     "imports": [
-      "_chunk-K6CSEXPM-BthqvbaO.js"
+      "_client-BFsy8bn8.js",
+      "_download-RkYWynoy.js"
     ],
     "dynamicImports": [
       "node_modules/dompurify/dist/purify.es.mjs",

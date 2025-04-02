@@ -1,9 +1,9 @@
-
-import React from 'react';
+import React, { useEffect, useState } from "react";
 import ResultPage from '../components/ResultPage';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+
 import '../styles/print.css';
 
 const Result = () => {
@@ -114,7 +114,10 @@ const Result = () => {
         </Link>
       </div>
 
-      <ResultPage />
+      <ResultPage
+        title={data.student.class}
+        data={data}
+      />
     </div>
   );
 };

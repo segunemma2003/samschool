@@ -14,30 +14,37 @@ const SchoolReport = ({
   title = "NURSERY REPORT SHEET",
   watermarkOpacity,
   watermarkScale,
-  data
+  data,
+  mdata
 }) => {
   return (
     <div className="report-card w-full box-border print:box-border print:w-full" id="printable-report">
-      <StudentHeader schoolLogoUrl={schoolLogoUrl} title={title} />
-      
-      <StudentInfo 
-        name={data.student.name}
-        admissionNo={data.student.admissionNo}
-        className={data.student.className}
-        session={data.session}
-        term={data.term}
-        grade={data.grade}
-        attendanceData={data.attendance}
+      <StudentHeader data={mdata} schoolLogoUrl={schoolLogoUrl} title={title} />
+
+      <StudentInfo
+        name={mdata.student.name}
+        admissionNo={mdata.student.admissionNo}
+        className={mdata.student.class}
+        session={mdata.student.session}
+        term={mdata.student.term}
+        grade={mdata.student.grade}
+        attendanceData={mdata.attendance}
       />
 
-      <SubjectsAnalysis 
+      <SubjectsAnalysis
         subjects={data.subjects}
         watermarkUrl={schoolLogoUrl}
         watermarkOpacity={watermarkOpacity}
         watermarkScale={watermarkScale}
+        resultData={mdata.resultData}
+        markObtained={mdata.markObtained}
+        studentSummary={mdata.studentSummary}
+        termSummary={mdata.termSummary}
+        remarks={mdata.remarks}
+        analysis={mdata.analysis}
       />
 
-      <ScoreSummary 
+      <ScoreSummary
         subjectsOffered={data.summary.subjectsOffered}
         marksObtained={data.summary.marksObtained}
         marksObtainable={data.summary.marksObtainable}
@@ -45,14 +52,14 @@ const SchoolReport = ({
         studentAverage={data.summary.studentAverage}
       />
 
-      <DomainRatings 
+      <DomainRatings
         affectiveDomain={data.affectiveDomain}
         psychomotor={data.psychomotor}
       />
-      
+
       <GradingScale />
 
-      <Comments 
+      <Comments
         teacherComments={data.comments.teacher}
         headmasterComments={data.comments.headmaster}
         decision={data.comments.decision}

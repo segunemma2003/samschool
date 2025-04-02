@@ -19,12 +19,14 @@ use App\Models\Term;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ExamController extends Controller
 {
 
     public function generatePdf($studentId,$termId,$academyId){
         try {
+            // dd(Storage::disk('s3')->url("tt.jpg"));
             $student = Student::with('class', 'class.group')->whereId($studentId)->firstOrFail();
             if (!$student) {
                 throw new Exception('Student record not found.');

@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Take Exam</title>
-    @vite(['resources/js/react/app.jsx'])
+    {{-- @vite(['resources/js/react/app.jsx']) --}}
+    @vite(['resources/js/result/app.jsx'])
 </head>
 <body>
 

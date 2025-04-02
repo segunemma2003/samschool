@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../ui/table";
 
 const DomainRatings = ({ affectiveDomain, psychomotor }) => {
   return (

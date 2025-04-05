@@ -139,6 +139,7 @@ class StudentResource extends Resource
                 Forms\Components\FileUpload::make('avatar')
                 ->label('Passport')
                     ->disk('s3')
+                    ->openable()
                         ->required(),
                 Forms\Components\Select::make('user_type')
                         ->options([

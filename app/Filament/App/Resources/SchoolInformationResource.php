@@ -86,6 +86,10 @@ class SchoolInformationResource extends Resource
                     ->label('Next Term Begins')
                     ->nullable(),
 
+                Forms\Components\TextInput::make('mission')
+                    ->label('Mission')
+                    ->nullable(),
+
 
 
             ]);
@@ -119,6 +123,9 @@ class SchoolInformationResource extends Resource
                 ->searchable()
                 ->sortable(),
                 TextColumn::make('next_term_begins')
+                ->searchable()
+                ->sortable(),
+                TextColumn::make('mission')
                 ->searchable()
                 ->sortable(),
             ])

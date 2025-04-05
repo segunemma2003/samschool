@@ -9,6 +9,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class MigrateImagesToS3 implements ShouldQueue
@@ -17,7 +18,8 @@ class MigrateImagesToS3 implements ShouldQueue
 
      protected $model;
      protected $photoField;
-     protected $baseUrl = 'https://res.cloudinary.com/iamdevmaniac/client_cat/';
+     protected $baseUrl = 'https://res.cloudinary.com/iamdevmaniac/';
+    // protected $baseUrl = "https://schoolcompasse.s3.us-east-1.amazonaws.com/";
 
     /**
      * Create a new job instance.
@@ -36,10 +38,11 @@ class MigrateImagesToS3 implements ShouldQueue
          $count = 0;
          $modelClass = $this->model;
          $records = $modelClass::whereNotNull($this->photoField)->get();
-
+        // Log::info($modelClass);
          foreach ($records as $record) {
              $photoUrl = $record->{$this->photoField};
 
+            //  Log::info($photoUrl);
              if (!$photoUrl) {
                  continue;
              }
@@ -49,19 +52,22 @@ class MigrateImagesToS3 implements ShouldQueue
                  $photoUrl = $this->baseUrl . $photoUrl;
              }
 
+             Log::info($photoUrl);
              try {
                  // Download image
                  $response = Http::get($photoUrl);
+                 Log::info($response);
                  if (!$response->successful()) {
                      continue;
                  }
   // Generate unique filename
   $extension = pathinfo($photoUrl, PATHINFO_EXTENSION) ?: 'jpg';
+//   Log::info($extension);
   $filename = uniqid() . '.' . $extension;
-
+//   Log::info($filename);
   // Upload to S3
   Storage::disk('s3')->put($filename, $response->body());
-
+// Log::info($filename);
   // Update record with new S3 URL
   $record->update([
       $this->photoField => $filename

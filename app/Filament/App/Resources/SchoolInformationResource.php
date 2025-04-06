@@ -87,7 +87,7 @@ class SchoolInformationResource extends Resource
                     ->nullable(),
 
                 Forms\Components\TextInput::make('mission')
-                    ->label('Mission')
+                    ->label('Motto')
                     ->nullable(),
 
 

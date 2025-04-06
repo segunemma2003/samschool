@@ -61,171 +61,206 @@ class StudentResource extends Resource
                 //
             ])
             ->actions([
-                // Tables\Actions\ViewAction::make(),
-                // Tables\Actions\EditAction::make(),
                 \Filament\Tables\Actions\Action::make('downloadSingleResult')
                 ->label('Download Result')
                 ->icon('heroicon-s-arrow-down-on-square')
                 ->form([
                     Forms\Components\Select::make('term_id')
-                        ->options(Term::all()->pluck('name', 'id'))
+                        ->options(Term::whereNotNull('name')->pluck('name', 'id'))
                         ->preload()
                         ->label('Term')
                         ->searchable()
                         ->required(),
                     Forms\Components\Select::make('academic_id')
-                    ->label('Academy Year')
-                    ->options(AcademicYear::all()->pluck('title', 'id'))
-                    ->preload()
-                    ->searchable(),
+                        ->label('Academy Year')
+                        ->options(AcademicYear::whereNotNull('title')->pluck('title', 'id'))
+                        ->preload()
+                        ->required()
+                        ->searchable(),
+                    Forms\Components\Select::make('mid')
+                        ->label('Mid Term Result?')
+                        ->options([
+                            "Yes" => "Yes",
+                            "No" => "No"
+                        ])
+                        ->required()
+                        ->preload()
+                        ->searchable(),
                 ])
                 ->action(function (array $data, $record) {
-                    $student = $record;
+                    // Build the URL dynamically
+                    $url = route('student.result.check', [
+                        'studentId' => $record->id,
+                        'termId' => $data['term_id'],
+                        'academyId' => $data['academic_id'],
+                    ]);
 
-                    // Batch load related models
-                    $academy = AcademicYear::find($data['academic_id']);
-                    $term = Term::find($data['term_id']);
-
-                    $school = SchoolInformation::where([
-                        ['term_id', $term->id],
-                        ['academic_id', $academy->id]
-                    ])->first();
-
-                    $studentAttendance = StudentAttendanceSummary::where([
-                        ['term_id', $term->id],
-                        ['student_id', $student->id],
-                        ['academic_id', $academy->id]
-                    ])->first();
-
-                    $studentComment = StudentComment::where([
-                        ['student_id', $student->id],
-                        ['term_id', $term->id],
-                        ['academic_id', $academy->id]
-                    ])->first();
-
-                    // Eager load related data for courses
-                    $courses = CourseForm::with([
-                        'subject.subjectDepot',
-                        'scoreBoard'
-                    ])->where([
-                            ['student_id', $student->id],
-                            ['academic_year_id', $academy->id],
-                            ['term_id', $term->id]
-                        ])
-                        ->get();
-
-                    // Optimize headings query with eager loading
-                    $headings = ResultSectionType::with('resultSection')
-                        ->whereHas('resultSection', function ($query) use ($student) {
-                            $query->where('group_id', $student->class->group->id);
-                        })
-                        ->get();
-
-                    $psychomotorCategory = PsychomotorCategory::all();
-
-                    // Group headings by patterns
-                    $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
-                    $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
-                    $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
-                    $remarks = $headings->whereIn('calc_pattern', ['remarks']) ?? collect([]);
-
-                    $class = SchoolClass::where('id', $student->class->id)->first() ?? collect([]);
-                    $totalSubject =count($courses);
-
-                    $totalHeadings = $headings->where('calc_pattern', 'total');
-
-                    // Step 2: Initialize a variable to store the total sum
-                    $totalScore = 0;
-                    $englishScore = 0;
-                    $mathScore = 0;
-
-                    // Step 3: Iterate through the courses and calculate the total score
-                    // foreach ($courses as $course) {
-                    //     foreach ($totalHeadings as $heading) {
-                    //         $subject = $course->subject->subjectDepot->name;
-                    //         $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
-                    //         if(strtolower($subject) == 'english'){
-                    //             $englishScore = $score->score ?? 0;
-                    //         }
-                    //         if(strtolower($subject) == 'maths' || (strtolower($subject) == 'mathematics')){
-                    //             $mathScore = $score->score ?? 0;
-                    //         }
-
-                    //         // Retrieve the score for this subject and heading
-
-
-                    //         // Add the score to the total (only if it exists)
-                    //         $totalScore += $score->score ?? 0;
-                    //     }
-                    // }
-                    // dd($totalScore);
-                    // dd($totalSubject);
-
-                    $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings, &$englishScore, &$mathScore) {
-                        foreach ($totalHeadings as $heading) {
-                            $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
-                            $scoreValue = $score->score ?? 0;
-
-                            // Add to the total score
-                            $carry += $scoreValue;
-
-                            // Check if the subject is English or Maths and store their scores
-                            $subject = $course->subject->subjectDepot->name;
-                            if ((strncasecmp($subject, 'english', 7) === 0) || (strncasecmp($subject, 'literacy', 8) === 0)){
-                                $englishScore = $scoreValue;
-                            } elseif ((strncasecmp($subject,'math', 4)  == 0)|| (strncasecmp($subject, 'numeracy', 8) === 0)) {
-                                $mathScore = $scoreValue;
-                            }
-                        }
-                        return $carry;
-                    }, 0);
-
-
-                    $percent = round(($totalScore / $totalSubject));
-                    // dd($percent);
-
-                    $principalComment = self::getPerformanceComment($percent, $englishScore, $mathScore);
-
-                    $data = [
-                        'class'=>$class,
-                        'totalSubject'=>$totalSubject,
-                        'totalScore'=>$totalScore,
-                        'percent'=>$percent,
-                        'markObtained'=>$markObtained,
-                        'remarks'=>$remarks,
-                        'studentSummary'=> $studentSummary,
-                        'termSummary'=>$termSummary,
-                        'courses'=>$courses,
-                        'studentComment'=>$studentComment,
-                        'student'=>$student,
-                        'school'=>$school,
-                        'academy'=>$academy,
-                        'studentAttendance'=>$studentAttendance,
-                        'term'=>$term,
-                        'principalComment' => $principalComment,
-                        'psychomotorCategory'=> $psychomotorCategory
-                    ];
-
-
-                    $time = time();
-                    // $html = view('results.template', $data)->render();
-
-                    $pdf = SnappyPdf::loadView('results.template', $data);
-                    return response()->streamDownload(
-                            fn () => print($pdf->output()),
-                            "result-{$record->name}.pdf"
-                        );
-                    // $pdf = Pdf::loadView('results.template',compact('psychomotorCategory','class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
-                    // return response()->streamDownload(
-                    //     fn () => print($pdf->output()),
-                    //     "result-{$record->name}.pdf"
-                    // );
+                    // Redirect to the generated URL
+                    return redirect($url);
                 }),
+                // \Filament\Tables\Actions\Action::make('downloadSingleResult')
+                // ->label('Download Result')
+                // ->icon('heroicon-s-arrow-down-on-square')
+                // ->form([
+                //     Forms\Components\Select::make('term_id')
+                //         ->options(Term::all()->pluck('name', 'id'))
+                //         ->preload()
+                //         ->label('Term')
+                //         ->searchable()
+                //         ->required(),
+                //     Forms\Components\Select::make('academic_id')
+                //     ->label('Academy Year')
+                //     ->options(AcademicYear::all()->pluck('title', 'id'))
+                //     ->preload()
+                //     ->searchable(),
+                // ])
+                // ->action(function (array $data, $record) {
+                //     $student = $record;
+
+                //     // Batch load related models
+                //     $academy = AcademicYear::find($data['academic_id']);
+                //     $term = Term::find($data['term_id']);
+
+                //     $school = SchoolInformation::where([
+                //         ['term_id', $term->id],
+                //         ['academic_id', $academy->id]
+                //     ])->first();
+
+                //     $studentAttendance = StudentAttendanceSummary::where([
+                //         ['term_id', $term->id],
+                //         ['student_id', $student->id],
+                //         ['academic_id', $academy->id]
+                //     ])->first();
+
+                //     $studentComment = StudentComment::where([
+                //         ['student_id', $student->id],
+                //         ['term_id', $term->id],
+                //         ['academic_id', $academy->id]
+                //     ])->first();
+
+                //     // Eager load related data for courses
+                //     $courses = CourseForm::with([
+                //         'subject.subjectDepot',
+                //         'scoreBoard'
+                //     ])->where([
+                //             ['student_id', $student->id],
+                //             ['academic_year_id', $academy->id],
+                //             ['term_id', $term->id]
+                //         ])
+                //         ->get();
+
+                //     // Optimize headings query with eager loading
+                //     $headings = ResultSectionType::with('resultSection')
+                //         ->whereHas('resultSection', function ($query) use ($student) {
+                //             $query->where('group_id', $student->class->group->id);
+                //         })
+                //         ->get();
+
+                //     $psychomotorCategory = PsychomotorCategory::all();
+
+                //     // Group headings by patterns
+                //     $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
+                //     $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
+                //     $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
+                //     $remarks = $headings->whereIn('calc_pattern', ['remarks']) ?? collect([]);
+
+                //     $class = SchoolClass::where('id', $student->class->id)->first() ?? collect([]);
+                //     $totalSubject =count($courses);
+
+                //     $totalHeadings = $headings->where('calc_pattern', 'total');
+
+                //     // Step 2: Initialize a variable to store the total sum
+                //     $totalScore = 0;
+                //     $englishScore = 0;
+                //     $mathScore = 0;
+
+                //     // Step 3: Iterate through the courses and calculate the total score
+                //     // foreach ($courses as $course) {
+                //     //     foreach ($totalHeadings as $heading) {
+                //     //         $subject = $course->subject->subjectDepot->name;
+                //     //         $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
+                //     //         if(strtolower($subject) == 'english'){
+                //     //             $englishScore = $score->score ?? 0;
+                //     //         }
+                //     //         if(strtolower($subject) == 'maths' || (strtolower($subject) == 'mathematics')){
+                //     //             $mathScore = $score->score ?? 0;
+                //     //         }
+
+                //     //         // Retrieve the score for this subject and heading
+
+
+                //     //         // Add the score to the total (only if it exists)
+                //     //         $totalScore += $score->score ?? 0;
+                //     //     }
+                //     // }
+                //     // dd($totalScore);
+                //     // dd($totalSubject);
+
+                //     $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings, &$englishScore, &$mathScore) {
+                //         foreach ($totalHeadings as $heading) {
+                //             $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
+                //             $scoreValue = $score->score ?? 0;
+
+                //             // Add to the total score
+                //             $carry += $scoreValue;
+
+                //             // Check if the subject is English or Maths and store their scores
+                //             $subject = $course->subject->subjectDepot->name;
+                //             if ((strncasecmp($subject, 'english', 7) === 0) || (strncasecmp($subject, 'literacy', 8) === 0)){
+                //                 $englishScore = $scoreValue;
+                //             } elseif ((strncasecmp($subject,'math', 4)  == 0)|| (strncasecmp($subject, 'numeracy', 8) === 0)) {
+                //                 $mathScore = $scoreValue;
+                //             }
+                //         }
+                //         return $carry;
+                //     }, 0);
+
+
+                //     $percent = round(($totalScore / $totalSubject));
+                //     // dd($percent);
+
+                //     $principalComment = self::getPerformanceComment($percent, $englishScore, $mathScore);
+
+                //     $data = [
+                //         'class'=>$class,
+                //         'totalSubject'=>$totalSubject,
+                //         'totalScore'=>$totalScore,
+                //         'percent'=>$percent,
+                //         'markObtained'=>$markObtained,
+                //         'remarks'=>$remarks,
+                //         'studentSummary'=> $studentSummary,
+                //         'termSummary'=>$termSummary,
+                //         'courses'=>$courses,
+                //         'studentComment'=>$studentComment,
+                //         'student'=>$student,
+                //         'school'=>$school,
+                //         'academy'=>$academy,
+                //         'studentAttendance'=>$studentAttendance,
+                //         'term'=>$term,
+                //         'principalComment' => $principalComment,
+                //         'psychomotorCategory'=> $psychomotorCategory
+                //     ];
+
+
+                //     $time = time();
+                //     // $html = view('results.template', $data)->render();
+
+                //     $pdf = SnappyPdf::loadView('results.template', $data);
+                //     return response()->streamDownload(
+                //             fn () => print($pdf->output()),
+                //             "result-{$record->name}.pdf"
+                //         );
+                //     // $pdf = Pdf::loadView('results.template',compact('psychomotorCategory','class','markObtained','remarks','studentSummary','termSummary','courses','studentComment','student', 'school', 'academy', 'studentAttendance', 'term', 'totalScore','totalSubject', 'percent','principalComment'))->setPaper('a4', 'portrait');
+                //     // return response()->streamDownload(
+                //     //     fn () => print($pdf->output()),
+                //     //     "result-{$record->name}.pdf"
+                //     // );
+                // }),
 
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

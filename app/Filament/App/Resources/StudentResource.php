@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources;
 
 use App\Exports\StudentExport;
 use App\Filament\App\Resources\StudentResource\Pages;
+use App\Filament\App\Resources\StudentResource\Pages\AdminStudentResults;
 use App\Filament\App\Resources\StudentResource\RelationManagers;
 use App\Filament\Exports\StudentExporter;
 use App\Jobs\MigrateImagesToS3;
@@ -29,6 +30,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -156,6 +158,108 @@ class StudentResource extends Resource
     {
         return $table
         ->headerActions([
+            Tables\Actions\Action::make('generateBulkInvoices')
+            ->label('Generate Bulk Invoices')
+            ->requiresConfirmation()
+            ->form([
+                Select::make('term_id')
+                    ->label('Term')
+                    ->options(Term::all()->pluck('name', 'id'))
+                    ->preload()
+                    ->searchable()
+                    ->required(),
+
+                Select::make('academic_id')
+                    ->label('Academy')
+                    ->options(AcademicYear::all()->pluck('title', 'id'))
+                    ->preload()
+                    ->searchable()
+                    ->required(),
+                Select::make('class_id')
+                    ->label('Class')
+                    ->options(SchoolClass::all()->pluck('name', 'id'))
+                    ->preload()
+                    ->searchable()
+                    ->required(),
+                    RichEditor::make('note')
+                    ->required(),
+                Repeater::make('invoice_details')
+                    ->label('Invoice Details')
+                    ->schema([
+                        Select::make('invoice_group_id')
+                            ->label('Name')
+                            ->options(InvoiceGroup::all()->pluck('name', 'id'))
+                            ->preload()
+                            ->searchable()
+                            ->required(),
+
+                        TextInput::make('amount')
+                            ->label('Amount')
+                            ->prefix('₦')
+                            ->numeric()
+                            ->live('blur')
+                            ->hint(new HtmlString(Blade::render('<x-filament::loading-indicator class="w-5 h-5" wire:loading wire-target="data.invoice_student_id"/>')))
+                            ->required(),
+                    ])
+                    ->columnSpanFull()
+                    ->minItems(1)
+                    ->hiddenLabel()
+                    ->collapsible()
+                    ->collapsed(fn($record) => $record)
+                    ->cloneable()
+                    ->afterStateUpdated(function (callable $get, callable $set) {
+                        // Calculate the total dynamically
+                        $details = $get('invoice_details');
+                        $total = collect($details)->sum('amount'); // Sum the 'amount' field
+                        $set('total_amount', $total); // Update the total_amount field
+                    })
+
+                    ->required(),
+
+                    TextInput::make('total_amount')
+                    ->label('Total Amount')
+                    ->prefix('₦')
+                    ->numeric()
+                    ->live()
+                    ->required(),
+
+                    ]) ->action(function (array $data) {
+                        $students = Student::where('class_id', $data['class_id'])->get();
+                        foreach ($students as $student) {
+                            // dd($record);
+                            // $student = Student::where("class_id",$record);
+
+                            if (!$student) {
+                                continue;
+                            }
+
+                            // Generate unique order code
+                            do {
+                                $orderCode = 'ORD-' . random_int(100000000, 999999999);
+                            } while (InvoiceStudent::where('order_code', $orderCode)->exists());
+
+                            $invoiceStudent = InvoiceStudent::create([
+                                'order_code' => $orderCode,
+                                'term_id' => $data['term_id'],
+                                'academic_id' => $data['academic_id'],
+                                'student_id' => $student->id,
+                                'note'=> $data['note'],
+                                'total_amount' => $data['total_amount'],
+                                'amount_owed' => $data['total_amount'],
+                            ]);
+
+                            foreach ($data['invoice_details'] as $detail) {
+                                $invoiceStudent->invoice_details()->create($detail);
+                            }
+                        }
+
+                        Notification::make()
+                            ->title('Bulk Invoices Created Successfully')
+                            ->success()
+                            ->send();
+                    })
+                    ->icon('heroicon-s-document')
+                    ->color('success'),
             Tables\Actions\Action::make('migrate_images')
                 ->label('Migrate Images to S3')
                 ->icon('heroicon-o-arrow-path')
@@ -179,11 +283,54 @@ class StudentResource extends Resource
                 ->searchable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('class')
+                ->relationship('class', 'name')
+                ->searchable()
+                ->preload()
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                \Filament\Tables\Actions\Action::make('downloadSingleResult')
+                ->label('Download Result')
+                ->icon('heroicon-s-arrow-down-on-square')
+                ->form([
+                    Forms\Components\Select::make('term_id')
+                        ->options(Term::whereNotNull('name')->pluck('name', 'id'))
+                        ->preload()
+                        ->label('Term')
+                        ->searchable()
+                        ->required(),
+                    Forms\Components\Select::make('academic_id')
+                        ->label('Academy Year')
+                        ->options(AcademicYear::whereNotNull('title')->pluck('title', 'id'))
+                        ->preload()
+                        ->required()
+                        ->searchable(),
+                    Forms\Components\Select::make('mid')
+                        ->label('Mid Term Result?')
+                        ->options([
+                            "Yes" => "Yes",
+                            "No" => "No"
+                        ])
+                        ->required()
+                        ->preload()
+                        ->searchable(),
+                ])
+                ->action(function (array $data, $record) {
+                    // Build the URL dynamically
+                    $url = route('student.result.check', [
+                        'studentId' => $record->id,
+                        'termId' => $data['term_id'],
+                        'academyId' => $data['academic_id'],
+                    ]);
+
+                    // Redirect to the generated URL
+                    return redirect($url);
+                }),
+                \Filament\Tables\Actions\Action::make('viewresult')
+                ->label('View Result')
+                ->url(fn ($record) => AdminStudentResults::generateRoute($record->id)),
                 Tables\Actions\Action::make('createInvoice')
                 ->icon('heroicon-s-credit-card')
                 ->label("Pay")
@@ -452,6 +599,7 @@ class StudentResource extends Resource
             'create' => Pages\CreateStudent::route('/create'),
             'view' => Pages\ViewStudent::route('/{record}'),
             'edit' => Pages\EditStudent::route('/{record}/edit'),
+            'view-student-admin-result-details'=> Pages\AdminStudentResults::route('/{record}/student/result')
         ];
     }
 }

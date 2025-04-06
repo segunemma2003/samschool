@@ -31,6 +31,10 @@ class User extends Authenticatable implements FilamentUser
             return $this->user_type=="student";
         }else if($panel->getId() === 'teacher'){
             return $this->user_type=="teacher";
+        }else if($panel->getId()=="finance"){
+            if($this->user_type =="admin"){
+                return true;
+            }
         }
         return true;
     }

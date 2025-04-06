@@ -52,7 +52,7 @@ class MigrateImagesToS3 implements ShouldQueue
                  $photoUrl = $this->baseUrl . $photoUrl;
              }
 
-             Log::info($photoUrl);
+            //  Log::info($photoUrl);
              try {
                  // Download image
                  $response = Http::get($photoUrl);

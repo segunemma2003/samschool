@@ -22,6 +22,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Njxqlus\FilamentProgressbar\FilamentProgressbarPlugin;
 use TomatoPHP\FilamentTenancy\FilamentTenancyAppPlugin;
 
 class OurparentPanelProvider extends PanelProvider
@@ -48,8 +49,8 @@ class OurparentPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Ourparent/Widgets'), for: 'App\\Filament\\Ourparent\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\AccountWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -63,11 +64,15 @@ class OurparentPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
                 FilamentUnauthorizedRedirect::class,
             ])
+            ->plugin(
+                FilamentTenancyAppPlugin::make()
+                )
             ->plugins([
+                FilamentProgressbarPlugin::make()->color('#29b'),
                 LightSwitchPlugin::make(),
                     CustomAuthUIEnhancerGuardian::make()
                     ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/7.jpg'))
-                    ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity
+                    ->emptyPanelBackgroundImageOpacity('90%') // Optional: Adjust opacity
                     ->formPanelPosition('right') // Form position
                     ->formPanelWidth('45%') // Adjust form width
                     ->showEmptyPanelOnMobile(false)
@@ -76,6 +81,6 @@ class OurparentPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(
-                FilamentTenancyAppPlugin::make())->viteTheme('resources/css/filament/app/theme.css');
+                FilamentTenancyAppPlugin::make())->viteTheme('resources/css/filament/ourparent/theme.css');
     }
 }

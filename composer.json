@@ -60,6 +60,7 @@
         "tomatophp/filament-subscriptions": "^1.0",
         "tomatophp/filament-tenancy": "^1.0",
         "torgodly/html2media": "^1.1",
+        "unicodeveloper/laravel-paystack": "^1.2",
         "vormkracht10/filament-mails": "^2.3",
         "yoelpc4/laravel-cloudinary": "^5.0"
     },

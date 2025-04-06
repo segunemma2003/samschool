@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class ASponsor extends Model
 {
     use HasFactory;
+    protected $guarded = ['id'];
+    protected $table="sponsors";
 }

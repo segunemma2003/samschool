@@ -28,7 +28,7 @@ class ComplainResource extends Resource
             ->schema([
                 Forms\Components\Select::make('to_id')
                 ->label('Who you Complaining to')
-                ->options(User::all()->pluck('name', 'id'))
+                ->options(User::whereIn('user_type', ['admin'])->pluck('name', 'id'))
                 ->searchable(),
                 Forms\Components\TextInput::make('title')
                 ->required()

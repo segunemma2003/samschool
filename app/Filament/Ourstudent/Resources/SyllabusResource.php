@@ -4,7 +4,9 @@ namespace App\Filament\Ourstudent\Resources;
 
 use App\Filament\Ourstudent\Resources\SyllabusResource\Pages;
 use App\Filament\Ourstudent\Resources\SyllabusResource\RelationManagers;
+use App\Models\Student;
 use App\Models\Syllabus;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -31,6 +33,14 @@ class SyllabusResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->modifyQueryUsing(function (Builder $query) {
+            $user = User::whereId(request()->user()->id)->first();
+            $student = Student::whereEmail($user->email)->first();
+
+            if ($student) {
+                $query->where('class_id', $student->class_id);
+            }
+        })
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),
@@ -46,7 +56,7 @@ class SyllabusResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

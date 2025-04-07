@@ -4,7 +4,9 @@ namespace App\Filament\Ourstudent\Resources;
 
 use App\Filament\Ourstudent\Resources\SubjectResource\Pages;
 use App\Filament\Ourstudent\Resources\SubjectResource\RelationManagers;
+use App\Models\Student;
 use App\Models\Subject;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -31,6 +33,16 @@ class SubjectResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+        ->modifyQueryUsing(function (Builder $query) {
+            $user = User::whereId(request()->user()->id)->first();
+            $student = Student::whereEmail($user->email)->first();
+
+            if ($student) {
+                $query->whereHas('subjectDepot', function ($q) use ($student) {
+                    $q->where('class_id', $student->class_id);
+                });
+            }
+        })
             ->columns([
                 TextColumn::make('subjectDepot.name')
             ])

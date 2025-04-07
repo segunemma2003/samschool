@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Ourparent\Resources;
+namespace App\Filament\Ourstudent\Resources;
 
-use App\Filament\Ourparent\Resources\ComplainResource\Pages;
-use App\Filament\Ourparent\Resources\ComplainResource\RelationManagers;
+use App\Filament\Ourstudent\Resources\ComplainResource\Pages;
+use App\Filament\Ourstudent\Resources\ComplainResource\RelationManagers;
 use App\Models\Complain;
 use App\Models\User;
 use Filament\Forms;
@@ -14,7 +14,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
-use AmidEsfahani\FilamentTinyEditor\TinyEditor;
 
 class ComplainResource extends Resource
 {
@@ -45,7 +44,6 @@ class ComplainResource extends Resource
                 Forms\Components\FileUpload::make('file')
                 ->disk('s3')
                     ->nullable(),
-
             ]);
     }
 
@@ -63,6 +61,7 @@ class ComplainResource extends Resource
                 ->searchable(),
             Tables\Columns\TextColumn::make('user.name')
                 ->searchable(),
+
             ])
             ->filters([
                 //

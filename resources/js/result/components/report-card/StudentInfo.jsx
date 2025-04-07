@@ -7,25 +7,27 @@ const StudentInfo = ({
   className,
   session,
   term,
-  grade,
+
+  school,
+ position,
   attendanceData
 }) => {
   return (
-    <div className="flex justify-between items-start mb-2 student-info-section">
+    <div className="flex items-start justify-between mb-2 student-info-section">
       {/* Left: Student Details */}
       <div className="w-1/3 text-xs">
-        <div className="h-full flex flex-col justify-between" style={{ minHeight: '80px' }}>
+        <div className="flex flex-col justify-between h-full" style={{ minHeight: '80px' }}>
           <div className="space-y-2">
             <div className="flex">
-              <span className="font-bold w-24">Name:</span>
+              <span className="w-24 font-bold">Name:</span>
               <span>{name}</span>
             </div>
             <div className="flex">
-              <span className="font-bold w-24">Admission No:</span>
+              <span className="w-24 font-bold">Admission No:</span>
               <span>{admissionNo}</span>
             </div>
             <div className="flex">
-              <span className="font-bold w-24">Class:</span>
+              <span className="w-24 font-bold">Class:</span>
               <span>{className}</span>
             </div>
           </div>
@@ -34,27 +36,28 @@ const StudentInfo = ({
 
       {/* Middle: Session, Term, Grade - Text aligned to left */}
       <div className="w-1/3 text-xs">
-        <div className="h-full flex flex-col justify-between" style={{ minHeight: '80px' }}>
+        <div className="flex flex-col justify-between h-full" style={{ minHeight: '80px' }}>
           <div className="space-y-2">
             <div className="flex">
-              <span className="font-bold w-24">Session:</span>
+              <span className="w-24 font-bold">Session:</span>
               <span>{session}</span>
             </div>
             <div className="flex">
-              <span className="font-bold w-24">Term:</span>
+              <span className="w-24 font-bold">Term:</span>
               <span>{term}</span>
             </div>
-            <div className="flex">
-              <span className="font-bold w-24">Grade:</span>
-              <span>{grade}</span>
+            {school.activate_position == "yes" && (<div className="flex">
+              <span className="w-24 font-bold">Position:</span>
+              <span>{position}</span>
             </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Right: Attendance Table with added % column */}
-      <div className="w-1/3 flex items-center justify-end">
-        <div className="border border-gray-300 rounded w-4/5">
+      <div className="flex items-center justify-end w-1/3">
+        <div className="w-4/5 border border-gray-300 rounded">
           <table className="w-full text-[8px] attendance-table">
             <thead>
               <tr>
@@ -63,17 +66,17 @@ const StudentInfo = ({
             </thead>
             <tbody className="text-[8px]">
               <tr>
-                <td className="border border-gray-300 p-1">Days School Open</td>
-                <td className="border border-gray-300 p-1 text-center">{attendanceData.expected_present}</td>
-                <td rowSpan={3} className="border border-gray-300 p-1 text-center align-middle">{(attendanceData.total_present/attendanceData.expected_present).toFixed(1)||"N/A"}%</td>
+                <td className="p-1 border border-gray-300">Days School Open</td>
+                <td className="p-1 text-center border border-gray-300">{attendanceData.expected_present}</td>
+                <td rowSpan={3} className="p-1 text-center align-middle border border-gray-300">{((attendanceData.total_present/attendanceData.expected_present)*100).toFixed(1)||"N/A"}%</td>
               </tr>
               <tr>
-                <td className="border border-gray-300 p-1">Days Present</td>
-                <td className="border border-gray-300 p-1 text-center">{attendanceData.total_present}</td>
+                <td className="p-1 border border-gray-300">Days Present</td>
+                <td className="p-1 text-center border border-gray-300">{attendanceData.total_present}</td>
               </tr>
               <tr>
-                <td className="border border-gray-300 p-1">Days Absent</td>
-                <td className="border border-gray-300 p-1 text-center">{attendanceData.total_absent}</td>
+                <td className="p-1 border border-gray-300">Days Absent</td>
+                <td className="p-1 text-center border border-gray-300">{attendanceData.total_absent}</td>
               </tr>
             </tbody>
           </table>

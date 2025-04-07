@@ -43,7 +43,8 @@ const Result = () => {
                class: student.class?.name || '',
                session: termAndAcademy.academy?.title || '',
                term: termAndAcademy.term?.name || '',
-               grade: scoreData.grade || ''
+               grade: scoreData.grade || '',
+               position: scoreData.position || ''
              },
              totalHeadings: totalHeadings,
              psychomotorNormal: psychomotorNormal.map(item => ({
@@ -96,9 +97,9 @@ const Result = () => {
 
        if (!data) {
          return (
-           <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4 flex items-center justify-center">
+           <div className="flex items-center justify-center min-h-screen px-4 py-8 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
              <div className="text-center">
-               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Loading...</h2>
+               <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-gray-100">Loading...</h2>
                <p className="text-gray-600 dark:text-gray-400">Please wait while we load your report card.</p>
              </div>
            </div>
@@ -106,10 +107,10 @@ const Result = () => {
        }
   return (
     <div className="result-container">
-      <div className="no-print p-4">
+      <div className="p-4 no-print">
         {/* <Link to="/">
           <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back to Home
+            <ArrowLeft className="w-4 h-4" /> Back to Home
           </Button>
         </Link> */}
       </div>

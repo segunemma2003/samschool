@@ -28,6 +28,10 @@ class ExamController extends Controller
         try {
             // dd(Storage::disk('s3')->url("tt.jpg"));
             $student = Student::with('class', 'class.group')->whereId($studentId)->firstOrFail();
+            $allStudents = Student::where('class_id', $student->class_id)->get();
+
+            $studentAverages = [];
+            $totalStudents = $allStudents->count();
             if (!$student) {
                 throw new Exception('Student record not found.');
             }
@@ -35,6 +39,8 @@ class ExamController extends Controller
             if (!$student->class || !$student->class->group) {
                 throw new Exception('Student class or group information is missing.');
             }
+
+
 
             $termAndAcademy = collect([
                 'term' => Term::find($termId),
@@ -163,6 +169,64 @@ class ExamController extends Controller
             $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
 
             $remarks = $headings->whereIn('calc_pattern', ['remarks']) ?? collect([]);
+
+
+            foreach ($allStudents as $oneStudent) {
+                $studentCourses = CourseForm::with([
+                    'subject.subjectDepot',
+                    'scoreBoard'
+                ])
+                ->where([
+                    ['student_id', $oneStudent->id],
+                    ['term_id', $termId],
+                    ['academic_year_id', $academyId]
+                ])
+                ->get();
+
+                if ($studentCourses->isEmpty()) continue;
+
+                $studentTotal = 0;
+                $subjectCount = 0;
+
+                foreach ($studentCourses as $course) {
+                    $subjectCount++;
+                    $score = $course->scoreBoard
+                        ->whereIn('result_section_type_id', $totalHeadings->pluck('id'))
+                        ->sum(function ($item) {
+                            return (int) $item->score;
+                        });
+
+                    $studentTotal += $score;
+                }
+
+                if ($subjectCount > 0) {
+                    $studentAverage = $studentTotal / $subjectCount;
+                    $studentAverages[] = [
+                        'student_id' => $oneStudent->id,
+                        'average' => round($studentAverage, 2)
+                    ];
+                }
+            }
+
+
+            usort($studentAverages, function ($a, $b) {
+                return $b['average'] <=> $a['average'];
+            });
+
+            $position = null;
+foreach ($studentAverages as $index => $data) {
+    if ($data['student_id'] == $student->id) {
+        $position = $index + 1;
+        break;
+    }
+}
+
+$classAverage = 0;
+if (count($studentAverages) > 0) {
+    $classAverage = round(array_sum(array_column($studentAverages, 'average')) / count($studentAverages), 2);
+}
+
+
             $class = SchoolClass::with('teacher')->where('id', $student->class->id)->first() ?? collect([]);
             $scoreData = $courses->reduce(function ($carry, $course) use ($totalHeadings) {
                 $subject = strtolower($course->subject->subjectDepot->name);
@@ -208,6 +272,27 @@ class ExamController extends Controller
             $percent = round($scoreData['totalScore'] / $courses->count());
             $principalComment = self::getPerformanceComment($percent, $englishScore, $mathScore);
             $totalSubject =count($courses);
+
+            $classStudents = Student::where('class_id', $student->class_id)->get();
+
+// Find the current student's position and average
+$currentStudentAverage = 0;
+$currentStudentPosition = null;
+
+foreach ($studentAverages as $index => $data) {
+    if ($data['student_id'] == $student->id) {
+        $currentStudentAverage = $data['average'];
+        $currentStudentPosition = $index + 1; // Position is 1-based
+        break;
+    }
+}
+
+// Calculate the class average by averaging all students' averages
+$classAverageScore = count($studentAverages) > 0
+    ? array_sum(array_column($studentAverages, 'average')) / count($studentAverages)
+    : 0;
+
+
 $resultData =[
             'class'=>$class,
             'totalSubject'=>$totalSubject,
@@ -218,9 +303,12 @@ $resultData =[
             'studentSummary'=> $studentSummary,
             'termSummary'=>$termSummary,
             'courses'=>$courses,
-            'classAverage'=>0,
             'student'=>$student,
+            'classAverage' => $classAverage,
+            'totalStudents' => $totalStudents,
+            'studentPosition' => $position,
             'principalComment' => $principalComment,
+            'studentAverage' => $currentStudentAverage,
         ];
 
 

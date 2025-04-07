@@ -18,7 +18,7 @@ const SchoolReport = ({
   mdata
 }) => {
   return (
-    <div className="report-card w-full box-border print:box-border print:w-full" id="printable-report">
+    <div className="box-border w-full report-card print:box-border print:w-full" id="printable-report">
       <StudentHeader data={mdata} schoolLogoUrl={schoolLogoUrl} title={title} />
 
       <StudentInfo
@@ -27,7 +27,9 @@ const SchoolReport = ({
         className={mdata.student.class}
         session={mdata.student.session}
         term={mdata.student.term}
-        grade={mdata.student.grade}
+        school= {mdata.school}
+        // grade={mdata.student.grade}
+        position={mdata.resultData.studentPosition}
         attendanceData={mdata.attendance}
       />
 
@@ -48,8 +50,8 @@ const SchoolReport = ({
         subjectsOffered={mdata.resultData.totalSubject}
         marksObtained={mdata.analysis.totalScore}
         marksObtainable={mdata.analysis.marksObtainable}
-        classAverage={mdata.analysis.classAverage}
-        studentAverage={mdata.analysis.studentAverage || 0.000}
+        classAverage={mdata.resultData.classAverage}
+        studentAverage={mdata.resultData.studentAverage || 0.000}
       />
 
       <DomainRatings

@@ -17,7 +17,7 @@ console.log(resultData);
       // Ensure we have all required data
       if (!resultData || !resultData.courses) {
         return (
-          <div className="my-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+          <div className="p-4 my-4 border border-yellow-200 rounded bg-yellow-50">
             <p className="text-yellow-800">No subject data available</p>
           </div>
         );
@@ -47,7 +47,7 @@ console.log(resultData);
       {/* Subjects Table */}
       <div className="relative z-10">
         <h2 className="text-[12px] font-bold mb-0.5 text-center">SUBJECTS ANALYSIS</h2>
-        <Table className="w-full border-collapse text-[10px]">
+        <Table className="w-full border-collapse text-[10px] font-semibold">
           <TableHeader>
             <TableRow>
               <TableHead className="border border-gray-300 p-0.5 text-center" rowSpan={2}>SUBJECTS</TableHead>

@@ -67,6 +67,12 @@ class SchoolInformationResource extends Resource
                     ->label('School Phone')
 
                     ->required(),
+                Select::make('activate_position')
+                ->label('Activate Position')
+                ->options([
+                    "yes"=>"Yes",
+                    "no"=>"No"
+                ]),
 
                     FileUpload::make('school_logo')
                     ->disk('s3'),
@@ -117,6 +123,9 @@ class SchoolInformationResource extends Resource
                 ImageColumn::make('principal_sign'),
                 ImageColumn::make('school_stamp'),
                 TextColumn::make('term_begin')
+                ->searchable()
+                ->sortable(),
+                TextColumn::make('activate_position')
                 ->searchable()
                 ->sortable(),
                 TextColumn::make('term_ends')

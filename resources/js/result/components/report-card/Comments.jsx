@@ -21,19 +21,19 @@ const Comments = ({
             <TableCell className="border border-gray-300 p-0.5 flex justify-center items-center">
               <div className="text-center">
                 <div className="font-semibold mb-0.5">School Stamp:</div>
-                <div className="h-16 w-16 mx-auto">
+                <div className="w-16 h-16 mx-auto">
                 {school?.school_stamp ? (
             <img
               src={school.school_stamp.startsWith('data:image')
                 ? school.school_stamp
                 : `https://schoolcompasse.s3.us-east-1.amazonaws.com/${school.school_stamp}`}
               alt="School Stamp"
-              className="w-full h-full object-contain"
+              className="object-contain w-full h-full"
             />
           ) : (  <img
                     src="https://images.unsplash.com/photo-1459767129954-1b1c1f9b9ace"
                     alt="School Stamp"
-                    className="h-full w-full object-contain"
+                    className="object-contain w-full h-full"
                   />
                 )}
                 </div>
@@ -46,7 +46,7 @@ const Comments = ({
               <div className="pl-1">{""}</div>
             </TableCell>
             <TableCell className="border border-gray-300 p-0.5">
-              <div className="font-semibold mb-0.5">RESUMPTION DATE FOR SECOND TERM:</div>
+              <div className="font-semibold mb-0.5">RESUMPTION DATE FOR THE NEXT TERM:</div>
               <div className="pl-1">{nextTerm}</div>
             </TableCell>
             <TableCell className="border border-gray-300 p-0.5">

@@ -42,3 +42,11 @@
         <x-filament-actions::modals />
     </div>
 </div>
+
+<script>
+    document.addEventListener('livewire:initialized', () => {
+        Livewire.on('refreshPage', () => {
+            window.location.reload();
+        });
+    });
+</script>

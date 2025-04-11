@@ -105,7 +105,7 @@ class StudentResults extends Component
         if ($total >= 55) return 'CREDIT';
         if ($total >= 50) return 'CREDIT';
         if ($total >= 45) return 'PASS';
-        if ($total >= 40) return 'FAIL';
+        if ($total >= 39) return 'FAIL';
         return 'FAIL';
     }
 

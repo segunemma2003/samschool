@@ -1,13 +1,10 @@
 <?php
 
-namespace App\Filament\Ourstudent\Resources;
+namespace App\Filament\Teacher\Resources;
 
-use App\Filament\Ourstudent\Resources\EbooksResource\Pages;
-use App\Filament\Ourstudent\Resources\EbooksResource\RelationManagers;
-use App\Models\Ebooks;
-use App\Models\Subject;
-use App\Models\Teacher;
-use App\Models\User;
+use App\Filament\Teacher\Resources\EbookResource\Pages;
+use App\Filament\Teacher\Resources\EbookResource\RelationManagers;
+use App\Models\Ebook;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,20 +12,15 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
-class EbooksResource extends Resource
+class EbookResource extends Resource
 {
-    protected static ?string $model = Ebooks::class;
+    protected static ?string $model = Ebook::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
-        $userId = Auth::user()->id;
-        $user = User::whereId($userId)->first();
-        $teacher = Teacher::where('email', $user->email)->first();
-        Subject::all();
         return $form
             ->schema([
                 //
@@ -66,9 +58,9 @@ class EbooksResource extends Resource
     {
         return [
             'index' => Pages\ListEbooks::route('/'),
-            'create' => Pages\CreateEbooks::route('/create'),
-            'view' => Pages\ViewEbooks::route('/{record}'),
-            'edit' => Pages\EditEbooks::route('/{record}/edit'),
+            'create' => Pages\CreateEbook::route('/create'),
+            'view' => Pages\ViewEbook::route('/{record}'),
+            'edit' => Pages\EditEbook::route('/{record}/edit'),
         ];
     }
 }

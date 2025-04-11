@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Ourstudent\Resources\EbooksResource\Pages;
+namespace App\Filament\App\Resources\ArmsTeacherResource\Pages;
 
-use App\Filament\Ourstudent\Resources\EbooksResource;
+use App\Filament\App\Resources\ArmsTeacherResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditEbooks extends EditRecord
+class EditArmsTeacher extends EditRecord
 {
-    protected static string $resource = EbooksResource::class;
+    protected static string $resource = ArmsTeacherResource::class;
 
     protected function getHeaderActions(): array
     {

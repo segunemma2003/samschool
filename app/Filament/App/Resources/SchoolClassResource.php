@@ -39,7 +39,7 @@ class SchoolClassResource extends Resource
                 ->required()
                 ->maxLength(255),
                 Forms\Components\Select::make('teacher_id')
-                ->label('Teacher Name')
+                ->label('Year Tutor')
                 ->options(Teacher::all()->pluck('name', 'id'))
                 ->searchable(),
                 Forms\Components\Select::make('group_id')

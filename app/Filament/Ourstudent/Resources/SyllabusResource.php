@@ -44,7 +44,7 @@ class SyllabusResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),
-                TextColumn::make('subject.name')->searchable(),
+                TextColumn::make('subject.subjectDepot.name')->searchable(),
                 TextColumn::make('class.name')->searchable()
             ])
             ->filters([

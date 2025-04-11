@@ -32,6 +32,7 @@ class OurstudentPanelProvider extends PanelProvider
         return $panel
             ->id('student')
             ->path('student')
+            ->profile(isSimple: false)
             ->login(StudentLogin::class)
             ->brandLogo(getTenantLogo())
             ->passwordReset()

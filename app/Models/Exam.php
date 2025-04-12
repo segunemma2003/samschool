@@ -57,4 +57,9 @@ class Exam extends Model
     {
         return $this->hasMany(QuizScore::class, 'exam_id')->with('student');
     }
+
+    public function resultType()
+    {
+        return $this->belongsTo(ResultSectionType::class, 'result_section_type_id');
+    }
 }

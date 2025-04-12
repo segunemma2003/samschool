@@ -72,6 +72,7 @@ class ExamResource extends Resource
                 TextColumn::make('academic.title')->searchable(),
                 TextColumn::make('term.name')->searchable()->default('Term 1'),
                 TextColumn::make('subject.code')->searchable(),
+                TextColumn::make('resultType.name'),
                 TextColumn::make('subject.class.name')->searchable(),
                 TextColumn::make('subject.class.name')->searchable(),
                 TextColumn::make('score')

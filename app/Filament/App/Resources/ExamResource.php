@@ -55,6 +55,7 @@ class ExamResource extends Resource
                 ->default(false)
                 ->label('Exam is Set')
                 ->searchable(),
+                TextColumn::make('resultType.name'),
                 Select::make('term_id')
                 ->options(Term::all()->pluck('name', 'id'))
                 ->preload()

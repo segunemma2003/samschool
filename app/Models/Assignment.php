@@ -16,11 +16,15 @@ class Assignment extends Model
         return $this->belongsTo(SchoolClass::class, 'class_id'); // Assuming your class model is SchoolClass
     }
 
-    public function section()
+    public function term()
     {
-        return $this->belongsTo(SchoolSection::class, 'section_id'); // Assuming your class model is SchoolClass
+        return $this->belongsTo(Term::class, 'term_id'); // Assuming your class model is SchoolClass
     }
 
+    public function academy()
+    {
+        return $this->belongsTo(AcademicYear::class, 'academic_id'); // Assuming your class model is SchoolClass
+    }
     public function subject()
     {
         return $this->belongsTo(Subject::class, 'subject_id'); // Assuming your class model is SchoolClass
@@ -41,5 +45,12 @@ class Assignment extends Model
     {
         return $this->students()->wherePivot('status', 'submitted');
     }
+
+    public function getStudentPivotAttribute()
+{
+    $studentId = auth()->user()?->student?->id;
+
+    return $this->students->where('id', $studentId)->first()?->pivot;
+}
 
 }

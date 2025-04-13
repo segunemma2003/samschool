@@ -8,11 +8,13 @@ use App\Filament\Teacher\Pages\SubmittedStudentsList;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\SubmittedStudents;
 use App\Filament\Teacher\Resources\AssignmentResource\RelationManagers;
+use App\Models\AcademicYear;
 use App\Models\Assignment;
 use App\Models\SchoolClass;
 use App\Models\SchoolSection;
 use App\Models\Subject;
 use App\Models\Teacher;
+use App\Models\Term;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
@@ -54,9 +56,13 @@ class AssignmentResource extends Resource
                 ->label('Class Name')
                 ->options(SchoolClass::where('teacher_id',$teacherId->id)->pluck('name', 'id'))
                 ->searchable(),
-                Forms\Components\Select::make('section_id')
-                    ->label('Section')
-                    ->options(SchoolSection::all()->pluck('section', 'id'))
+                Forms\Components\Select::make('term_id')
+                    ->label('Term')
+                    ->options(Term::all()->pluck('name', 'id'))
+                    ->searchable(),
+                Forms\Components\Select::make('academic_id')
+                    ->label('Academy')
+                    ->options(AcademicYear::all()->pluck('title', 'id'))
                     ->searchable(),
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject')
@@ -81,7 +87,11 @@ class AssignmentResource extends Resource
             ->columns([
                 TextColumn::make('title'),
                 TextColumn::make('class.name'),
-                TextColumn::make('section.section'),
+                Tables\Columns\TextColumn::make('term.name')
+                ->searchable(),
+
+                Tables\Columns\TextColumn::make('academy.title')
+                ->searchable(),
                 TextColumn::make('total_students_answered')->label('Total Students Submitted'),
                 TextColumn::make('deadline'),
                 TextColumn::make('created_at')->since()

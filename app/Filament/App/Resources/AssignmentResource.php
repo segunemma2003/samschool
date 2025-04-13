@@ -4,10 +4,12 @@ namespace App\Filament\App\Resources;
 
 use App\Filament\App\Resources\AssignmentResource\Pages;
 use App\Filament\App\Resources\AssignmentResource\RelationManagers;
+use App\Models\AcademicYear;
 use App\Models\Assignment;
 use App\Models\SchoolClass;
 use App\Models\SchoolSection;
 use App\Models\Subject;
+use App\Models\Term;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -41,9 +43,13 @@ class AssignmentResource extends Resource
                     ->options(SchoolClass::all()->pluck('name', 'id'))
                     ->searchable(),
 
-                Forms\Components\Select::make('section_id')
-                    ->label('Section')
-                    ->options(SchoolSection::all()->pluck('section', 'id'))
+                Forms\Components\Select::make('term_id')
+                    ->label('Term')
+                    ->options(Term::all()->pluck('name', 'id'))
+                    ->searchable(),
+                Forms\Components\Select::make('academic_id')
+                    ->label('Academy')
+                    ->options(AcademicYear::all()->pluck('title', 'id'))
                     ->searchable(),
                 Forms\Components\Select::make('subject_id')
                     ->label('Subject')
@@ -64,7 +70,10 @@ class AssignmentResource extends Resource
                 Tables\Columns\TextColumn::make('class.name')
                 ->searchable(),
 
-                Tables\Columns\TextColumn::make('section.section')
+                Tables\Columns\TextColumn::make('term.name')
+                ->searchable(),
+
+                Tables\Columns\TextColumn::make('academy.title')
                 ->searchable(),
 
                 Tables\Columns\TextColumn::make('subject.code')

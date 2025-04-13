@@ -35,11 +35,13 @@ class ViewSubmittedAssignmentTeacher extends Component implements HasForms, HasI
 
     public function mount( $assignment,  $mrecord){
 
+        // dd($mrecord);
         $this->assignment= $assignment;
         $this->mrecord = $mrecord;
         $assignment = Assignment::whereId($this->assignment)->first();
+        // dd($mrecord);
         $pivotData = $assignment->students()->where('student_id', $mrecord)->first();
-
+        // dd($pivotData);
         if ($pivotData) {
             $this->data = [
                 'score' => $pivotData->pivot->total_score,

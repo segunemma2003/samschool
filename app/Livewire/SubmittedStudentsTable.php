@@ -46,6 +46,7 @@ class SubmittedStudentsTable extends Component implements HasTable, HasForms, Ha
             ->query(
                 $this->assignment->answeredStudents()->getQuery())
             ->columns([
+                    TextColumn::make('No')->rowIndex(),
                     TextColumn::make('name')->label('Student Name')
                     ->searchable()
                     ->sortable(),
@@ -66,10 +67,11 @@ class SubmittedStudentsTable extends Component implements HasTable, HasForms, Ha
             ->actions([
 
                 // ViewAction::make(),
-                Tables\Actions\Action::make('view')->url(function($record) {
+                    Tables\Actions\Action::make('view')->url(function($record) {
+
                     return route('filament.teacher.pages.view-submitted-assignment-teacher', [
                     'assignment' => $this->assignment,
-                    'student' => $record,
+                    'student' => $record->student_id,
                 ]);
 
     })

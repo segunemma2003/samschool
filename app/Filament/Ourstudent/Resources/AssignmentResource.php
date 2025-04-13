@@ -44,55 +44,66 @@ class AssignmentResource extends Resource
 
     $student = Student::whereEmail($user->email)->first();
 
-    return $table
+    return  $table
     ->modifyQueryUsing(function (Builder $query) use ($student, $academicYearId) {
         if ($student && $academicYearId) {
             $query->whereHas('subject.courseOffer', function ($subQuery) use ($student, $academicYearId) {
                 $subQuery->where('student_id', $student->id)
                          ->where('academic_year_id', $academicYearId);
-            })->with(['subject', 'class', 'section', 'students']);
+            })
+            ->with(['subject', 'class', 'term', 'academy', 'students' => function($q) use ($student) {
+                $q->where('student_id', $student->id);
+            }]);
         }
     })
-        ->columns([
-            TextColumn::make('title'),
-            TextColumn::make('class.name'),
-            TextColumn::make('section.section'),
-            TextColumn::make('deadline'),
-            TextColumn::make('student_status')
-                ->label('Total Score')
-                ->formatStateUsing(function ($record) use ($student) {
-                    $pivot = $record->students()->find($student->id)?->pivot;
+    ->columns([
+        TextColumn::make('title'),
+        TextColumn::make('class.name'),
+        TextColumn::make('term.name')->searchable(),
+        TextColumn::make('academy.title')->searchable(),
+        TextColumn::make('deadline'),
+        TextColumn::make('student_status')
+        ->label('Status')
+        ->state(function ($record) use ($student) {
+            if (!$student) return null;
 
-                    if (!$pivot) {
-                        return 'Not Answered';
-                    }
+            // Debugging - uncomment to see what's loaded
+            // dd($record->students->toArray());
 
-                    return is_null($pivot->comments_score)
-                        ? ($pivot->status === 'draft' ? 'Draft' : 'Awaiting Score')
-                        : 'Marked';
-                })
-                ->sortable(),
+            $pivot = $record->students->first()?->pivot;
+
+            if (!$pivot) return 'Not Answered';
+
+            if ($pivot->status === 'draft') return 'Draft';
+
+            return is_null($pivot->comments_score)
+                ? 'Awaiting Score'
+                : 'Marked';
+        })
+        ->sortable(),
             TextColumn::make('score_only')
-                ->label('Score')
-                ->formatStateUsing(function ($record) use ($student) {
-                    $pivot = $record->students()->find($student->id)?->pivot;
+            ->label('Score')
+            ->state(function ($record) use ($student) {
+                if (!$student) return null;
 
-                    return $pivot && !is_null($pivot->comments_score)
-                        ? $pivot->total_score
-                        : '-';
-                }),
-            TextColumn::make('created_at')->since(),
-        ])
+                $pivot = $record->students->first()?->pivot;
+
+                return $pivot && !is_null($pivot->comments_score)
+                    ? $pivot->total_score
+                    : '-';
+            }),
+        TextColumn::make('created_at')->since(),
+    ])
         ->filters([
             // Add filters if needed
         ])
         ->actions([
             Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
+            // Tables\Actions\EditAction::make(),
         ])
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
+                // Tables\Actions\DeleteBulkAction::make(),
             ]),
         ]);
 }

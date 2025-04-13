@@ -202,12 +202,19 @@ class StudentResource extends Resource
                ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                 ->searchable(),
+                Tables\Columns\TextColumn::make('arm.name')
+                ->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('class.name')
-                ->searchable(),
+                ->searchable()->sortable(),
             ])
             ->filters([
                 SelectFilter::make('class')
                 ->relationship('class', 'name')
+                ->searchable()
+                ->preload()
+                ,
+                SelectFilter::make('arm')
+                ->relationship('arm', 'name')
                 ->searchable()
                 ->preload()
             ])

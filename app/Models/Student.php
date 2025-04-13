@@ -37,4 +37,8 @@ class Student extends Model
         'subject_id'     // Local key on CourseForm table
     );
 }
+
+public function arm(){
+    return $this->belongsTo(Arm::class, 'arm_id');
+}
 }

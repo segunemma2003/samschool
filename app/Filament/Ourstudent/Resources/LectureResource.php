@@ -48,7 +48,7 @@ class LectureResource extends Resource
             // $query->where('id', $student->class->id);
         })
     ->columns([
-        TextColumn::make('subject.name')
+        TextColumn::make('subject.subjectDepot.name')
         ->searchable()
         ->sortable(),
         TextColumn::make('title')

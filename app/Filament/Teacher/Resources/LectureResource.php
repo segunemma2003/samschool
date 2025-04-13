@@ -18,6 +18,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -40,18 +41,21 @@ class LectureResource extends Resource
         return $form
             ->schema([
                 Select::make('subject_id')
-                ->options(Subject::where('teacher_id', $teacher->id)->pluck('name', 'id'))
-                ->preload()
-                ->label('Subject')
-                ->searchable()
-                ->required(),
-
-                Select::make('subject_id')
-                ->options(Subject::where('teacher_id', $teacher->id)->pluck('name', 'id'))
-                ->preload()
-                ->label('Subject')
-                ->searchable()
-                ->required(),
+    ->options(function (Get $get) { // Using Get helper
+        $user = User::whereId(Auth::id())->first();
+        $teacher = Teacher::where('email', $user->email)->first();
+        // dd($teacher->id);
+        return $teacher
+            ? Subject::whereHas('teacher',function($q) use($teacher){
+                $q->where('id', $teacher->id);
+            })->pluck('code', 'id')
+            : [];
+    })
+    ->preload()
+    ->label('Subject')
+    ->searchable()
+    ->required()
+   ,
                 TextInput::make('title')
                 ->label('Topic')
                 ->required(),
@@ -85,7 +89,7 @@ class LectureResource extends Resource
                     $query->where('teacher_id', $teacher->id);
                 })
             ->columns([
-                TextColumn::make('subject.name')
+                TextColumn::make('subject.code')
                 ->searchable()
                 ->sortable(),
                 TextColumn::make('title')

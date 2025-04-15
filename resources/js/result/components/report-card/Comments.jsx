@@ -54,7 +54,7 @@ const Comments = ({
           </TableRow>
           <TableRow>
             <TableCell colSpan={3} className="border border-gray-300 p-0.5 text-center">
-              <div className="font-semibold text-[9px]">NOTE: EACH CHILD MUST RETURN TO SCHOOL WITH EVIDENCE OF PAYMENT OR THEY WILL BE SENT BACK HOME</div>
+              {/* <div className="font-semibold text-[9px]">NOTE: EACH CHILD MUST RETURN TO SCHOOL WITH EVIDENCE OF PAYMENT OR THEY WILL BE SENT BACK HOME</div> */}
             </TableCell>
           </TableRow>
         </TableBody>

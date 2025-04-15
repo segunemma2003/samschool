@@ -12,6 +12,27 @@ const StudentInfo = ({
  position,
   attendanceData
 }) => {
+
+    const getPositionSuffix = (position) => {
+        const lastDigit = position % 10;
+        const lastTwoDigits = position % 100;
+
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
+          return `${position}th`;
+        }
+
+        switch (lastDigit) {
+          case 1:
+            return `${position}st`;
+          case 2:
+            return `${position}nd`;
+          case 3:
+            return `${position}rd`;
+          default:
+            return `${position}th`;
+        }
+      };
+
   return (
     <div className="flex items-start justify-between mb-2 student-info-section">
       {/* Left: Student Details */}
@@ -48,7 +69,7 @@ const StudentInfo = ({
             </div>
             {school.activate_position == "yes" && (<div className="flex">
               <span className="w-24 font-bold">Position:</span>
-              <span>{position}</span>
+              <span>{getPositionSuffix(position)}</span>
             </div>
             )}
           </div>

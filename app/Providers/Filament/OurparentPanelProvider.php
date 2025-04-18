@@ -81,6 +81,7 @@ class OurparentPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])->plugin(
-                FilamentTenancyAppPlugin::make())->viteTheme('resources/css/filament/ourparent/theme.css');
+                FilamentTenancyAppPlugin::make())
+                ->viteTheme('resources/css/filament/parent/theme.css');
     }
 }

@@ -48,12 +48,12 @@
     "src": "resources/css/filament/teacher/theme.css",
     "isEntry": true
   },
-  "resources/css/filament/ourparent/theme.css": {
+  "resources/css/filament/ourstudent/theme.css": {
     "file": "assets/theme-CBV86JeO.css",
     "src": "resources/css/filament/teacher/theme.css",
     "isEntry": true
   },
-  "resources/css/filament/ourstudent/theme.css": {
+  "resources/css/filament/parent/theme.css": {
     "file": "assets/theme-CBV86JeO.css",
     "src": "resources/css/filament/teacher/theme.css",
     "isEntry": true

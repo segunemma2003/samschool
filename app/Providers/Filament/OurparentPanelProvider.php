@@ -67,6 +67,8 @@ class OurparentPanelProvider extends PanelProvider
             ->plugin(
                 FilamentTenancyAppPlugin::make()
                 )
+                ->plugin(
+                    FilamentTenancyAppPlugin::make())
             ->plugins([
                 FilamentProgressbarPlugin::make()->color('#29b'),
                 LightSwitchPlugin::make(),
@@ -80,8 +82,7 @@ class OurparentPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ])->plugin(
-                FilamentTenancyAppPlugin::make())
+            ])
                 ->viteTheme('resources/css/filament/parent/theme.css');
     }
 }

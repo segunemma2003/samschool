@@ -92,7 +92,8 @@ class CommunicationBookResource extends Resource
                             $data['date'],
                             fn (Builder $query, $date) => $query->whereDate('date', $date)
                         );
-                })
+                }),
+
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

@@ -80,4 +80,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(Message::class, 'sender_id');
     }
+
+    public function isAdmin()
+    {
+        return $this->user_type == 'admin';
+    }
 }

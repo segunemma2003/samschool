@@ -19,6 +19,7 @@
         "ercogx/filament-openai-assistant": "^1.0",
         "filament/filament": "^3.2",
         "filament/forms": "^3.2",
+        "filament/notifications": "^3.3",
         "filament/spatie-laravel-media-library-plugin": "^3.2",
         "filament/tables": "^3.2",
         "filament/widgets": "*",

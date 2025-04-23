@@ -6,6 +6,7 @@ use App\Filament\Ourstudent\Resources\ComplaintResource\Pages;
 use App\Filament\Ourstudent\Resources\ComplaintResource\RelationManagers;
 use App\Filament\Ourstudent\Resources\ComplaintResource\RelationManagers\RepliesRelationManager;
 use App\Models\Complaint;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Form;
@@ -24,6 +25,7 @@ class ComplaintResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $user = User::whereId(Auth::id())->first();
         return $form
             ->schema([
 
@@ -44,13 +46,13 @@ class ComplaintResource extends Resource
                     'resolved' => 'Resolved',
                 ])
                 ->default('open')
-                ->visible(fn (): bool => auth()->user()->isAdmin()),
+                ->visible(fn (): bool => $user->isAdmin()),
             ]);
     }
 
     public static function getEloquentQuery(): Builder
-    {
-        if (auth()->user()->isAdmin()) {
+    { $user = User::whereId(Auth::id())->first();
+        if ($user->isAdmin()) {
             return parent::getEloquentQuery();
         }
 

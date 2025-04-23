@@ -38,7 +38,7 @@ class Student extends Model
     );
 }
 
-public function arm(){
-    return $this->belongsTo(Arm::class, 'arm_id');
-}
+    public function arm(){
+        return $this->belongsTo(Arm::class, 'arm_id');
+    }
 }

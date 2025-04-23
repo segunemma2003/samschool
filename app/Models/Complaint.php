@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class Complaint extends Model
 {
@@ -13,8 +14,8 @@ class Complaint extends Model
     protected static function booted()
     {
         static::creating(function (Complaint $complaint) {
-            if (auth()->check()) {
-                $complaint->user_id = auth()->id();
+            if (Auth::check()) {
+                $complaint->user_id = Auth::id();
             }
         });
     }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources\ComplaintResource\RelationManagers;
 
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Form;
@@ -33,6 +34,7 @@ class RepliesRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $user = User::whereId(Auth::id())->first();
         return $table
             ->recordTitleAttribute('message')
             ->columns([
@@ -69,7 +71,7 @@ class RepliesRelationManager extends RelationManager
                 Forms\Components\Toggle::make('is_admin')
                     ->label('Admin Reply')
                     ->default(true)
-                    ->hidden(fn (): bool => !auth()->user()->isAdmin()),
+                    ->hidden(fn (): bool => !$user->isAdmin()),
                 ])
                 ->mutateFormDataUsing(function (array $data): array {
                     $data['user_id'] = Auth::id();

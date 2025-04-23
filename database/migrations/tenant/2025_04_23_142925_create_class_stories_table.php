@@ -17,7 +17,8 @@ return new class extends Migration
             $table->text('description');
             $table->text('content');
             $table->foreignId('teacher_id')->constrained('teachers');
-            $table->foreignId('class_arm_id')->constrained('arms_teachers');
+            $table->foreignId('arm_id')->constrained('arms');
+            $table->foreignId('class_id')->constrained('school_classes');
             $table->dateTime('published_at');
             $table->timestamps();
         });

@@ -12,6 +12,10 @@ use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -106,10 +110,55 @@ class CommunicationBookResource extends Resource
             ]);
     }
 
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = User::whereId(Auth::id())->first();
+        $teacher = Teacher::with('arm')->whereEmail($user->email)->first();
+        // Teachers see only their students' communication books
+
+
+            return $query->where('teacher_id',$teacher->id);
+
+        return $query;
+    }
+
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Student Information')
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('student.name')
+                                    ->label('Student Name'),
+                                TextEntry::make('student.class.name')
+                                    ->label('Class'),
+                                TextEntry::make('student.arm.name')
+                                    ->label('Arm'),
+                            ]),
+                    ]),
+                Section::make('Communication')
+                    ->schema([
+                        TextEntry::make('date')
+                            ->date(),
+                        TextEntry::make('teacher.name')
+                            ->label('Teacher'),
+                        TextEntry::make('content')
+                            ->html()
+                            ->columnSpanFull(),
+                    ]),
+            ]);
+    }
+
+
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\CommentsRelationManager::class,
         ];
     }
 

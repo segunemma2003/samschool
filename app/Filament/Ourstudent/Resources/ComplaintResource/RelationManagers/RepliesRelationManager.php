@@ -38,15 +38,10 @@ class RepliesRelationManager extends RelationManager
             ->columns([
                 // Tables\Columns\TextColumn::make('user.name'),
                 Tables\Columns\IconColumn::make('is_admin')
-                    ->label('Type')
-                    ->icons([
-                        'heroicon-o-user' => false,
-                        'heroicon-o-shield-check' => true,
-                    ])
-                    ->colors([
-                        'secondary' => false,
-                        'primary' => true,
-                    ]),
+                ->label('Type')
+                ->icon(fn ($state) => $state ? 'heroicon-o-shield-check' : 'heroicon-o-user')
+                ->color(fn ($state) => $state ? 'primary' : 'secondary')
+                ->tooltip(fn ($state) => $state ? 'Admin' : 'User'),
                     // Fix here: Adding null-coalescing operator to ensure a boolean value
                     // ->label(fn ($state): string => ($state ?? false) ? 'Admin' : 'User'),
                 Tables\Columns\TextColumn::make('message')

@@ -13,6 +13,7 @@ use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 
@@ -47,8 +48,11 @@ class ViewComplaint extends ViewRecord
                         'message' => $data['message'],
                         'is_admin' => $data['is_admin'],
                     ]);
-
-                    $this->notify('success', 'Reply added successfully');
+                    Notification::make()
+                        ->title('Reply added successfully')
+                        ->success()
+                        ->send();
+                    // $this->notify('success', 'Reply added successfully');
                     $this->redirect(ComplaintResource::getUrl('view', ['record' => $complaint]));
                 }),
 
@@ -79,47 +83,7 @@ class ViewComplaint extends ViewRecord
                     ])
                     ->columns(2),
 
-                Section::make('Message Thread')
-                    ->schema([
-                        // Use standard TextEntry with HTML rendering for the initial message
-                        TextEntry::make('message')
-                            ->label('Initial Message')
-                            ->html(),
 
-                        // Custom component to display the thread of replies
-                        TextEntry::make('replies')
-                            ->label('Replies')
-                            ->html()
-                            ->formatStateUsing(function ($state) {
-                                // Check if $state is a collection or array before counting
-                                if (empty($state) || (is_array($state) && count($state) === 0) ||
-                                    (is_object($state) && method_exists($state, 'isEmpty') && $state->isEmpty())) {
-                                    return new HtmlString('<div class="text-gray-500 italic">No replies yet.</div>');
-                                }
-
-                                $html = '<div class="space-y-4">';
-
-                                // Make sure we're iterating over a collection/array
-                                if (is_object($state) && method_exists($state, 'each')) {
-                                    // It's a collection
-                                    $state->each(function ($reply) use (&$html) {
-                                        $html .= $this->formatReply($reply);
-                                    });
-                                } elseif (is_array($state)) {
-                                    // It's an array
-                                    foreach ($state as $reply) {
-                                        $html .= $this->formatReply($reply);
-                                    }
-                                } else {
-                                    // Not iterable, could be a single reply or something else
-                                    return new HtmlString('<div class="text-gray-500 italic">Unable to display replies.</div>');
-                                }
-
-                                $html .= '</div>';
-
-                                return new HtmlString($html);
-                            })
-                    ])
             ]);
     }
 

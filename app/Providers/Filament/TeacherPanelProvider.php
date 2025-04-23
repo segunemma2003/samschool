@@ -7,6 +7,7 @@ use App\Filament\Auth\TeacherLogin;
 use App\Filament\Pages\Auth\MainCustomLogin;
 use App\Filament\Plugins\CustomAuthUIEnhancer;
 use App\Filament\Plugins\CustomAuthUIEnhancerTeacher;
+use App\Filament\Teacher\Pages\Chat;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
 use App\Http\Middleware\FilamentUnauthorizedRedirect;
 use App\Models\School;
@@ -37,7 +38,7 @@ use TheThunderTurner\FilamentLatex\FilamentLatexPlugin;
 use TomatoPHP\FilamentTenancy\FilamentTenancyAppPlugin;
 use Awcodes\LightSwitch\LightSwitchPlugin;
 use Njxqlus\FilamentProgressbar\FilamentProgressbarPlugin;
-
+use Monzer\FilamentChatifyIntegration\ChatifyPlugin;
 
 class TeacherPanelProvider extends PanelProvider
 {
@@ -63,6 +64,7 @@ class TeacherPanelProvider extends PanelProvider
             ->pages([
                 // Pages\Dashboard::class,
                 ViewSubmittedAssignmentTeacher::class,
+                Chat::class
             ])
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
             ->widgets([
@@ -86,10 +88,12 @@ class TeacherPanelProvider extends PanelProvider
             ])
             ->plugin(
                 FilamentTenancyAppPlugin::make()
+
                 )
                 ->plugins([
                     FilamentProgressbarPlugin::make()->color('#29b'),
                     LightSwitchPlugin::make(),
+                    // ChatifyPlugin::make(),
                     CustomAuthUIEnhancerTeacher::make()
                     ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/12.jpg'))
                     ->emptyPanelBackgroundImageOpacity('90%') // Optional: Adjust opacity

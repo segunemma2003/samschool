@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\CustomLogin;
 use App\Filament\Auth\StudentLogin;
+use App\Filament\Ourstudent\Pages\Chat;
 use App\Filament\Plugins\CustomAuthUIEnhancerStudent;
 use App\Http\Middleware\FilamentUnauthorizedRedirect;
 use Filament\Http\Middleware\Authenticate;
@@ -47,6 +48,8 @@ class OurstudentPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Plugins'), for: 'App\\Filament\\Plugins')
             ->pages([
                 Pages\Dashboard::class,
+                Chat::class,
+
             ])
             ->discoverWidgets(in: app_path('Filament/Ourstudent/Widgets'), for: 'App\\Filament\\Ourstudent\\Widgets')
             ->widgets([

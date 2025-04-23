@@ -67,4 +67,17 @@ class User extends Authenticatable implements FilamentUser
     public function teacher(){
         return $this->hasOne(Teacher::class, 'user_id');
     }
+
+
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class)
+            ->withPivot('last_read_at')
+            ->orderByDesc('last_message_at');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
 }

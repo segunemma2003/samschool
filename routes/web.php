@@ -12,3 +12,4 @@ Route::get('/payment/callback', [App\Http\Controllers\PaymentController::class, 
 Route::post('/pay', [App\Http\Controllers\PaymentController::class, 'redirectToGateway'])->name('pay');
 
 
+require __DIR__.'/channels.php';

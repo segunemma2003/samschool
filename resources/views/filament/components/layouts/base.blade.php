@@ -96,6 +96,7 @@
                 ) {
                     document.documentElement.classList.add('dark')
                 }
+
             </script>
         @endif
 

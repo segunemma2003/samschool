@@ -38,6 +38,10 @@ Route::middleware([
     if (config('filament-tenancy.central_domain') !== request()->getHost()) {
     Route::get('/', function () {
         return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
+
+        // Route::get('/chat', function () {
+        //     return redirect()->route('filament.ourstudent.pages.chat');
+        // })->middleware(['auth']);
     });
     Route::get('/exam-page/{records}', ExamPage::class)->name('exam.page');
     Route::get('/exam-instructions', ExamInstructions::class)->name('exam.instructions');

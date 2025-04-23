@@ -35,4 +35,27 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
+        'app_name' => env('GOOGLE_APP_NAME', 'Laravel'),
+        'auth_type' => env('GOOGLE_AUTH_TYPE', 'oauth'),
+    ],
+
+    'microsoft' => [
+        'client_id' => env('MICROSOFT_CLIENT_ID'),
+        'client_secret' => env('MICROSOFT_CLIENT_SECRET'),
+        'tenant_id' => env('MICROSOFT_TENANT_ID', 'common'),
+        'redirect' => env('MICROSOFT_REDIRECT_URI'),
+    ],
+
+    'zoom' => [
+        'api_key' => env('ZOOM_API_KEY'),
+        'api_secret' => env('ZOOM_API_SECRET'),
+        'client_id' => env('ZOOM_CLIENT_ID'),
+        'client_secret' => env('ZOOM_CLIENT_SECRET'),
+        'auth_type' => env('ZOOM_AUTH_TYPE', 'jwt'),
+    ],
+
 ];

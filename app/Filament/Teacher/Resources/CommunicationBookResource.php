@@ -121,7 +121,7 @@ class CommunicationBookResource extends Resource
 
             return $query->where('teacher_id',$teacher->id);
 
-        return $query;
+
     }
 
 

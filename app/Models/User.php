@@ -9,6 +9,7 @@ use Spatie\Permission\Traits\HasRoles;
 use BezhanSalleh\FilamentShield\Traits\HasPanelShield;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Sevenspan\LaravelChat\Traits\HasConversations;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 // use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
@@ -84,5 +85,21 @@ class User extends Authenticatable implements FilamentUser
     public function isAdmin()
     {
         return $this->user_type == 'admin';
+    }
+
+
+    public function readingProgress(): HasMany
+    {
+        return $this->hasMany(OnlineLibraryReadingProgress::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(OnlineLibraryReview::class);
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(OnlineLibraryFavorite::class);
     }
 }

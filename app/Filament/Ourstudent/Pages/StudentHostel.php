@@ -33,7 +33,7 @@ class StudentHostel extends Page
     {
         $user = User::where('id', Auth::id())->first();
         $student = Student::whereEmail($user->email)->first();
-        $this->currentTerm = Term::current()->first();
+        $this->currentTerm = Term::whereStatus("true")?->first();
         $this->application = HostelApplication::where('student_id', $student->id)
             ->where('term_id', $this->currentTerm->id)
             ->first();

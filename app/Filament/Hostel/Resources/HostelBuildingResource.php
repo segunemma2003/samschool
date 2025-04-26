@@ -79,6 +79,7 @@ class HostelBuildingResource extends Resource
     {
         return [
             RelationManagers\FloorsRelationManager::class,
+            RelationManagers\HouseMastersRelationManager::class,
         ];
     }
 

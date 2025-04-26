@@ -4,6 +4,7 @@ use App\Mail\HostelNotificationMail;
 use App\Models\HostelApplication;
 use App\Models\HostelLeaveApplication;
 use App\Models\HostelNotification;
+use App\Models\ParentVisitRequest;
 use App\Models\Student;
 use App\Models\User;
 
@@ -64,6 +65,51 @@ class HostelNotificationService
         ]);
     }
 
+    public function sendVisitApprovalNotification(ParentVisitRequest $visit)
+    {
+        $message = "Your visit request to see {$visit->student->name} on {$visit->proposed_visit_date->format('M d, Y h:i A')} has been approved";
+
+        // Notify parent
+        HostelNotification::create([
+            'user_id' => $visit->parent->user_id,
+            'notification_type' => 'visit_approved',
+            'message' => $message,
+            'data' => [
+                'visit_id' => $visit->id,
+                'student_id' => $visit->student_id,
+            ],
+        ]);
+
+        // Notify house master
+        if ($visit->building->houseMaster) {
+            HostelNotification::create([
+                'user_id' => $visit->building->houseMaster->user_id,
+                'notification_type' => 'new_approved_visit',
+                'message' => "Approved visit for {$visit->parent->name} to see {$visit->student->name} on {$visit->proposed_visit_date->format('M d, Y h:i A')}",
+                'data' => [
+                    'visit_id' => $visit->id,
+                    'parent_id' => $visit->parent_id,
+                ],
+            ]);
+        }
+    }
+
+    public function sendNewVisitRequestNotification(ParentVisitRequest $visit)
+    {
+        if ($visit->building->houseMaster) {
+            $message = "New visit request from {$visit->parent->name} to see {$visit->student->name} on {$visit->proposed_visit_date->format('M d, Y h:i A')}";
+
+            HostelNotification::create([
+                'user_id' => $visit->building->houseMaster->user_id,
+                'notification_type' => 'new_visit_request',
+                'message' => $message,
+                'data' => [
+                    'visit_id' => $visit->id,
+                    'parent_id' => $visit->parent_id,
+                ],
+            ]);
+        }
+    }
     protected function sendEmailNotification(User $user, string $message)
     {
         // Implement email sending logic

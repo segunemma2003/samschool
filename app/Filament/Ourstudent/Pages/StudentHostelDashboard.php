@@ -2,6 +2,7 @@
 
 namespace App\Filament\Ourstudent\Pages;
 
+use App\Models\AcademicYear;
 use App\Models\HostelApplication;
 use App\Models\HostelAttendance;
 use App\Models\HostelInventory;
@@ -39,7 +40,7 @@ class StudentHostelDashboard extends Page
 
     public function mount()
     {
-        $this->currentTerm = Term::current()->first();
+        $this->currentTerm = Term::whereStatus("true")?->first();
         $user = User::whereId(Auth::id())->first();
         $student = Student::whereEmail($user->email)->first();
         $studentId = $student->id;
@@ -89,9 +90,11 @@ class StudentHostelDashboard extends Page
         }
         $user = User::whereId(Auth::id())->first();
         $student = Student::whereEmail($user->email)->first();
+        $academicYear = AcademicYear::whereStatus('true')->first();
         $this->application = HostelApplication::create([
             'student_id' => $student->id,
             'term_id' => $this->currentTerm->id,
+            'academic_id' => $academicYear->id,
             'status' => 'pending',
         ]);
 

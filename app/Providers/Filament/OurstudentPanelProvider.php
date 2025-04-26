@@ -36,6 +36,10 @@ class OurstudentPanelProvider extends PanelProvider
             ->profile(isSimple: false)
             ->login(StudentLogin::class)
             ->brandLogo(getTenantLogo())
+            ->sidebarWidth('15rem') /* Slimmer but readable */
+            ->sidebarFullyCollapsibleOnDesktop(false)
+            ->sidebarCollapsibleOnDesktop()
+            ->collapsedSidebarWidth('4.5rem')
             ->passwordReset()
             ->favicon(getTenantLogo())
             ->brandLogoHeight('5rem')

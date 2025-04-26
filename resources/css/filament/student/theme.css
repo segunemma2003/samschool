@@ -1,3 +1,39 @@
 @import '/vendor/filament/filament/resources/css/theme.css';
 
 @config 'tailwind.config.js';
+
+
+/* ===== Light Theme (Default) ===== */
+.fi-sidebar {
+    @apply bg-white border-r border-gray-100;
+}
+
+/* ===== Dark Theme (Automatic) ===== */
+.dark .fi-sidebar {
+    @apply bg-gray-900 border-gray-800; /* Dark slate with subtle border */
+}
+
+/* Shared styles (both themes) */
+.fi-sidebar-nav-item {
+    @apply px-3 py-2 mx-1 rounded-md;
+}
+.fi-sidebar-nav-item-active {
+    border-left: 3px solid rgb(var(--primary-500));
+}
+.dark .fi-sidebar-nav-item-active {
+    @apply bg-gray-800; /* Darker active state */
+}
+
+/* Collapsed state (universal) */
+.fi-sidebar-nav-collapsed .fi-sidebar-nav-item {
+    @apply justify-center px-2;
+}
+.fi-sidebar-nav-collapsed .fi-sidebar-nav-item-label,
+.fi-sidebar-nav-collapsed .fi-sidebar-group div:first-child {
+    @apply hidden;
+}
+
+/* Dark mode hover tooltips */
+.dark .fi-sidebar-nav-collapsed .fi-sidebar-nav-item:hover::after {
+    @apply bg-gray-700 text-gray-100;
+}

@@ -51,6 +51,10 @@ class TeacherPanelProvider extends PanelProvider
             ->favicon(getTenantLogo())
             ->passwordReset()
             ->brandLogoHeight('5rem')
+            ->sidebarWidth('15rem') /* Slimmer but readable */
+            ->sidebarFullyCollapsibleOnDesktop(false)
+            ->sidebarCollapsibleOnDesktop()
+            ->collapsedSidebarWidth('4.5rem')
             ->login(TeacherLogin::class)
             // ->profile()
             ->colors([

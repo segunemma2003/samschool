@@ -50,7 +50,12 @@ class AppPanelProvider extends PanelProvider
             ->login(AdminLogin::class)
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
+            ->sidebarWidth('15rem') /* Slimmer but readable */
+            ->sidebarFullyCollapsibleOnDesktop(false)
+            ->sidebarCollapsibleOnDesktop()
             ->brandLogoHeight('5rem')
+            // ->topbar(false)
+            ->collapsedSidebarWidth('4.5rem')
             ->colors([
                 'primary' => Color::Amber,
             ])

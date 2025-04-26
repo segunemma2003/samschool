@@ -32,6 +32,10 @@ class HostelPanelProvider extends PanelProvider
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
             ->passwordReset()
+            ->sidebarWidth('15rem') /* Slimmer but readable */
+            ->sidebarFullyCollapsibleOnDesktop(false)
+            ->sidebarCollapsibleOnDesktop()
+            ->collapsedSidebarWidth('4.5rem')
             ->brandLogoHeight('5rem')
             ->colors([
                 'primary' => Color::Amber,
@@ -66,6 +70,6 @@ class HostelPanelProvider extends PanelProvider
                 ) ->plugins([
                     FilamentProgressbarPlugin::make()->color('#29b'),
                     LightSwitchPlugin::make(),
-                ]);
+                ])->viteTheme('resources/css/filament/hostel/theme.css');
     }
 }

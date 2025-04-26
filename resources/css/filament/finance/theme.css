@@ -2,7 +2,6 @@
 
 @config 'tailwind.config.js';
 
-
 /* ===== Light Theme (Default) ===== */
 .fi-sidebar {
     @apply bg-white border-r border-gray-100;
@@ -37,3 +36,11 @@
 .dark .fi-sidebar-nav-collapsed .fi-sidebar-nav-item:hover::after {
     @apply bg-gray-700 text-gray-100;
 }
+
+.fi-sidebar-nav-item {
+    transition: transform 0.1s;
+    &:hover {
+        transform: translateX(2px);
+    }
+}
+

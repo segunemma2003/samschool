@@ -33,8 +33,13 @@ class AdminPanelProvider extends PanelProvider
 
         return $panel
             ->default()
+            // ->sidebarCollapsibleOnDesktop()
             ->id('admin')
             ->path('admin')
+
+            ->sidebarWidth('15rem') /* Slimmer but readable */
+            ->sidebarFullyCollapsibleOnDesktop(false)
+
             ->login(CustomLogin::class)
             ->colors([
                 'primary' => Color::Amber,

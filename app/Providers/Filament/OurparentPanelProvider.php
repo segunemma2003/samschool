@@ -34,6 +34,10 @@ class OurparentPanelProvider extends PanelProvider
             ->path('parent')
             ->login(GuardianLogin::class)
             ->passwordReset()
+            ->sidebarWidth('15rem') /* Slimmer but readable */
+            ->sidebarFullyCollapsibleOnDesktop(false)
+            ->sidebarCollapsibleOnDesktop()
+            ->collapsedSidebarWidth('4.5rem')
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
             ->brandLogoHeight('5rem')

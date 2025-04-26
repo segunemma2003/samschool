@@ -28,6 +28,10 @@ class FinancePanelProvider extends PanelProvider
             ->login()
             ->brandLogo(getTenantLogo())
             ->favicon(getTenantLogo())
+            ->sidebarWidth('15rem') /* Slimmer but readable */
+            ->sidebarFullyCollapsibleOnDesktop(false)
+            ->sidebarCollapsibleOnDesktop()
+            ->collapsedSidebarWidth('4.5rem')
             ->brandLogoHeight('5rem')
             ->colors([
                 'primary' => Color::Amber,
@@ -55,6 +59,6 @@ class FinancePanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])->viteTheme('resources/css/filament/finance/theme.css');
     }
 }

@@ -15,7 +15,7 @@ class HostelApplication extends Model
 
     public function academicYear()
     {
-        return $this->belongsTo(AcademicYear::class);
+        return $this->belongsTo(AcademicYear::class, 'academic_id');
     }
 
     public function term()
@@ -33,4 +33,13 @@ class HostelApplication extends Model
         return $this->hasOne(HostelAssignment::class);
     }
 
+    public function room()
+    {
+        return $this->hasMany(HostelRoom::class, 'id', 'room_id');
+    }
+
+    public function room_number()
+    {
+        return $this->hasMany(HostelRoom::class, 'id', 'room_id')->select('id', 'room_number');
+    }
 }

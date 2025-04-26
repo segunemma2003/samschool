@@ -78,7 +78,7 @@ class HostelApplicationResource extends Resource
                 Tables\Filters\SelectFilter::make('term_id')
                     ->relationship('term', 'name'),
                 Tables\Filters\SelectFilter::make('academic_year_id')
-                    ->relationship('acaemicYear', 'title'),
+                    ->relationship('academicYear', 'title'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

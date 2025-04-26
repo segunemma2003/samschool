@@ -2,8 +2,8 @@
 
 namespace App\Filament\Hostel\Resources;
 
-use App\Filament\Hostel\Pages\TakeMealAttendance;
 use App\Filament\Hostel\Resources\HostelMealResource\Pages;
+use App\Filament\Hostel\Resources\HostelMealResource\Pages\TakeMealAttendance;
 use App\Filament\Hostel\Resources\HostelMealResource\RelationManagers;
 use App\Models\HostelMeal;
 use Filament\Forms;
@@ -116,7 +116,7 @@ class HostelMealResource extends Resource
             'create' => Pages\CreateHostelMeal::route('/create'),
             'view' => Pages\ViewHostelMeal::route('/{record}'),
             'edit' => Pages\EditHostelMeal::route('/{record}/edit'),
-            // 'take-attendance' => TakeMealAttendance::route('/{record}/take-attendance'),
+            'take-attendance' => TakeMealAttendance::route('/{record}/take-attendance'),
         ];
     }
 }

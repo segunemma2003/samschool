@@ -1,20 +1,25 @@
 <?php
 
-namespace App\Filament\Hostel\Pages;
+namespace App\Filament\Hostel\Resources\HostelMealResource\Pages;
 
 use App\Models\HostelMeal;
 use App\Models\HostelMealAttendance;
 use App\Models\Student;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
+use Filament\Resources\Pages\Page;
+use App\Filament\Hostel\Resources\HostelMealResource;
 
 class TakeMealAttendance extends Page
 {
+    protected static string $resource = HostelMealResource::class;
+
     protected static ?string $title = 'Take Meal Attendance';
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static string $view = 'filament.hostel.pages.take-meal-attendance';
+
+
 
     public HostelMeal $record;
     public array $attendance = [];
@@ -31,6 +36,11 @@ class TakeMealAttendance extends Page
             $this->attendance[$attendance->student_id] = $attendance->attended;
             $this->specialRequirements[$attendance->student_id] = $attendance->special_requirements;
         }
+    }
+
+    public static function getSlug(): string
+    {
+        return '{record}/take-attendance';
     }
 
     public function saveAttendance()

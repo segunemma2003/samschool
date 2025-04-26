@@ -5,6 +5,7 @@ namespace App\Filament\Ourparent\Pages;
 use App\Models\Guardians;
 use App\Models\HostelBuilding;
 use App\Models\ParentVisitRequest;
+use App\Models\Student;
 use App\Models\User;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -62,7 +63,8 @@ class RequestHostelVisit extends Page
     {
         $user = User::whereId(Auth::id())->first();
         $parent = Guardians::whereEmail($user->email)->first();
-        return $parent->students;
+        $students = Student::where('guardian_id', $parent->id)->get();
+        return $students;
     }
 
     public function getBuildingsProperty()

@@ -11,6 +11,8 @@ use App\Filament\Teacher\Pages\SubmittedStudentsList;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
 use App\Filament\Teacher\Resources\ExamResource\Pages\ExamStudentDetails;
 use App\Http\Controllers\ExamController;
+use App\Models\Payroll;
+use App\Models\SchoolInvoice;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +45,13 @@ Route::middleware([
         //     return redirect()->route('filament.ourstudent.pages.chat');
         // })->middleware(['auth']);
     });
+    Route::get('/invoices/{invoice}/pdf', function (SchoolInvoice $invoice) {
+        return app(\App\Services\InvoicePdfGenerator::class)->generate($invoice);
+    })->name('invoices.pdf');
+
+    Route::get('/payslips/{payroll}/pdf', function (Payroll $payroll) {
+        return app(\App\Services\PayslipPdfGenerator::class)->generate($payroll);
+    })->name('payslips.pdf');
     Route::get('/exam-page/{records}', ExamPage::class)->name('exam.page');
     Route::get('/exam-instructions', ExamInstructions::class)->name('exam.instructions');
     Route::get('/exam/review', ExamReviewPage::class)->name('exam.review');

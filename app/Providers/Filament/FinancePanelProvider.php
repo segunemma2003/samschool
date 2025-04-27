@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Awcodes\LightSwitch\LightSwitchPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -17,6 +18,8 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Njxqlus\FilamentProgressbar\FilamentProgressbarPlugin;
+use TomatoPHP\FilamentTenancy\FilamentTenancyAppPlugin;
 
 class FinancePanelProvider extends PanelProvider
 {
@@ -56,7 +59,13 @@ class FinancePanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-            ])
+            ])->plugin(
+                FilamentTenancyAppPlugin::make()
+
+                )->plugins([
+                    FilamentProgressbarPlugin::make()->color('#29b'),
+                    LightSwitchPlugin::make(),
+                ])
             ->authMiddleware([
                 Authenticate::class,
             ])->viteTheme('resources/css/filament/finance/theme.css');

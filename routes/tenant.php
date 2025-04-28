@@ -48,7 +48,8 @@ Route::middleware([
     Route::get('/invoices/{invoice}/pdf', function (SchoolInvoice $invoice) {
         return app(\App\Services\InvoicePdfGenerator::class)->generate($invoice);
     })->name('invoices.pdf');
-
+    Route::post('/payment/callback', [PaymentController::class, 'handleCallback'])
+    ->name('payment.callback');
     Route::get('/payslips/{payroll}/pdf', function (Payroll $payroll) {
         return app(\App\Services\PayslipPdfGenerator::class)->generate($payroll);
     })->name('payslips.pdf');

@@ -9,6 +9,8 @@ class FundraisingProgress extends ChartWidget
 {
     protected static ?string $heading = 'Fundraising Progress';
 
+    protected static ?int $sort = 2;
+
     protected function getData(): array
     {
         $programs = FundraisingProgram::get();

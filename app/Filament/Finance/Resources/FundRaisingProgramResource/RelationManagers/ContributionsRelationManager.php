@@ -57,8 +57,8 @@ class ContributionsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('message')
             ->columns([
-                Tables\Columns\TextColumn::make('parent.name')
-                ->visible(fn ($record) => !$record->is_anonymous),
+                // Tables\Columns\TextColumn::make('parent.name')
+                // ->visible(fn ($record) => !$record->is_anonymous),
             Tables\Columns\TextColumn::make('amount')
                 ->money('NGN'),
             Tables\Columns\TextColumn::make('payment_method')

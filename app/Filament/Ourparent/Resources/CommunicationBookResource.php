@@ -9,6 +9,7 @@ use App\Models\Guardians;
 use App\Models\Student;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
@@ -17,6 +18,7 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -68,7 +70,19 @@ class CommunicationBookResource extends Resource
                 ->searchable()
                 ->preload()
                 ->multiple()
-                ->placeholder('Select Student')
+                ->placeholder('Select Student'),
+
+                Filter::make('created_at')
+                ->default(now())
+                ->form([DatePicker::make('created_at')])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when(
+                            $data['created_at'],
+                            fn (Builder $query, $date) => $query->whereDate('created_at', $date)
+                        );
+                }),
+
             ])
             ->actions([
                 // Tables\Actions\ViewAction::make(),
@@ -87,9 +101,9 @@ class CommunicationBookResource extends Resource
         $query = parent::getEloquentQuery();
         $user = User::whereId(Auth::id())->first();
         $parent = Guardians::whereEmail($user->email)->first();
-        $classes = Student::whereGuardianId($parent->id)->pluck('class_id');
+        $classes = Student::whereGuardianId($parent->id)->pluck('id');
         // Parents see only their students' communication books
-        return $query->whereIn('class_id',$classes);
+        return $query->whereIn('student_id',$classes);
     }
 
 
@@ -128,6 +142,7 @@ class CommunicationBookResource extends Resource
             RelationManagers\CommentsRelationManager::class,
         ];
     }
+
 
     public static function getPages(): array
     {

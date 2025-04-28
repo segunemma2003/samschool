@@ -55,30 +55,14 @@ class CommentsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('content')
             ->columns([
-            //     Tables\Columns\TextColumn::make('content')
-            //     ->formatStateUsing(function ($state, $record) {
-            //         $depth = $this->getCommentDepth($record);
-            //         $indentation = str_repeat('<span class="ml-4"></span>', $depth);
-            //         $icon = $depth > 0 ? '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>' : '';
-            //         return $indentation . $icon . $state;
-            //     })
-            //     ->html()
-            //     ->wrap(),
-            //     Tables\Columns\TextColumn::make('user.name')
-            //     ->label('Author'),
-            // Tables\Columns\TextColumn::make('created_at')
-            //     ->dateTime()
-            //     ->sortable(),
-
-            Tables\Columns\ViewColumn::make('thread')
-            ->view('filament.tables.columns.comment-thread')
+                Tables\Columns\TextColumn::make('content')
+                ->formatStateUsing(function ($state, $record) {
+                    $indentation = str_repeat('— ', $this->getCommentDepth($record));
+                    return $indentation . $state;
+                })->html(),
+            Tables\Columns\TextColumn::make('user.name')
+                ->label('Author'),
             ])
-            ->defaultSort('created_at', 'asc')
-            ->contentGrid(['md' => 2, 'xl' => 3])
-            ->modifyQueryUsing(fn (Builder $query) => $query
-            ->with(['user', 'replies.user'])
-            ->withCount('replies')
-            ->whereNull('parent_id'))
             ->filters([
                 //
             ])
@@ -87,7 +71,7 @@ class CommentsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\Action::make('reply')
-                ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                    ->icon('heroicon-o-chat-bubble-left-ellipsis')
                     ->form([
                         RichEditor::make('content')
                             ->required()

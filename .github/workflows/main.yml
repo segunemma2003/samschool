@@ -1,43 +1,95 @@
-name: Deploy to EC2
+name: Deploy Laravel Application
 
 on:
   push:
-    branches:
-      - main # Trigger this action on pushes to the "main" branch
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      ACTIONS_RUNNER_DEBUG: true
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Install SSH Key
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath, zip
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Create .env file
+        run: |
+          cp .env.example .env
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=schoolcompass" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_DEFAULT_REGION=${{ secrets.AWS_REGION }}" >> .env
+          echo "AWS_BUCKET=${{ secrets.AWS_BUCKET }}" >> .env
+          echo "QUEUE_CONNECTION=database" >> .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.7.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} # Add your private SSH key as a secret in the GitHub repository
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to EC2
+      - name: Add SSH known hosts
+        run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy application
         run: |
-          ssh -tt -o StrictHostKeyChecking=no ubuntu@18.204.90.3 << 'EOF'
-            cd /var/www/html/samschool
-            sudo git pull origin main
-            # Stop Supervisor-managed processes (including any loops)
+          # Zip the application
+          zip -r application.zip ./ -x ".git/*" "node_modules/*" "vendor/*"
 
-            # Restart Nginx to reload the updated application
+          # Upload the zip file
+          scp application.zip ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+          # Connect to the server, extract the application, and restart services
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            # Move to the web directory
+            cd /var/www/html
+
+            # Backup the current .env file if it exists
+            if [ -f .env ]; then
+              cp .env /tmp/.env.backup
+            fi
+
+            # Extract the application
+            rm -rf *
+            unzip /tmp/application.zip -d .
+
+            # Restore .env file if backup exists
+            if [ -f /tmp/.env.backup ]; then
+              cp /tmp/.env.backup .env
+            fi
+
+            # Install dependencies
+            composer install --no-dev --optimize-autoloader
+
+            # Set permissions
+            chown -R www-data:www-data .
+            chmod -R 755 storage bootstrap/cache
+
+            # Run migrations
+            php artisan migrate --force
+
+            # Restart services
+            sudo systemctl restart php8.1-fpm
             sudo systemctl restart nginx
+            sudo supervisorctl restart all
 
-            sudo php artisan optimize
-            sudo php artisan filament:optimize
-            sudo php artisan optimize:clear
-            sudo php artisan cache:clear
-            sudo php artisan route:clear
-            sudo php artisan config:clear
-            sudo php artisan view:clear
-            sudo chmod +x start-queue.sh
-            sudo nohup ./start-queue.sh &
+            # Clean up
+            rm /tmp/application.zip
+            [ -f /tmp/.env.backup ] && rm /tmp/.env.backup
           EOF

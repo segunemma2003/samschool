@@ -10,7 +10,7 @@ class HostelRoom extends Model
 
     public function floor()
     {
-        return $this->belongsTo(HostelFloor::class);
+        return $this->belongsTo(HostelFloor::class, 'hostel_floor_id');
     }
 
     public function assignments()

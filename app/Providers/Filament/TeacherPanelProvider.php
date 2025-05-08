@@ -66,7 +66,7 @@ class TeacherPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Plugins'), for: 'App\\Filament\\Plugins')
             ->discoverClusters(in: app_path('Filament/Teacher/Clusters'), for: 'App\\Filament\\Teacher\\Clusters')
             ->pages([
-                // Pages\Dashboard::class,
+                Pages\Dashboard::class,
                 ViewSubmittedAssignmentTeacher::class,
                 Chat::class
             ])

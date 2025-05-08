@@ -20,12 +20,12 @@ class HouseMasterWidget extends BaseWidget
                 ->icon('heroicon-o-document-text')
                 ->color('warning'),
 
-            Stat::make('Current Occupancy',$this->getCurrentOccupancy())
+            Stat::make('Number of Hostel Members',$this->getCurrentOccupancy())
                 ->label('Current Occupancy')
                 ->icon('heroicon-o-users')
                 ->color('success'),
 
-            Stat::make('Total Capacity', $this->getTotalCapacity())
+            Stat::make('Total available space', $this->getTotalCapacity())
                 ->label('Total Capacity')
                 ->icon('heroicon-o-home')
                 ->color('primary'),
@@ -36,13 +36,16 @@ class HouseMasterWidget extends BaseWidget
 
 
     public function getBuilding()
-    {
-        $user = User::whereId(Auth::id())->first();
-        $teacher = Teacher::whereEmail($user->email)->first();
-        return HostelBuilding::where('house_master_id', $teacher->id)
-            ->withCount(['floors', 'rooms'])
-            ->first();
-    }
+{
+    $user = User::whereId(Auth::id())->first();
+    $teacher = Teacher::whereEmail($user->email)->first();
+
+    return HostelBuilding::whereHas('currentHouseMaster', function($query) use ($teacher) {
+            $query->where('teacher_id', $teacher->id);
+        })
+        ->withCount(['floors', 'rooms'])
+        ->first();
+}
 
     public function getPendingRequests()
     {

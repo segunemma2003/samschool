@@ -14,15 +14,20 @@ class HostelBuilding extends Model
 
     public function currentHouseMaster()
     {
-        return $this->hasOne(HostelHouseMaster::class)
+        return $this->hasOne(HouseHostelMaster::class)
             ->where('is_current', true)
             ->with('teacher');
     }
 
     public function houseMasters()
     {
-        return $this->hasMany(HostelHouseMaster::class)
+        return $this->hasMany(HouseHostelMaster::class)
             ->with(['teacher', 'academicYear'])
             ->orderBy('academic_year_id', 'desc');
+    }
+
+    public function rooms()
+    {
+        return $this->hasManyThrough(HostelRoom::class, HostelFloor::class, 'hostel_building_id', 'hostel_floor_id');
     }
 }

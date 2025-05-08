@@ -8,6 +8,8 @@ class HostelHouseMaster extends Model
 {
     protected $guarded =  ['id'];
 
+    protected $table = 'hostel_house_masters';
+
     public function building()
     {
         return $this->belongsTo(HostelBuilding::class, 'hostel_building_id');

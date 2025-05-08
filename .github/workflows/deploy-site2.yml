@@ -25,4 +25,7 @@ jobs:
 
             # Make deployment script executable and run it
             chmod +x ~/deployment/repo/deploy-site2.sh
+
+            sudo mkdir -p /var/www/northstar
+            sudo chown -R $USER:$USER /var/www/northstar
             ~/deployment/repo/deploy-site2.sh

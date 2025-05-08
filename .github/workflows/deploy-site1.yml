@@ -25,4 +25,8 @@ jobs:
 
             # Make deployment script executable and run it
             chmod +x ~/deployment/repo/deploy-site1.sh
+
+            sudo mkdir -p /var/www/compasse
+            sudo chown -R $USER:$USER /var/www/compasse
+
             ~/deployment/repo/deploy-site1.sh

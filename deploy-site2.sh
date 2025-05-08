@@ -3,8 +3,10 @@ REPO_URL="https://github.com/yourusername/your-repo.git"
 APP_DIR="/var/www/northstar"
 BRANCH="prod"
 
-echo "Deploying Site 2 from $BRANCH branch..."
+echo "Deploying Northstar from $BRANCH branch..."
 
+sudo mkdir -p $APP_DIR
+sudo chown -R $USER:$USER $APP_DIR
 # Clone or pull latest code
 if [ -d "$APP_DIR" ]; then
   cd $APP_DIR
@@ -15,6 +17,11 @@ else
   cd $APP_DIR
 fi
 
+if ! command -v composer &> /dev/null; then
+  echo "Installing composer..."
+  curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+fi
+
 # Install dependencies
 composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
@@ -23,6 +30,10 @@ if [ ! -f "$APP_DIR/.env" ]; then
   cp .env.example .env
   php artisan key:generate
 fi
+
+
+mkdir -p $APP_DIR/storage/app $APP_DIR/storage/framework/cache $APP_DIR/storage/framework/sessions $APP_DIR/storage/framework/views $APP_DIR/storage/logs
+mkdir -p $APP_DIR/bootstrap/cache
 
 # Database migrations
 php artisan migrate --force

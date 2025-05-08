@@ -14,4 +14,15 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: ~/deploy-site1.sh
+          script_stop: true
+          script: |
+            # Create deployment directory
+            mkdir -p ~/deployment
+
+            # Clone the repository to get the deployment scripts
+            rm -rf ~/deployment/repo
+            git clone  https://github.com/segunemma2003/samschool.git ~/deployment/repo
+
+            # Make deployment script executable and run it
+            chmod +x ~/deployment/repo/deploy-site1.sh
+            ~/deployment/repo/deploy-site1.sh

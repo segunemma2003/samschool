@@ -65,9 +65,21 @@ composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev |
 }
 
 # Environment setup (if first time)
+# Create .env file if it doesn't exist
 if [ ! -f "$APP_DIR/.env" ]; then
   if [ -f "$APP_DIR/.env.example" ]; then
     cp .env.example .env
+    # Update database connection to MySQL
+    sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/g' .env
+
+    # You can customize these MySQL settings based on your setup
+    sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/g' .env
+    sed -i 's/DB_PORT=.*/DB_PORT=3306/g' .env
+    sed -i 's/DB_DATABASE=.*/DB_DATABASE=compasse/g' .env
+    sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/g' .env
+    sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=your_mysql_password/g' .env
+
+    # Generate application key
     php artisan key:generate
   else
     echo "ERROR: .env.example file not found!"

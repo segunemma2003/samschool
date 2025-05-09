@@ -1,5 +1,5 @@
 <?php
-
+namespace App\Services;
 use App\Models\AcademicYear;
 use App\Models\HostelApplication;
 use App\Models\HostelRoom;

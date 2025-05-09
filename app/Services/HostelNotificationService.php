@@ -1,5 +1,6 @@
 <?php
 
+namespace App\Services;
 use App\Mail\HostelNotificationMail;
 use App\Models\HostelApplication;
 use App\Models\HostelLeaveApplication;

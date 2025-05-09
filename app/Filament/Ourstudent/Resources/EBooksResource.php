@@ -91,7 +91,7 @@ class EbooksResource extends Resource
             Action::make('download')
                 ->label('Download File')
                 ->icon('heroicon-m-arrow-down-tray')
-                ->url(fn ($record) => Storage::disk('s3')->temporaryUrl($record->file, now()->addMinutes(10)))
+                ->url(fn ($record) => Storage::disk('s3')->url($record->file, now()->addMinutes(10)))
                 ->openUrlInNewTab(),
             ])
             ->bulkActions([

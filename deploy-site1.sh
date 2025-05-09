@@ -7,6 +7,11 @@ BRANCH="main"
 
 echo "Deploying Compasse from $BRANCH branch..."
 
+# Install required PHP extensions first
+echo "Installing required PHP extensions..."
+sudo apt update
+sudo apt install -y php8.3-intl
+
 # Create directories with proper permissions
 sudo mkdir -p $APP_DIR
 sudo chown -R $USER:$USER $APP_DIR
@@ -49,8 +54,15 @@ if ! command -v composer &> /dev/null; then
   curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 fi
 
-# Install dependencies
-composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev || { echo "Composer install failed"; exit 1; }
+# Install dependencies with fallback options
+echo "Installing Composer dependencies..."
+composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev || {
+  echo "Standard composer install failed, trying with ignore-platform-req..."
+  composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-req=ext-intl || {
+    echo "Composer install failed completely. Check for missing PHP extensions."
+    exit 1
+  }
+}
 
 # Environment setup (if first time)
 if [ ! -f "$APP_DIR/.env" ]; then

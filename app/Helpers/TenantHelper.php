@@ -15,6 +15,8 @@ if(!function_exists('getAuthName')){
 
 }
 
+
+
 if(!function_exists('getTenantLogo')){
      function getTenantLogo()  // Replace School with your actual tenant model
     {

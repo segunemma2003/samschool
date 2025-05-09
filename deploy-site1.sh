@@ -72,6 +72,7 @@ mkdir -p $APP_DIR/bootstrap/cache
 
 # Database migrations (with error handling)
 php artisan migrate --force || { echo "Migration failed, but continuing..."; }
+php artisan tenants:migrate --force || { echo "Migration failed, but continuing..."; }
 
 # Clear previous caches first
 php artisan optimize:clear || { echo "Optimize clear failed, but continuing..."; }

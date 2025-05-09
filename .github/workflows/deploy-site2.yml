@@ -23,7 +23,7 @@ jobs:
             git clone  https://github.com/segunemma2003/samschool.git ~/deployment/repos
 
             # Make deployment script executable and run it
-            chmod +x ~/deployment/repos/deploy-site1.sh
+            chmod +x ~/deployment/repos/deploy-site2.sh
 
             sudo mkdir -p /var/www/northstar
             sudo chown -R $USER:$USER /var/www/northstar

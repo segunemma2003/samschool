@@ -2,7 +2,7 @@ name: Deploy Northstar
 
 on:
   push:
-    branches: [prod]
+    branches: [main]
 
 jobs:
   deploy:
@@ -14,18 +14,18 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
           script: |
             # Create deployment directory
             mkdir -p ~/deployment
 
             # Clone the repository to get the deployment scripts
-            rm -rf ~/deployment/repo
-            git clone  https://github.com/segunemma2003/samschool.git ~/deployment/repo
+            rm -rf ~/deployment/repos
+            git clone  https://github.com/segunemma2003/samschool.git ~/deployment/repos
 
             # Make deployment script executable and run it
-            chmod +x ~/deployment/repo/deploy-site2.sh
+            chmod +x ~/deployment/repos/deploy-site1.sh
 
             sudo mkdir -p /var/www/northstar
             sudo chown -R $USER:$USER /var/www/northstar
-            ~/deployment/repo/deploy-site2.sh
+
+            ~/deployment/repos/deploy-site1.sh

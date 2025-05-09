@@ -86,8 +86,12 @@ sudo chown -R www-data:www-data $APP_DIR/storage $APP_DIR/bootstrap/cache
 sudo chmod -R 775 $APP_DIR/storage $APP_DIR/bootstrap/cache
 
 # Restart supervisor (with error handling)
-sudo supervisorctl restart compasse-worker:* || { echo "Supervisor restart failed. May need to create the configuration first or check logs."; }
-
+echo "Restarting supervisor services..."
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart compasse-worker:* || {
+  echo "Supervisor restart failed, but continuing...";
+}
 # Reload Nginx (with error handling)
 sudo systemctl reload nginx || { echo "Nginx reload failed. Check the configuration."; }
 

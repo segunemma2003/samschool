@@ -28,4 +28,4 @@ jobs:
             sudo mkdir -p /var/www/northstar
             sudo chown -R $USER:$USER /var/www/northstar
 
-            ~/deployment/repos/deploy-site1.sh
+            ~/deployment/repos/deploy-site2.sh

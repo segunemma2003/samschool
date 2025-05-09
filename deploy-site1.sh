@@ -11,14 +11,36 @@ echo "Deploying Compasse from $BRANCH branch..."
 sudo mkdir -p $APP_DIR
 sudo chown -R $USER:$USER $APP_DIR
 
-# Clone or pull latest code
-if [ -d "$APP_DIR/.git" ]; then  # Check for .git directory instead
+# Check if it's a git repository
+if [ -d "$APP_DIR/.git" ]; then
+  # It's a git repository, so pull the latest changes
+  echo "Git repository found. Pulling latest changes..."
   cd $APP_DIR
   git fetch --all
   git reset --hard origin/$BRANCH
 else
-  git clone -b $BRANCH $REPO_URL $APP_DIR
-  cd $APP_DIR
+  # It's not a git repository
+  if [ "$(ls -A $APP_DIR)" ]; then
+    # Directory is not empty and not a git repo
+    echo "Directory exists but is not a git repository. Backing up and cloning fresh..."
+    BACKUP_DIR="/var/www/compasse_backup_$(date +%Y%m%d%H%M%S)"
+    sudo mv $APP_DIR $BACKUP_DIR
+    sudo mkdir -p $APP_DIR
+    sudo chown -R $USER:$USER $APP_DIR
+    git clone -b $BRANCH $REPO_URL $APP_DIR
+    cd $APP_DIR
+
+    # Copy .env from backup if it exists
+    if [ -f "$BACKUP_DIR/.env" ]; then
+      cp $BACKUP_DIR/.env $APP_DIR/.env
+      echo "Copied existing .env file from backup"
+    fi
+  else
+    # Directory is empty, just clone
+    echo "Directory is empty. Cloning repository..."
+    git clone -b $BRANCH $REPO_URL $APP_DIR
+    cd $APP_DIR
+  fi
 fi
 
 # Check for composer

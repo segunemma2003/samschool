@@ -13,135 +13,121 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           timeout: 1200s
-          command_timeout: 40m  # Add command timeout
           script: |
-            # Create deployment directory
-            mkdir -p ~/deployment
-            # Clone the repository to get the deployment scripts
-            rm -rf ~/deployment/repo
-            git clone --depth=1 https://github.com/segunemma2003/samschool.git ~/deployment/repo
+            echo "Starting deployment process..."
             
-            # Modify the deployment script to add timeout handling
-            cat > ~/deployment/modified-deploy.sh << 'EOL'
+            # Create emergency deployment script
+            cat > ~/emergency-deploy.sh << 'EOL'
             #!/bin/bash
-            
-            # Set error handling
             set -e
             
-            # Define timeout function
-            timeout_handler() {
-              echo "Command taking too long, moving to next step"
-              return 0
-            }
-            
-            # Create directories with proper permissions
-            sudo mkdir -p /var/www/compasse
-            sudo chown -R $USER:$USER /var/www/compasse
-            
-            # Run the original deployment script with timeouts on critical commands
-            cd ~/deployment/repo
-            
-            # Add AWS region to env if missing to fix S3 issues
-            if [ -f "/var/www/compasse/.env" ]; then
-              grep -q "AWS_DEFAULT_REGION" /var/www/compasse/.env || echo "AWS_DEFAULT_REGION=us-east-1" >> /var/www/compasse/.env
-              grep -q "FILESYSTEM_DISK" /var/www/compasse/.env && sed -i 's/FILESYSTEM_DISK=s3/FILESYSTEM_DISK=local/g' /var/www/compasse/.env
-            fi
-            
-            # Source the deployment script, but add timeout handling
-            BRANCH="main"
-            REPO_URL="https://github.com/segunemma2003/samschool.git"
             APP_DIR="/var/www/compasse"
+            BACKUP_DIR="/var/www/compasse_backup_$(date +%Y%m%d%H%M%S)"
+            REPO_URL="https://github.com/segunemma2003/samschool.git"
+            BRANCH="main"
             
-            echo "Deploying Compasse from $BRANCH branch..."
+            echo "Starting emergency deployment script..."
             
-            # Install required PHP extensions first
-            echo "Installing required PHP extensions..."
-            sudo apt update
-            sudo apt install -y php8.3-intl
-            
-            # Handle git repository
-            if [ -d "$APP_DIR/.git" ]; then
-              echo "Git repository found. Pulling latest changes..."
-              cd $APP_DIR
-              git fetch --all
-              git reset --hard origin/$BRANCH
-            else
-              if [ "$(ls -A $APP_DIR)" ]; then
-                echo "Directory exists but is not a git repository. Backing up and cloning fresh..."
-                BACKUP_DIR="/var/www/compasse_backup_$(date +%Y%m%d%H%M%S)"
-                sudo mv $APP_DIR $BACKUP_DIR
-                sudo mkdir -p $APP_DIR
-                sudo chown -R $USER:$USER $APP_DIR
-                git clone -b $BRANCH --depth=1 $REPO_URL $APP_DIR
-                cd $APP_DIR
-                if [ -f "$BACKUP_DIR/.env" ]; then
-                  cp $BACKUP_DIR/.env $APP_DIR/.env
-                  echo "Copied existing .env file from backup"
-                  # Fix AWS config
-                  grep -q "AWS_DEFAULT_REGION" .env || echo "AWS_DEFAULT_REGION=us-east-1" >> .env
-                  sed -i 's/FILESYSTEM_DISK=s3/FILESYSTEM_DISK=local/g' .env
-                fi
-              else
-                echo "Directory is empty. Cloning repository..."
-                git clone -b $BRANCH --depth=1 $REPO_URL $APP_DIR
-                cd $APP_DIR
+            # 1. Create backup of existing site if needed
+            if [ -d "$APP_DIR" ] && [ "$(ls -A $APP_DIR)" ]; then
+              echo "Creating backup of existing installation..."
+              # Just back up .env and storage, not the entire directory to save time
+              if [ -f "$APP_DIR/.env" ]; then
+                mkdir -p $BACKUP_DIR
+                cp $APP_DIR/.env $BACKUP_DIR/.env
+                echo "Backed up .env file"
+              fi
+              
+              if [ -d "$APP_DIR/storage" ]; then
+                mkdir -p $BACKUP_DIR/storage
+                cp -r $APP_DIR/storage/app $BACKUP_DIR/storage/ 2>/dev/null || true
+                echo "Backed up user uploads"
               fi
             fi
             
-            # Check for composer
+            # 2. Clone fresh copy to a temporary location
+            echo "Cloning fresh repository..."
+            TMP_DIR=$(mktemp -d)
+            git clone --depth=1 -b $BRANCH $REPO_URL $TMP_DIR
+            cd $TMP_DIR
+            
+            # 3. Prepare the application without using composer
+            echo "Preparing application..."
+            
+            # Restore .env file if available
+            if [ -f "$BACKUP_DIR/.env" ]; then
+              cp $BACKUP_DIR/.env $TMP_DIR/.env
+              # Fix AWS region
+              grep -q "AWS_DEFAULT_REGION" .env || echo "AWS_DEFAULT_REGION=us-east-1" >> .env
+              sed -i 's/FILESYSTEM_DISK=s3/FILESYSTEM_DISK=local/g' .env 2>/dev/null || true
+            else
+              # Create basic .env file if none exists
+              cp .env.example .env 2>/dev/null || echo "No .env.example found"
+              echo "APP_ENV=production" >> .env
+              echo "APP_DEBUG=false" >> .env
+              echo "APP_KEY=$(php -r 'echo "base64:".base64_encode(random_bytes(32));')" >> .env
+              echo "AWS_DEFAULT_REGION=us-east-1" >> .env
+              echo "FILESYSTEM_DISK=local" >> .env
+            fi
+            
+            # 4. Install composer dependencies WITHOUT autoloader optimization
+            echo "Installing composer dependencies without autoloader optimization..."
+            
+            # Check if composer is installed
             if ! command -v composer &> /dev/null; then
               echo "Installing composer..."
               curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
             fi
             
-            # Install dependencies with timeout and fallback options
-            echo "Installing Composer dependencies..."
-            timeout 600 composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts || {
-              echo "Composer install with timeout failed, trying alternative approach..."
-              # If composer gets stuck, try running without autoloader optimization
-              timeout 300 composer install --no-interaction --prefer-dist --no-dev --no-scripts --no-autoloader || {
-                echo "Second composer install attempt failed."
-                return 1
-              }
-              # Generate autoloader separately with a timeout
-              echo "Generating autoloader..."
-              timeout 300 composer dump-autoload --optimize || echo "Autoloader generation timed out, continuing..."
-            }
+            # Install dependencies with minimal settings to avoid hanging
+            COMPOSER_MEMORY_LIMIT=-1 composer install --no-interaction --no-dev --no-scripts --no-plugins --prefer-dist --no-autoloader
             
-            # Create storage directories
-            mkdir -p $APP_DIR/storage/app $APP_DIR/storage/framework/cache $APP_DIR/storage/framework/sessions $APP_DIR/storage/framework/views $APP_DIR/storage/logs
-            mkdir -p $APP_DIR/bootstrap/cache
+            # Generate autoloader without optimization (much faster but less efficient)
+            COMPOSER_MEMORY_LIMIT=-1 composer dump-autoload --no-dev
             
-            # Database migrations (with error handling)
-            timeout 180 php artisan migrate --force || { echo "Migration failed, but continuing..."; }
-            timeout 180 php artisan tenants:migrate --force || { echo "Tenant migration failed, but continuing..."; }
+            # 5. Prepare directory structure
+            mkdir -p storage/app storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+            mkdir -p bootstrap/cache
             
-            # Clear previous caches first
-            timeout 60 php artisan optimize:clear || { echo "Optimize clear failed, but continuing..."; }
+            # 6. Move application to final location
+            echo "Moving application to final location..."
+            sudo rm -rf $APP_DIR
+            sudo mkdir -p $APP_DIR
+            sudo cp -r * $APP_DIR/ 2>/dev/null || true
+            sudo cp -r .env $APP_DIR/ 2>/dev/null || true
+            sudo cp -r .git* $APP_DIR/ 2>/dev/null || true
             
-            # Cache configurations
-            timeout 60 php artisan config:cache || { echo "Config cache failed, but continuing..."; }
-            timeout 60 php artisan route:cache || { echo "Route cache failed, but continuing..."; }
-            timeout 60 php artisan view:cache || { echo "View cache failed, but continuing..."; }
+            # 7. Restore storage directory if backup exists
+            if [ -d "$BACKUP_DIR/storage/app" ]; then
+              echo "Restoring user uploads..."
+              sudo cp -r $BACKUP_DIR/storage/app/* $APP_DIR/storage/app/ 2>/dev/null || true
+            fi
             
-            # Set permissions
+            # 8. Set permissions
+            echo "Setting permissions..."
+            sudo chown -R $USER:$USER $APP_DIR
             sudo chown -R www-data:www-data $APP_DIR/storage $APP_DIR/bootstrap/cache
             sudo chmod -R 775 $APP_DIR/storage $APP_DIR/bootstrap/cache
             
-            # Restart supervisor (with error handling)
-            echo "Restarting supervisor services..."
+            # 9. Run minimal commands needed to get the site working
+            cd $APP_DIR
+            php artisan optimize:clear || echo "Optimize clear failed, continuing..."
+            
+            # Only run critical commands, skip the rest
+            php artisan config:cache || echo "Config cache failed, continuing..."
+            php artisan route:cache || echo "Route cache failed, continuing..."
+            
+            # 10. Restart services
+            echo "Restarting services..."
             sudo supervisorctl reread
             sudo supervisorctl update
-            sudo supervisorctl restart compasse-worker:* || {
-              echo "Supervisor restart failed, but continuing...";
-            }
+            sudo supervisorctl restart compasse-worker:* || echo "Supervisor restart failed, continuing..."
+            sudo systemctl reload nginx || echo "Nginx reload failed, continuing..."
             
-            # Reload Nginx (with error handling)
-            sudo systemctl reload nginx || { echo "Nginx reload failed. Check the configuration."; }
-            
-            echo "Compasse deployment completed successfully!"
+            echo "Emergency deployment completed!"
             EOL
             
-            # Make the modified script executable and run it
-            chmod +x ~/deployment/modified-deploy.sh
-            ~/deployment/modified-deploy.sh
+            # Make script executable and run it
+            chmod +x ~/emergency-deploy.sh
+            echo "Running emergency deployment script..."
+            ~/emergency-deploy.sh

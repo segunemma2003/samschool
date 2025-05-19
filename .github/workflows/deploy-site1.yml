@@ -1,4 +1,4 @@
-name: Update Compasse with Complete Setup
+name: Update Compasse with Permission Fix
 on:
   push:
     branches: [main]
@@ -6,7 +6,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy with Complete Setup Checks
+      - name: Deploy with Permission Fix
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -14,33 +14,79 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           timeout: 600s
           script: |
-            echo "Starting complete deployment with smart setup..."
+            echo "Starting deployment with permission fixes..."
             
-            # Create comprehensive deployment script
-            cat > ~/complete-deploy.sh << 'EOL'
+            # Create deployment script with permission handling
+            cat > ~/permission-fix-deploy.sh << 'EOL'
             #!/bin/bash
             set -e
             
             APP_DIR="/var/www/compasse"
             REPO_URL="https://github.com/segunemma2003/samschool.git"
             BRANCH="main"
-            DOMAIN="compasse.io"  # Replace with your actual domain
             
-            echo "Beginning complete deployment for Compasse..."
+            echo "Starting deployment with permission fixes..."
             
-            # 1. Pull latest code changes
+            # 1. Fix permissions before Git operations
+            if [ -d "$APP_DIR" ]; then
+              echo "Fixing permissions before Git operations..."
+              sudo chown -R $USER:$USER $APP_DIR
+              
+              # Ensure the bootstrap/cache directory is writable
+              if [ -d "$APP_DIR/bootstrap/cache" ]; then
+                sudo chmod -R 777 $APP_DIR/bootstrap/cache
+              fi
+              
+              # Ensure the storage directory is writable
+              if [ -d "$APP_DIR/storage" ]; then
+                sudo chmod -R 777 $APP_DIR/storage
+              fi
+              
+              # Remove problematic files that might cause Git issues
+              if [ -f "$APP_DIR/bootstrap/cache/.gitignore" ]; then
+                sudo rm -f $APP_DIR/bootstrap/cache/.gitignore
+              fi
+            fi
+            
+            # 2. Pull latest code changes
             if [ -d "$APP_DIR/.git" ]; then
               echo "Git repository found. Pulling latest changes..."
               cd $APP_DIR
-              git stash
+              
+              # Use git clean to remove untracked files and directories first
+              git clean -fd
+              
+              # Try to unstage changes before stashing
+              git reset -- .
+              
+              # Try to stash any changes (but don't fail if there's nothing to stash)
+              git stash || echo "Nothing to stash"
+              
+              # Fetch and update from remote
               git fetch --all
-              git checkout $BRANCH
-              git reset --hard origin/$BRANCH
+              
+              # Hard reset to the remote branch
+              # For stubborn cases, we'll try a different approach
+              git checkout -f $BRANCH || git checkout -b temp-$BRANCH && git branch -D $BRANCH && git checkout -b $BRANCH
+              git reset --hard origin/$BRANCH || {
+                echo "Unable to reset with Git, trying alternative approach"
+                # As a last resort, clone to a temp directory and copy over
+                TMP_DIR=$(mktemp -d)
+                git clone -b $BRANCH $REPO_URL $TMP_DIR
+                sudo rsync -av --exclude='.env' --exclude='storage' $TMP_DIR/ $APP_DIR/
+                rm -rf $TMP_DIR
+              }
             else
               echo "No git repository found. Creating one..."
               # Backup critical files
-              [ -f "$APP_DIR/.env" ] && cp "$APP_DIR/.env" /tmp/.env.backup
-              [ -d "$APP_DIR/storage/app" ] && mkdir -p /tmp/storage_backup && cp -r $APP_DIR/storage/app /tmp/storage_backup/
+              if [ -f "$APP_DIR/.env" ]; then
+                cp "$APP_DIR/.env" /tmp/.env.backup
+              fi
+              
+              if [ -d "$APP_DIR/storage/app" ]; then
+                mkdir -p /tmp/storage_backup
+                cp -r $APP_DIR/storage/app /tmp/storage_backup/
+              fi
               
               # Clone repository
               sudo rm -rf $APP_DIR
@@ -50,11 +96,19 @@ jobs:
               cd $APP_DIR
               
               # Restore backups
-              [ -f "/tmp/.env.backup" ] && cp /tmp/.env.backup $APP_DIR/.env && rm /tmp/.env.backup
-              [ -d "/tmp/storage_backup/app" ] && mkdir -p $APP_DIR/storage && cp -r /tmp/storage_backup/app $APP_DIR/storage/ && rm -rf /tmp/storage_backup
+              if [ -f "/tmp/.env.backup" ]; then
+                cp /tmp/.env.backup $APP_DIR/.env
+                rm /tmp/.env.backup
+              fi
+              
+              if [ -d "/tmp/storage_backup/app" ]; then
+                mkdir -p $APP_DIR/storage
+                cp -r /tmp/storage_backup/app $APP_DIR/storage/
+                rm -rf /tmp/storage_backup
+              fi
             fi
             
-            # 2. Update .env configuration if needed
+            # 3. Update .env configuration if needed
             if [ -f "$APP_DIR/.env" ]; then
               grep -q "AWS_DEFAULT_REGION" $APP_DIR/.env || echo "AWS_DEFAULT_REGION=us-east-1" >> $APP_DIR/.env
               grep -q "FILESYSTEM_DISK=s3" $APP_DIR/.env && sed -i 's/FILESYSTEM_DISK=s3/FILESYSTEM_DISK=local/g' $APP_DIR/.env
@@ -68,7 +122,7 @@ jobs:
               echo "FILESYSTEM_DISK=local" >> $APP_DIR/.env
             fi
             
-            # 3. Update dependencies
+            # 4. Update dependencies
             echo "Updating dependencies..."
             cd $APP_DIR
             
@@ -76,6 +130,9 @@ jobs:
               echo "Installing composer..."
               curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
             fi
+            
+            # Clear composer cache first
+            composer clear-cache
             
             if [ -d "$APP_DIR/vendor" ]; then
               timeout 180 COMPOSER_MEMORY_LIMIT=-1 composer update --no-interaction --no-dev --no-scripts --no-plugins --prefer-dist --no-autoloader || echo "Composer update failed, continuing anyway..."
@@ -85,12 +142,12 @@ jobs:
             
             timeout 120 COMPOSER_MEMORY_LIMIT=-1 composer dump-autoload --no-dev || echo "Autoloader generation failed, continuing anyway..."
             
-            # 4. Directory setup and permissions
+            # 5. Directory setup and permissions
             echo "Setting up directory structure and permissions..."
             mkdir -p $APP_DIR/storage/app $APP_DIR/storage/framework/cache $APP_DIR/storage/framework/sessions $APP_DIR/storage/framework/views $APP_DIR/storage/logs
             mkdir -p $APP_DIR/bootstrap/cache
             
-            # 5. Check if Nginx is already configured for this site
+            # 6. Check if Nginx is already configured for this site
             if [ ! -f "/etc/nginx/sites-available/compasse" ]; then
               echo "Setting up Nginx configuration..."
               
@@ -107,7 +164,9 @@ jobs:
                 listen 80;
                 listen [::]:80;
                 
-                server_name compasse.io www.compasse.io;  # Replace with your domain
+                # Replace with your domain or use server IP
+                server_name _;
+                
                 root /var/www/compasse/public;
                 
                 index index.php index.html index.htm;
@@ -185,7 +244,7 @@ jobs:
               echo "Nginx configuration already exists for Compasse."
             fi
             
-            # 6. Check if Supervisor is installed and configured
+            # 7. Check if Supervisor is installed and configured
             if ! command -v supervisorctl &> /dev/null; then
               echo "Installing supervisor..."
               sudo apt update
@@ -217,13 +276,13 @@ jobs:
               echo "Supervisor configuration already exists"
             fi
             
-            # 7. Ensure appropriate ownership and permissions
+            # 8. Set final permissions
             echo "Setting final ownership and permissions..."
             sudo chown -R $USER:$USER $APP_DIR
             sudo chown -R www-data:www-data $APP_DIR/storage $APP_DIR/bootstrap/cache
             sudo chmod -R 775 $APP_DIR/storage $APP_DIR/bootstrap/cache
             
-            # 8. Run essential Laravel commands
+            # 9. Run essential Laravel commands
             echo "Running essential Laravel commands..."
             cd $APP_DIR
             timeout 60 php artisan optimize:clear || echo "Optimize clear failed, continuing anyway..."
@@ -231,7 +290,7 @@ jobs:
             timeout 60 php artisan route:cache || echo "Route cache failed, continuing anyway..."
             timeout 60 php artisan view:cache || echo "View cache failed, continuing anyway..."
             
-            # 9. Restart all services
+            # 10. Restart all services
             echo "Restarting services..."
             sudo supervisorctl reread || echo "Supervisor reread failed, continuing anyway..."
             sudo supervisorctl update || echo "Supervisor update failed, continuing anyway..."
@@ -240,13 +299,15 @@ jobs:
             # Only restart PHP-FPM if it's installed
             if systemctl list-units --full -all | grep -Fq "php8.3-fpm"; then
               sudo systemctl restart php8.3-fpm || echo "PHP-FPM restart failed, continuing anyway..."
+            elif systemctl list-units --full -all | grep -Fq "php-fpm"; then
+              sudo systemctl restart php-fpm || echo "PHP-FPM restart failed, continuing anyway..."
             fi
             
             sudo systemctl reload nginx || echo "Nginx reload failed, continuing anyway..."
             
-            echo "Complete deployment finished successfully!"
+            echo "Deployment with permission fixes completed successfully!"
             EOL
             
             # Make script executable and run it
-            chmod +x ~/complete-deploy.sh
-            ~/complete-deploy.sh
+            chmod +x ~/permission-fix-deploy.sh
+            ~/permission-fix-deploy.sh

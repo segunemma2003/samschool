@@ -1,4 +1,4 @@
-name: Deploy Compasse
+name: Update Compasse with Complete Setup
 on:
   push:
     branches: [main]
@@ -6,128 +6,247 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to EC2 - Compasse
+      - name: Deploy with Complete Setup Checks
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 1200s
+          timeout: 600s
           script: |
-            echo "Starting deployment process..."
+            echo "Starting complete deployment with smart setup..."
             
-            # Create emergency deployment script
-            cat > ~/emergency-deploy.sh << 'EOL'
+            # Create comprehensive deployment script
+            cat > ~/complete-deploy.sh << 'EOL'
             #!/bin/bash
             set -e
             
             APP_DIR="/var/www/compasse"
-            BACKUP_DIR="/var/www/compasse_backup_$(date +%Y%m%d%H%M%S)"
             REPO_URL="https://github.com/segunemma2003/samschool.git"
             BRANCH="main"
+            DOMAIN="compasse.io"  # Replace with your actual domain
             
-            echo "Starting emergency deployment script..."
+            echo "Beginning complete deployment for Compasse..."
             
-            # 1. Create backup of existing site if needed
-            if [ -d "$APP_DIR" ] && [ "$(ls -A $APP_DIR)" ]; then
-              echo "Creating backup of existing installation..."
-              # Just back up .env and storage, not the entire directory to save time
-              if [ -f "$APP_DIR/.env" ]; then
-                mkdir -p $BACKUP_DIR
-                cp $APP_DIR/.env $BACKUP_DIR/.env
-                echo "Backed up .env file"
-              fi
-              
-              if [ -d "$APP_DIR/storage" ]; then
-                mkdir -p $BACKUP_DIR/storage
-                cp -r $APP_DIR/storage/app $BACKUP_DIR/storage/ 2>/dev/null || true
-                echo "Backed up user uploads"
-              fi
-            fi
-            
-            # 2. Clone fresh copy to a temporary location
-            echo "Cloning fresh repository..."
-            TMP_DIR=$(mktemp -d)
-            git clone --depth=1 -b $BRANCH $REPO_URL $TMP_DIR
-            cd $TMP_DIR
-            
-            # 3. Prepare the application without using composer
-            echo "Preparing application..."
-            
-            # Restore .env file if available
-            if [ -f "$BACKUP_DIR/.env" ]; then
-              cp $BACKUP_DIR/.env $TMP_DIR/.env
-              # Fix AWS region
-              grep -q "AWS_DEFAULT_REGION" .env || echo "AWS_DEFAULT_REGION=us-east-1" >> .env
-              sed -i 's/FILESYSTEM_DISK=s3/FILESYSTEM_DISK=local/g' .env 2>/dev/null || true
+            # 1. Pull latest code changes
+            if [ -d "$APP_DIR/.git" ]; then
+              echo "Git repository found. Pulling latest changes..."
+              cd $APP_DIR
+              git stash
+              git fetch --all
+              git checkout $BRANCH
+              git reset --hard origin/$BRANCH
             else
-              # Create basic .env file if none exists
-              cp .env.example .env 2>/dev/null || echo "No .env.example found"
-              echo "APP_ENV=production" >> .env
-              echo "APP_DEBUG=false" >> .env
-              echo "APP_KEY=$(php -r 'echo "base64:".base64_encode(random_bytes(32));')" >> .env
-              echo "AWS_DEFAULT_REGION=us-east-1" >> .env
-              echo "FILESYSTEM_DISK=local" >> .env
+              echo "No git repository found. Creating one..."
+              # Backup critical files
+              [ -f "$APP_DIR/.env" ] && cp "$APP_DIR/.env" /tmp/.env.backup
+              [ -d "$APP_DIR/storage/app" ] && mkdir -p /tmp/storage_backup && cp -r $APP_DIR/storage/app /tmp/storage_backup/
+              
+              # Clone repository
+              sudo rm -rf $APP_DIR
+              sudo mkdir -p $APP_DIR
+              sudo chown -R $USER:$USER $APP_DIR
+              git clone -b $BRANCH $REPO_URL $APP_DIR
+              cd $APP_DIR
+              
+              # Restore backups
+              [ -f "/tmp/.env.backup" ] && cp /tmp/.env.backup $APP_DIR/.env && rm /tmp/.env.backup
+              [ -d "/tmp/storage_backup/app" ] && mkdir -p $APP_DIR/storage && cp -r /tmp/storage_backup/app $APP_DIR/storage/ && rm -rf /tmp/storage_backup
             fi
             
-            # 4. Install composer dependencies WITHOUT autoloader optimization
-            echo "Installing composer dependencies without autoloader optimization..."
+            # 2. Update .env configuration if needed
+            if [ -f "$APP_DIR/.env" ]; then
+              grep -q "AWS_DEFAULT_REGION" $APP_DIR/.env || echo "AWS_DEFAULT_REGION=us-east-1" >> $APP_DIR/.env
+              grep -q "FILESYSTEM_DISK=s3" $APP_DIR/.env && sed -i 's/FILESYSTEM_DISK=s3/FILESYSTEM_DISK=local/g' $APP_DIR/.env
+            else
+              echo "Creating new .env file..."
+              cp $APP_DIR/.env.example $APP_DIR/.env 2>/dev/null || touch $APP_DIR/.env
+              echo "APP_ENV=production" >> $APP_DIR/.env
+              echo "APP_DEBUG=false" >> $APP_DIR/.env 
+              echo "APP_KEY=$(php -r 'echo "base64:".base64_encode(random_bytes(32));')" >> $APP_DIR/.env
+              echo "AWS_DEFAULT_REGION=us-east-1" >> $APP_DIR/.env
+              echo "FILESYSTEM_DISK=local" >> $APP_DIR/.env
+            fi
             
-            # Check if composer is installed
+            # 3. Update dependencies
+            echo "Updating dependencies..."
+            cd $APP_DIR
+            
             if ! command -v composer &> /dev/null; then
               echo "Installing composer..."
               curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
             fi
             
-            # Install dependencies with minimal settings to avoid hanging
-            COMPOSER_MEMORY_LIMIT=-1 composer install --no-interaction --no-dev --no-scripts --no-plugins --prefer-dist --no-autoloader
-            
-            # Generate autoloader without optimization (much faster but less efficient)
-            COMPOSER_MEMORY_LIMIT=-1 composer dump-autoload --no-dev
-            
-            # 5. Prepare directory structure
-            mkdir -p storage/app storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
-            mkdir -p bootstrap/cache
-            
-            # 6. Move application to final location
-            echo "Moving application to final location..."
-            sudo rm -rf $APP_DIR
-            sudo mkdir -p $APP_DIR
-            sudo cp -r * $APP_DIR/ 2>/dev/null || true
-            sudo cp -r .env $APP_DIR/ 2>/dev/null || true
-            sudo cp -r .git* $APP_DIR/ 2>/dev/null || true
-            
-            # 7. Restore storage directory if backup exists
-            if [ -d "$BACKUP_DIR/storage/app" ]; then
-              echo "Restoring user uploads..."
-              sudo cp -r $BACKUP_DIR/storage/app/* $APP_DIR/storage/app/ 2>/dev/null || true
+            if [ -d "$APP_DIR/vendor" ]; then
+              timeout 180 COMPOSER_MEMORY_LIMIT=-1 composer update --no-interaction --no-dev --no-scripts --no-plugins --prefer-dist --no-autoloader || echo "Composer update failed, continuing anyway..."
+            else
+              timeout 180 COMPOSER_MEMORY_LIMIT=-1 composer install --no-interaction --no-dev --no-scripts --no-plugins --prefer-dist --no-autoloader || echo "Composer install failed, continuing anyway..."
             fi
             
-            # 8. Set permissions
-            echo "Setting permissions..."
+            timeout 120 COMPOSER_MEMORY_LIMIT=-1 composer dump-autoload --no-dev || echo "Autoloader generation failed, continuing anyway..."
+            
+            # 4. Directory setup and permissions
+            echo "Setting up directory structure and permissions..."
+            mkdir -p $APP_DIR/storage/app $APP_DIR/storage/framework/cache $APP_DIR/storage/framework/sessions $APP_DIR/storage/framework/views $APP_DIR/storage/logs
+            mkdir -p $APP_DIR/bootstrap/cache
+            
+            # 5. Check if Nginx is already configured for this site
+            if [ ! -f "/etc/nginx/sites-available/compasse" ]; then
+              echo "Setting up Nginx configuration..."
+              
+              # Install Nginx if not already installed
+              if ! command -v nginx &> /dev/null; then
+                echo "Installing Nginx..."
+                sudo apt update
+                sudo apt install -y nginx
+              fi
+              
+              # Create Nginx site configuration
+              sudo tee /etc/nginx/sites-available/compasse > /dev/null << 'NGINX_CONFIG'
+            server {
+                listen 80;
+                listen [::]:80;
+                
+                server_name compasse.io www.compasse.io;  # Replace with your domain
+                root /var/www/compasse/public;
+                
+                index index.php index.html index.htm;
+                
+                location / {
+                    try_files $uri $uri/ /index.php?$query_string;
+                }
+                
+                location ~ \.php$ {
+                    include snippets/fastcgi-php.conf;
+                    fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+                    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                    include fastcgi_params;
+                }
+                
+                location ~ /\.ht {
+                    deny all;
+                }
+                
+                location ~ /.well-known {
+                    allow all;
+                }
+                
+                # Set client body size to 50M
+                client_max_body_size 50M;
+                
+                # Cache static files
+                location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+                    expires 7d;
+                    add_header Cache-Control "public, no-transform";
+                }
+                
+                # Enable gzip compression
+                gzip on;
+                gzip_comp_level 5;
+                gzip_min_length 256;
+                gzip_proxied any;
+                gzip_vary on;
+                gzip_types
+                    application/atom+xml
+                    application/javascript
+                    application/json
+                    application/ld+json
+                    application/manifest+json
+                    application/rss+xml
+                    application/vnd.geo+json
+                    application/vnd.ms-fontobject
+                    application/x-font-ttf
+                    application/x-web-app-manifest+json
+                    application/xhtml+xml
+                    application/xml
+                    font/opentype
+                    image/bmp
+                    image/svg+xml
+                    image/x-icon
+                    text/cache-manifest
+                    text/css
+                    text/plain
+                    text/vcard
+                    text/vnd.rim.location.xloc
+                    text/vtt
+                    text/x-component
+                    text/x-cross-domain-policy;
+            }
+            NGINX_CONFIG
+              
+              # Create a symlink to enable the site if it doesn't already exist
+              if [ ! -f "/etc/nginx/sites-enabled/compasse" ]; then
+                sudo ln -sf /etc/nginx/sites-available/compasse /etc/nginx/sites-enabled/
+              fi
+              
+              # Test Nginx configuration
+              sudo nginx -t && echo "Nginx configuration is valid" || echo "Warning: Nginx configuration has errors"
+            else
+              echo "Nginx configuration already exists for Compasse."
+            fi
+            
+            # 6. Check if Supervisor is installed and configured
+            if ! command -v supervisorctl &> /dev/null; then
+              echo "Installing supervisor..."
+              sudo apt update
+              sudo apt install -y supervisor
+              sudo systemctl enable supervisor
+              sudo systemctl start supervisor
+            fi
+            
+            # Create supervisor configuration if it doesn't exist
+            if [ ! -f "/etc/supervisor/conf.d/compasse-worker.conf" ]; then
+              echo "Creating supervisor configuration for queue workers..."
+              sudo tee /etc/supervisor/conf.d/compasse-worker.conf > /dev/null << 'SUPERVISOR_CONFIG'
+            [program:compasse-worker]
+            process_name=%(program_name)s_%(process_num)02d
+            command=php /var/www/compasse/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+            autostart=true
+            autorestart=true
+            stopasgroup=true
+            killasgroup=true
+            user=www-data
+            numprocs=2
+            redirect_stderr=true
+            stdout_logfile=/var/www/compasse/storage/logs/worker.log
+            stopwaitsecs=3600
+            SUPERVISOR_CONFIG
+            
+              echo "Supervisor configuration created"
+            else
+              echo "Supervisor configuration already exists"
+            fi
+            
+            # 7. Ensure appropriate ownership and permissions
+            echo "Setting final ownership and permissions..."
             sudo chown -R $USER:$USER $APP_DIR
             sudo chown -R www-data:www-data $APP_DIR/storage $APP_DIR/bootstrap/cache
             sudo chmod -R 775 $APP_DIR/storage $APP_DIR/bootstrap/cache
             
-            # 9. Run minimal commands needed to get the site working
+            # 8. Run essential Laravel commands
+            echo "Running essential Laravel commands..."
             cd $APP_DIR
-            php artisan optimize:clear || echo "Optimize clear failed, continuing..."
+            timeout 60 php artisan optimize:clear || echo "Optimize clear failed, continuing anyway..."
+            timeout 60 php artisan config:cache || echo "Config cache failed, continuing anyway..."
+            timeout 60 php artisan route:cache || echo "Route cache failed, continuing anyway..."
+            timeout 60 php artisan view:cache || echo "View cache failed, continuing anyway..."
             
-            # Only run critical commands, skip the rest
-            php artisan config:cache || echo "Config cache failed, continuing..."
-            php artisan route:cache || echo "Route cache failed, continuing..."
-            
-            # 10. Restart services
+            # 9. Restart all services
             echo "Restarting services..."
-            sudo supervisorctl reread
-            sudo supervisorctl update
-            sudo supervisorctl restart compasse-worker:* || echo "Supervisor restart failed, continuing..."
-            sudo systemctl reload nginx || echo "Nginx reload failed, continuing..."
+            sudo supervisorctl reread || echo "Supervisor reread failed, continuing anyway..."
+            sudo supervisorctl update || echo "Supervisor update failed, continuing anyway..."
+            sudo supervisorctl restart compasse-worker:* || echo "Supervisor restart failed, continuing anyway..."
             
-            echo "Emergency deployment completed!"
+            # Only restart PHP-FPM if it's installed
+            if systemctl list-units --full -all | grep -Fq "php8.3-fpm"; then
+              sudo systemctl restart php8.3-fpm || echo "PHP-FPM restart failed, continuing anyway..."
+            fi
+            
+            sudo systemctl reload nginx || echo "Nginx reload failed, continuing anyway..."
+            
+            echo "Complete deployment finished successfully!"
             EOL
             
             # Make script executable and run it
-            chmod +x ~/emergency-deploy.sh
-            echo "Running emergency deployment script..."
-            ~/emergency-deploy.sh
+            chmod +x ~/complete-deploy.sh
+            ~/complete-deploy.sh

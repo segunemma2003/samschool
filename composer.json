@@ -84,6 +84,9 @@
         "reliese/laravel": "^1.3"
     },
     "autoload": {
+        "exclude-from-classmap": [
+            "vendor/coolsam/signature-pad/src/"
+        ],
         "files": [
             "app/Helpers/TenantHelper.php"
         ],

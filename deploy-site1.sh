@@ -77,7 +77,7 @@ php artisan tenants:migrate --force || { echo "Migration failed, but continuing.
 # Clear previous caches first
 php artisan optimize:clear || { echo "Optimize clear failed, but continuing..."; }
 
-# Cache configurations
+# Cache co  nfigurations
 php artisan config:cache || { echo "Config cache failed, but continuing..."; }
 php artisan route:cache || { echo "Route cache failed, but continuing..."; }
 php artisan view:cache || { echo "View cache failed, but continuing..."; }

@@ -15,6 +15,25 @@ if(!function_exists('getAuthName')){
 
 }
 
+function getCurrentTenant()
+{
+    // Skip tenant resolution in testing/CI environment
+    if (app()->environment(['testing']) || env('TENANCY_SKIP_DOMAIN_CHECK', false)) {
+        return null;
+    }
+
+    try {
+        $domain = request()->getHost();
+        return \App\Models\School::where('domain', $domain)->first();
+    } catch (\Exception $e) {
+        // Handle database connection issues gracefully in testing
+        if (app()->environment(['local', 'testing'])) {
+            return null;
+        }
+        throw $e;
+    }
+}
+
 if(!function_exists('getTenantLogo')){
      function getTenantLogo()  // Replace School with your actual tenant model
     {

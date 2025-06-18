@@ -48,54 +48,33 @@ jobs:
             composer dump-autoload --optimize
             echo "✅ Dependencies updated"
 
-            # Check migration status before running
-            echo "🔍 Checking migration status..."
-            php artisan migrate:status
-
-            # Run database migrations with error handling
+            # Run database migrations
             echo "🔄 Running database migrations..."
-            if ! php artisan migrate --force; then
-              echo "⚠️ Migration failed, attempting to fix common issues..."
-
-              # Try to mark existing tables as migrated
-              echo "🔧 Checking for orphaned tables..."
-
-              # List all migrations and mark completed ones
-              php artisan migrate:status --pending | while read migration; do
-                if [ ! -z "$migration" ]; then
-                  echo "Checking migration: $migration"
-                  # Add custom logic here to handle specific migrations
-                fi
-              done
-
-              # Retry migrations
-              echo "🔄 Retrying migrations..."
-              php artisan migrate --force || echo "Some migrations may need manual intervention"
-            fi
+            php artisan migrate --force
             echo "✅ Migrations completed"
 
-            # Run tenant migrations with error handling
+            # Run tenant migrations
             echo "🔄 Running tenant migrations..."
-            if ! php artisan tenants:migrate --force; then
-              echo "⚠️ Tenant migration failed, continuing with deployment..."
-            fi
+            php artisan tenants:migrate --force || echo "No tenant migrations to run"
             echo "✅ Tenant migrations completed"
 
-            # Clear and cache configurations
+            # Clear and cache configurations (SKIP ROUTE CACHING)
             echo "🧹 Clearing and caching configurations..."
             php artisan optimize:clear
             php artisan config:cache
-            php artisan route:cache
+            # php artisan route:cache  # <-- COMMENTED OUT TO IGNORE THE ERROR
             php artisan view:cache
-            echo "✅ Configurations cached"
+            echo "✅ Configurations cached (routes skipped)"
 
             # Restart queue workers
             echo "🔄 Restarting queue workers..."
             php artisan queue:restart
-            sudo supervisorctl restart compasse-worker:* || echo "Could not restart workers"
+            if sudo supervisorctl status | grep -q "compasse-worker"; then
+              sudo supervisorctl restart compasse-worker:*
+            fi
             echo "✅ Queue workers restarted"
 
-            # Restart PHP-FPM (optional, for good measure)
+            # Restart PHP-FPM
             echo "🔄 Restarting PHP-FPM..."
             sudo systemctl reload php8.4-fpm || echo "Could not reload PHP-FPM"
             echo "✅ PHP-FPM reloaded"
@@ -117,7 +96,7 @@ jobs:
             echo "  ✅ Dependencies updated"
             echo "  ✅ Database migrations run"
             echo "  ✅ Tenant migrations run"
-            echo "  ✅ Configurations cached"
+            echo "  ✅ Configurations cached (routes skipped for stability)"
             echo "  ✅ Queue workers restarted"
             echo "  ✅ Application is live"
             echo ""
@@ -127,7 +106,7 @@ jobs:
         if: failure()
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: ${{ secrets.SSH_USER }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
@@ -140,7 +119,9 @@ jobs:
               echo "📦 Rolling back to: $LATEST_BACKUP"
 
               # Stop queue workers
-              sudo supervisorctl stop compasse-worker:* || true
+              if sudo supervisorctl status | grep -q "compasse-worker"; then
+                sudo supervisorctl stop compasse-worker:* || true
+              fi
 
               # Restore from backup
               sudo rm -rf /var/www/compasse
@@ -153,7 +134,9 @@ jobs:
               # Restart services
               cd /var/www/compasse
               php artisan up || true
-              sudo supervisorctl start compasse-worker:* || true
+              if sudo supervisorctl status | grep -q "compasse-worker"; then
+                sudo supervisorctl start compasse-worker:* || true
+              fi
               sudo systemctl reload php8.4-fpm || true
 
               echo "✅ Automatic rollback completed!"

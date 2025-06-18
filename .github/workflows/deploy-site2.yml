@@ -1,31 +1,219 @@
-name: Deploy Northstar
+name: Deploy Northstar (Production Branch)
 
 on:
   push:
     branches: [prod]
 
+env:
+  PHP_VERSION: "8.3"
+
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testing
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
     steps:
-      - name: Deploy to EC2 - Northstar
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Run database migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
+      - name: Run tests
+        run: php artisan test
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
+      - name: Run multitenancy tests
+        run: php artisan test --testsuite=Feature --filter=Tenant || echo "No tenant tests found"
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/prod'
+    environment: production
+
+    steps:
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 1800s
+          script: |
+            set -e
+
+            echo "🚀 Starting Northstar deployment..."
+
+            # Variables
+            REPO_URL="https://github.com/segunemma2003/samschool.git"
+            APP_DIR="/var/www/northstar"
+            BRANCH="prod"
+
+            # Create backup
+            if [ -d "$APP_DIR" ] && [ "$(ls -A $APP_DIR)" ]; then
+              BACKUP_DIR="/var/www/northstar_backup_$(date +%Y%m%d_%H%M%S)"
+              echo "💾 Creating backup..."
+              sudo cp -r $APP_DIR $BACKUP_DIR
+
+              # Backup database
+              if [ -f "$APP_DIR/.env" ]; then
+                DB_NAME="${{ secrets.DB_DATABASE_NORTHSTAR }}"
+                DB_USER="${{ secrets.DB_USERNAME }}"
+                DB_PASS="${{ secrets.DB_PASSWORD }}"
+
+                echo "💾 Creating database backup..."
+                mysqldump -h${{ secrets.DB_HOST }} -u$DB_USER -p$DB_PASS $DB_NAME > $BACKUP_DIR/database_backup.sql
+
+                # Upload to S3
+                aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws configure set default.region ${{ secrets.AWS_DEFAULT_REGION }}
+                aws s3 cp $BACKUP_DIR/database_backup.sql s3://${{ secrets.AWS_BUCKET_BACKUPS }}/northstar/$(date +%Y%m%d_%H%M%S)_database_backup.sql || echo "S3 backup upload failed"
+              fi
+            fi
+
+            # Setup application directory
+            sudo mkdir -p $APP_DIR
+            sudo chown -R $USER:$USER $APP_DIR
+
+            # Clone or update repository
+            if [ -d "$APP_DIR/.git" ]; then
+              echo "📥 Updating repository..."
+              cd $APP_DIR
+              git fetch --all
+              git reset --hard origin/$BRANCH
+              git clean -fd
+            else
+              echo "📥 Cloning repository..."
+              if [ "$(ls -A $APP_DIR 2>/dev/null)" ]; then
+                rm -rf $APP_DIR/*
+              fi
+              git clone -b $BRANCH $REPO_URL $APP_DIR
+              cd $APP_DIR
+            fi
+
+            # Install dependencies
+            echo "📦 Installing dependencies..."
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+            # Configure environment
+            echo "🔧 Configuring environment..."
+            if [ ! -f ".env" ]; then
+              cp .env.example .env
+              php artisan key:generate --force
+            fi
+
+            # Update environment variables
+            sed -i "s/DB_CONNECTION=.*/DB_CONNECTION=mysql/" .env
+            sed -i "s/DB_HOST=.*/DB_HOST=${{ secrets.DB_HOST }}/" .env
+            sed -i "s/DB_PORT=.*/DB_PORT=${{ secrets.DB_PORT }}/" .env
+            sed -i "s/DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE_NORTHSTAR }}/" .env
+            sed -i "s/DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/" .env
+            sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/" .env
+
+            sed -i "s/AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}/" .env
+            sed -i "s/AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}/" .env
+            sed -i "s/AWS_DEFAULT_REGION=.*/AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}/" .env
+            sed -i "s/AWS_BUCKET=.*/AWS_BUCKET=${{ secrets.AWS_BUCKET_NORTHSTAR }}/" .env
+            sed -i "s/FILESYSTEM_DISK=.*/FILESYSTEM_DISK=s3/" .env
+
+            # Create storage directories
+            mkdir -p storage/{app,framework/{cache,sessions,views},logs}
+            mkdir -p bootstrap/cache
+
+            # Put in maintenance mode
+            php artisan down --retry=60 || echo "Could not put in maintenance mode"
+
+            # Run migrations
+            echo "🔄 Running migrations..."
+            php artisan migrate --force
+            php artisan tenants:migrate --force || echo "No tenant migrations"
+
+            # Clear and cache
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # Set permissions
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+
+            # Restart services
+            sudo supervisorctl restart northstar-worker:* || echo "Supervisor restart failed"
+            sudo systemctl reload nginx
+
+            # Take out of maintenance mode
+            php artisan up
+
+            echo "✅ Northstar deployment completed!"
+
+      - name: Rollback on failure
+        if: failure()
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Create deployment directory
-            mkdir -p ~/deployment
-
-            # Clone the repository to get the deployment scripts
-            rm -rf ~/deployment/repos
-            git clone  https://github.com/segunemma2003/samschool.git ~/deployment/repos
-
-            # Make deployment script executable and run it
-            chmod +x ~/deployment/repos/deploy-site2.sh
-
-            sudo mkdir -p /var/www/northstar
-            sudo chown -R $USER:$USER /var/www/northstar
-
-            ~/deployment/repos/deploy-site2.sh
+            echo "❌ Deployment failed! Starting rollback..."
+            LATEST_BACKUP=$(ls -td /var/www/northstar_backup_* 2>/dev/null | head -n1)
+            if [ -n "$LATEST_BACKUP" ] && [ -d "$LATEST_BACKUP" ]; then
+              echo "📦 Rolling back to: $LATEST_BACKUP"
+              sudo rm -rf /var/www/northstar
+              sudo cp -r $LATEST_BACKUP /var/www/northstar
+              sudo chown -R www-data:www-data /var/www/northstar/storage /var/www/northstar/bootstrap/cache
+              sudo systemctl reload nginx
+              cd /var/www/northstar && php artisan up || true
+              echo "✅ Rollback completed!"
+            else
+              echo "❌ No backup found for rollback!"
+            fi

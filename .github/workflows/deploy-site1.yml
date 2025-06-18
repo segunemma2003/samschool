@@ -1,4 +1,4 @@
-name: Deploy Compasse (Main Branch) - First Push
+name: Deploy Compasse (Main Branch) - Fixed
 
 on:
   push:
@@ -10,19 +10,6 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: testing
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-        ports:
-          - 3306:3306
 
     steps:
       - name: Checkout code
@@ -37,31 +24,42 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Copy environment file
-        run: cp .env.example .env
+      - name: Setup test environment
+        run: |
+          cp .env.example .env
+          # Configure for SQLite testing
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=database\/database.sqlite/' .env
+          sed -i 's/DB_HOST=.*//' .env
+          sed -i 's/DB_PORT=.*//' .env
+          sed -i 's/DB_USERNAME=.*//' .env
+          sed -i 's/DB_PASSWORD=.*//' .env
+          echo "TENANCY_SKIP_DOMAIN_CHECK=true" >> .env
+          # Create SQLite database
+          mkdir -p database
+          touch database/database.sqlite
 
       - name: Generate application key
         run: php artisan key:generate
 
+      - name: Clear autoload and optimize
+        run: |
+          composer dump-autoload --optimize
+          php artisan optimize:clear
+
       - name: Run database migrations
         run: php artisan migrate --force
         env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: testing
-          DB_USERNAME: root
-          DB_PASSWORD: root
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+          TENANCY_SKIP_DOMAIN_CHECK: true
 
       - name: Run tests
         run: php artisan test
         env:
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: testing
-          DB_USERNAME: root
-          DB_PASSWORD: root
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+          TENANCY_SKIP_DOMAIN_CHECK: true
 
   deploy:
     needs: test
@@ -80,7 +78,7 @@ jobs:
           script: |
             set -e
 
-            echo "🚀 Starting Compasse deployment (First Push)..."
+            echo "🚀 Starting Compasse deployment (Fixed Version)..."
 
             # Variables
             REPO_URL="https://github.com/segunemma2003/samschool.git"
@@ -119,10 +117,13 @@ jobs:
               echo "✅ Repository cloned successfully"
             fi
 
-            # Install dependencies
+            # Install dependencies and fix autoloading
             echo "📦 Installing Composer dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-            echo "✅ Dependencies installed"
+
+            echo "🔧 Fixing autoload issues..."
+            composer dump-autoload --optimize
+            echo "✅ Dependencies installed and autoload fixed"
 
             # Environment configuration - Manual setup message
             echo "🔧 Checking environment configuration..."
@@ -152,6 +153,10 @@ jobs:
             mkdir -p bootstrap/cache
             echo "✅ Storage directories created"
 
+            # Clear any cached autoload issues
+            echo "🧹 Clearing application cache..."
+            php artisan optimize:clear || echo "Cache clear failed - this is normal for first deployment"
+
             # Check if we can connect to database before proceeding
             echo "🔍 Checking database connection..."
             if php artisan migrate:status > /dev/null 2>&1; then
@@ -170,24 +175,17 @@ jobs:
               php artisan tenants:migrate --force || echo "No tenant migrations found"
 
               echo "✅ Migrations completed"
-            else
-              echo "⚠️  Database connection failed - skipping migrations"
-              echo "⚠️  Please configure your .env file with correct database settings"
-              echo "⚠️  Then manually run: php artisan migrate --force"
-            fi
 
-            # Clear and cache configurations (only if database is connected)
-            echo "🧹 Clearing and caching configurations..."
-            php artisan optimize:clear || echo "Optimize clear failed - this is normal for first deployment"
-
-            # Only cache if database connection works
-            if php artisan migrate:status > /dev/null 2>&1; then
+              # Cache configurations after successful migration
+              echo "📦 Caching configurations..."
               php artisan config:cache || echo "Config cache failed"
               php artisan route:cache || echo "Route cache failed"
               php artisan view:cache || echo "View cache failed"
               echo "✅ Configurations cached"
             else
-              echo "⚠️  Skipping configuration caching due to database connection issues"
+              echo "⚠️  Database connection failed - skipping migrations"
+              echo "⚠️  Please configure your .env file with correct database settings"
+              echo "⚠️  Then manually run: php artisan migrate --force"
             fi
 
             # Set proper permissions
@@ -233,7 +231,7 @@ jobs:
             fi
 
             echo ""
-            echo "🎉 Compasse deployment completed!"
+            echo "🎉 Compasse deployment completed successfully!"
             echo ""
             echo "📋 NEXT STEPS (IMPORTANT):"
             echo "1. SSH into your server: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
@@ -245,3 +243,6 @@ jobs:
             echo ""
             echo "💡 Your application files are deployed at: /var/www/compasse"
             echo "💡 Logs are available at: /var/www/compasse/storage/logs/"
+            echo ""
+            echo "🔧 To fix any remaining PSR-4 issues, run on server:"
+            echo "   cd /var/www/compasse && composer dump-autoload --optimize"

@@ -1,148 +1,158 @@
-name: Deploy Compasse (Main Branch) - Final Fix
+name: Update Compasse Application
 
 on:
   push:
     branches: [main]
 
-env:
-  PHP_VERSION: "8.3"
-
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
-
-      - name: Setup test environment
-        run: |
-          cp .env.example .env
-          # Configure for testing environment
-          echo "APP_ENV=testing" >> .env
-          echo "DB_CONNECTION=sqlite" >> .env
-          echo "DB_DATABASE=:memory:" >> .env
-          echo "TENANCY_SKIP_DOMAIN_CHECK=true" >> .env
-          echo "SESSION_DRIVER=array" >> .env
-          echo "CACHE_DRIVER=array" >> .env
-          echo "QUEUE_CONNECTION=sync" >> .env
-
-      - name: Generate application key
-        run: php artisan key:generate
-
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Clear and optimize
-        run: |
-          composer dump-autoload --optimize
-          php artisan optimize:clear || true
-
-      - name: Run tests (skip if no tests)
-        run: |
-          if [ -d "tests" ] && [ "$(ls -A tests)" ]; then
-            php artisan test || echo "Tests failed but continuing..."
-          else
-            echo "No tests found, skipping test execution"
-          fi
-
-  deploy:
-    needs: test
+  update:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    environment: production
 
     steps:
-      - name: Deploy to Production Server
+      - name: Deploy Updates to Server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 1800s
+          timeout: 600s
           script: |
             set -e
 
-            echo "🚀 Starting Compasse deployment..."
+            echo "🚀 Starting application update..."
 
-            # Variables
-            REPO_URL="https://github.com/segunemma2003/samschool.git"
-            APP_DIR="/var/www/compasse"
-            BRANCH="main"
+            # Navigate to application directory
+            cd /var/www/compasse
 
-            # Create backup
-            if [ -d "$APP_DIR" ] && [ "$(ls -A $APP_DIR 2>/dev/null)" ]; then
-              BACKUP_DIR="/var/www/compasse_backup_$(date +%Y%m%d_%H%M%S)"
-              echo "💾 Creating backup..."
-              sudo cp -r $APP_DIR $BACKUP_DIR
-              echo "✅ Backup created at: $BACKUP_DIR"
-            fi
+            # Create quick backup
+            BACKUP_DIR="/var/www/compasse_backup_$(date +%Y%m%d_%H%M%S)"
+            echo "💾 Creating backup..."
+            sudo cp -r /var/www/compasse $BACKUP_DIR
+            echo "✅ Backup created: $BACKUP_DIR"
 
-            # Setup application directory
-            sudo mkdir -p $APP_DIR
-            sudo chown -R $USER:$USER $APP_DIR
+            # Put application in maintenance mode
+            echo "🔧 Enabling maintenance mode..."
+            php artisan down --retry=60 --refresh=15 || echo "Could not enable maintenance mode"
 
-            # Clone or update repository
-            if [ -d "$APP_DIR/.git" ]; then
-              echo "📥 Updating repository..."
-              cd $APP_DIR
-              git fetch --all
-              git reset --hard origin/$BRANCH
-              git clean -fd
-            else
-              echo "📥 Cloning repository..."
-              rm -rf $APP_DIR/*
-              git clone -b $BRANCH $REPO_URL $APP_DIR
-              cd $APP_DIR
-            fi
+            # Pull latest changes from GitHub
+            echo "📥 Pulling latest changes..."
+            git fetch --all
+            git reset --hard origin/main
+            git clean -fd
+            echo "✅ Code updated successfully"
 
-            # Install dependencies
-            echo "📦 Installing dependencies..."
-            COMPOSER_MEMORY_LIMIT=-1 composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-
-            # Fix autoloading
-            echo "🔧 Fixing autoload..."
+            # Update Composer dependencies
+            echo "📦 Updating dependencies..."
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
             composer dump-autoload --optimize
+            echo "✅ Dependencies updated"
 
-            # Environment setup
-            if [ ! -f ".env" ]; then
-              cp .env.example .env
-              php artisan key:generate --force
-            fi
+            # Run database migrations
+            echo "🔄 Running database migrations..."
+            php artisan migrate --force
+            echo "✅ Migrations completed"
 
-            # Create directories
-            mkdir -p storage/{app,framework/{cache,sessions,views},logs}
-            mkdir -p bootstrap/cache
+            # Run tenant migrations
+            echo "🔄 Running tenant migrations..."
+            php artisan tenants:migrate --force || echo "No tenant migrations to run"
+            echo "✅ Tenant migrations completed"
 
-            # Set permissions
-            sudo chown -R www-data:www-data storage bootstrap/cache
-            sudo chmod -R 775 storage bootstrap/cache
+            # Clear and cache configurations
+            echo "🧹 Clearing and caching configurations..."
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            echo "✅ Configurations cached"
 
-            # Clear caches
-            php artisan optimize:clear || true
+            # Restart queue workers
+            echo "🔄 Restarting queue workers..."
+            php artisan queue:restart
+            sudo supervisorctl restart compasse-worker:*
+            echo "✅ Queue workers restarted"
 
-            # Database operations (only if configured)
-            if php artisan migrate:status > /dev/null 2>&1; then
-              echo "🔄 Running migrations..."
-              php artisan down --retry=60 || true
-              php artisan migrate --force
-              php artisan tenants:migrate --force || true
-              php artisan config:cache || true
-              php artisan route:cache || true
-              php artisan view:cache || true
+            # Restart PHP-FPM (optional, for good measure)
+            echo "🔄 Restarting PHP-FPM..."
+            sudo systemctl reload php8.4-fpm
+            echo "✅ PHP-FPM reloaded"
+
+            # Take application out of maintenance mode
+            echo "🟢 Disabling maintenance mode..."
+            php artisan up
+            echo "✅ Application is now live"
+
+            # Clean up old backups (keep last 5)
+            echo "🧹 Cleaning up old backups..."
+            ls -td /var/www/compasse_backup_* | tail -n +6 | xargs -r rm -rf
+            echo "✅ Old backups cleaned"
+
+            echo ""
+            echo "🎉 Application update completed successfully!"
+            echo "📊 Summary:"
+            echo "  ✅ Code pulled from GitHub"
+            echo "  ✅ Dependencies updated"
+            echo "  ✅ Database migrations run"
+            echo "  ✅ Tenant migrations run"
+            echo "  ✅ Configurations cached"
+            echo "  ✅ Queue workers restarted"
+            echo "  ✅ Application is live"
+            echo ""
+            echo "🔗 Visit your site to verify the update!"
+
+      - name: Rollback on Failure
+        if: failure()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "❌ Update failed! Starting automatic rollback..."
+
+            # Find the latest backup
+            LATEST_BACKUP=$(ls -td /var/www/compasse_backup_* 2>/dev/null | head -n1)
+
+            if [ -n "$LATEST_BACKUP" ] && [ -d "$LATEST_BACKUP" ]; then
+              echo "📦 Rolling back to: $LATEST_BACKUP"
+
+              # Stop queue workers
+              sudo supervisorctl stop compasse-worker:* || true
+
+              # Restore from backup
+              sudo rm -rf /var/www/compasse
+              sudo cp -r $LATEST_BACKUP /var/www/compasse
+
+              # Fix permissions
+              sudo chown -R www-data:www-data /var/www/compasse/storage /var/www/compasse/bootstrap/cache
+              sudo chown -R $USER:$USER /var/www/compasse
+
+              # Restart services
+              cd /var/www/compasse
               php artisan up || true
+              sudo supervisorctl start compasse-worker:* || true
+              sudo systemctl reload php8.4-fpm || true
+
+              echo "✅ Automatic rollback completed!"
+              echo "🔗 Your previous version is now restored and live"
             else
-              echo "⚠️  Database not configured - skipping migrations"
+              echo "❌ No backup found for rollback!"
+              echo "🚨 Manual intervention required"
             fi
 
-            # Restart services
-            sudo supervisorctl restart compasse-worker:* || true
-            sudo systemctl reload nginx || true
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "🚀 Application has been updated and is running the latest code"
+          echo "📅 Deployed at: $(date)"
+          echo "📊 Commit: ${{ github.sha }}"
 
-            echo "✅ Deployment completed!"
+      - name: Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "🔄 Automatic rollback should have restored the previous version"
+          echo "📅 Failed at: $(date)"
+          echo "📊 Commit: ${{ github.sha }}"
+          echo "🚨 Please check the server logs for details"

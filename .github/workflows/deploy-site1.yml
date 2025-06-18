@@ -1,4 +1,4 @@
-name: Deploy Compasse (Main Branch)
+name: Deploy Compasse (Main Branch) - First Push
 
 on:
   push:
@@ -80,33 +80,21 @@ jobs:
           script: |
             set -e
 
-            echo "🚀 Starting Compasse deployment..."
+            echo "🚀 Starting Compasse deployment (First Push)..."
 
             # Variables
             REPO_URL="https://github.com/segunemma2003/samschool.git"
             APP_DIR="/var/www/compasse"
             BRANCH="main"
 
-            # Create backup
-            if [ -d "$APP_DIR" ] && [ "$(ls -A $APP_DIR)" ]; then
+            # Create backup only if directory exists and has content
+            if [ -d "$APP_DIR" ] && [ "$(ls -A $APP_DIR 2>/dev/null)" ]; then
               BACKUP_DIR="/var/www/compasse_backup_$(date +%Y%m%d_%H%M%S)"
-              echo "💾 Creating backup..."
+              echo "💾 Creating backup of existing installation..."
               sudo cp -r $APP_DIR $BACKUP_DIR
-
-              # Backup database
-              if [ -f "$APP_DIR/.env" ]; then
-                DB_NAME="${{ secrets.COMPASSE_DB_DATABASE }}"
-                DB_USER="${{ secrets.COMPASSE_DB_USERNAME }}"
-                DB_PASS="${{ secrets.COMPASSE_DB_PASSWORD }}"
-
-                echo "💾 Creating database backup..."
-                mysqldump -h${{ secrets.COMPASSE_DB_HOST }} -u$DB_USER -p$DB_PASS $DB_NAME > $BACKUP_DIR/database_backup.sql
-
-                # Upload to S3
-                aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-                aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                aws configure set default.region ${{ secrets.AWS_DEFAULT_REGION }}
-              fi
+              echo "✅ Backup created at: $BACKUP_DIR"
+            else
+              echo "ℹ️  No existing installation found - this appears to be first deployment"
             fi
 
             # Setup application directory
@@ -115,61 +103,145 @@ jobs:
 
             # Clone or update repository
             if [ -d "$APP_DIR/.git" ]; then
-              echo "📥 Updating repository..."
+              echo "📥 Updating existing repository..."
               cd $APP_DIR
               git fetch --all
               git reset --hard origin/$BRANCH
               git clean -fd
             else
-              echo "📥 Cloning repository..."
+              echo "📥 Cloning repository for first time..."
+              # Clear directory if it has any files
               if [ "$(ls -A $APP_DIR 2>/dev/null)" ]; then
                 rm -rf $APP_DIR/*
               fi
               git clone -b $BRANCH $REPO_URL $APP_DIR
               cd $APP_DIR
+              echo "✅ Repository cloned successfully"
             fi
 
             # Install dependencies
-            echo "📦 Installing dependencies..."
+            echo "📦 Installing Composer dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+            echo "✅ Dependencies installed"
 
-            # Configure environment
-            echo "🔧 Configuring environment..."
+            # Environment configuration - Manual setup message
+            echo "🔧 Checking environment configuration..."
             if [ ! -f ".env" ]; then
+              echo "📋 Creating .env file from example..."
               cp .env.example .env
-              php artisan key:generate --force
+              echo "⚠️  IMPORTANT: You need to manually configure your .env file!"
+              echo "⚠️  Please SSH into the server and edit /var/www/compasse/.env"
+              echo "⚠️  Set your database credentials, S3 settings, and other configurations"
+              echo "⚠️  Then run: php artisan key:generate"
+            else
+              echo "✅ .env file already exists - keeping your manual configuration"
             fi
 
-            # Update environment variables
+            # Generate app key if not set
+            if ! grep -q "APP_KEY=base64:" .env; then
+              echo "🔑 Generating application key..."
+              php artisan key:generate --force
+              echo "✅ Application key generated"
+            else
+              echo "✅ Application key already exists"
+            fi
 
-
-            # Create storage directories
+            # Create required storage directories
+            echo "📁 Creating storage directories..."
             mkdir -p storage/{app,framework/{cache,sessions,views},logs}
             mkdir -p bootstrap/cache
+            echo "✅ Storage directories created"
 
-            # Put in maintenance mode
-            php artisan down --retry=60 || echo "Could not put in maintenance mode"
+            # Check if we can connect to database before proceeding
+            echo "🔍 Checking database connection..."
+            if php artisan migrate:status > /dev/null 2>&1; then
+              echo "✅ Database connection successful"
 
-            # Run migrations
-            echo "🔄 Running migrations..."
-            php artisan migrate --force
-            php artisan tenants:migrate --force || echo "No tenant migrations"
+              # Put in maintenance mode (only if not first deployment)
+              if [ -f "storage/framework/down" ] || [ -f "bootstrap/cache/config.php" ]; then
+                php artisan down --retry=60 || echo "Could not put in maintenance mode"
+              fi
 
-            # Clear and cache
-            php artisan optimize:clear
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+              # Run migrations
+              echo "🔄 Running migrations..."
+              php artisan migrate --force
 
-            # Set permissions
+              # Run tenant migrations if available
+              php artisan tenants:migrate --force || echo "No tenant migrations found"
+
+              echo "✅ Migrations completed"
+            else
+              echo "⚠️  Database connection failed - skipping migrations"
+              echo "⚠️  Please configure your .env file with correct database settings"
+              echo "⚠️  Then manually run: php artisan migrate --force"
+            fi
+
+            # Clear and cache configurations (only if database is connected)
+            echo "🧹 Clearing and caching configurations..."
+            php artisan optimize:clear || echo "Optimize clear failed - this is normal for first deployment"
+
+            # Only cache if database connection works
+            if php artisan migrate:status > /dev/null 2>&1; then
+              php artisan config:cache || echo "Config cache failed"
+              php artisan route:cache || echo "Route cache failed"
+              php artisan view:cache || echo "View cache failed"
+              echo "✅ Configurations cached"
+            else
+              echo "⚠️  Skipping configuration caching due to database connection issues"
+            fi
+
+            # Set proper permissions
+            echo "🔒 Setting file permissions..."
             sudo chown -R www-data:www-data storage bootstrap/cache
             sudo chmod -R 775 storage bootstrap/cache
+            sudo chown -R $USER:$USER $APP_DIR
+            echo "✅ Permissions set"
 
-            # Restart services
-            sudo supervisorctl restart compasse-worker:* || echo "Supervisor restart failed"
-            sudo systemctl reload nginx
+            # Install or restart supervisor workers (create config if not exists)
+            echo "⚙️  Configuring supervisor workers..."
+            if [ ! -f "/etc/supervisor/conf.d/compasse-worker.conf" ]; then
+              echo "📝 Creating supervisor configuration..."
+              sudo tee /etc/supervisor/conf.d/compasse-worker.conf > /dev/null <<EOF
+            [program:compasse-worker]
+            process_name=%(program_name)s_%(process_num)02d
+            command=php $APP_DIR/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+            autostart=true
+            autorestart=true
+            stopasgroup=true
+            killasgroup=true
+            user=www-data
+            numprocs=2
+            redirect_stderr=true
+            stdout_logfile=$APP_DIR/storage/logs/worker.log
+            stopwaitsecs=3600
+            EOF
+              sudo supervisorctl reread
+              sudo supervisorctl update
+              echo "✅ Supervisor configuration created"
+            fi
+
+            sudo supervisorctl restart compasse-worker:* || echo "Supervisor restart failed - may not be configured yet"
+
+            # Reload Nginx
+            echo "🔄 Reloading Nginx..."
+            sudo nginx -t && sudo systemctl reload nginx || echo "Nginx reload failed - please check configuration"
 
             # Take out of maintenance mode
-            php artisan up
+            if [ -f "storage/framework/down" ]; then
+              php artisan up || echo "Could not take out of maintenance mode"
+              echo "✅ Application is now live"
+            fi
 
-            echo "✅ Compasse deployment completed!"
+            echo ""
+            echo "🎉 Compasse deployment completed!"
+            echo ""
+            echo "📋 NEXT STEPS (IMPORTANT):"
+            echo "1. SSH into your server: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+            echo "2. Edit your .env file: nano /var/www/compasse/.env"
+            echo "3. Configure your database settings, S3 credentials, etc."
+            echo "4. Run migrations: cd /var/www/compasse && php artisan migrate --force"
+            echo "5. Run tenant migrations: php artisan tenants:migrate --force"
+            echo "6. Test your application: visit your domain"
+            echo ""
+            echo "💡 Your application files are deployed at: /var/www/compasse"
+            echo "💡 Logs are available at: /var/www/compasse/storage/logs/"

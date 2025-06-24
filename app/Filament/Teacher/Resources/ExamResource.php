@@ -117,28 +117,19 @@ class ExamResource extends Resource
     public static function table(Table $table): Table
     {
         $academy = AcademicYear::whereStatus('true')->first();
-        $term = Term::whereStatus('true')->first();
-        $userId = Auth::id();
-        $user = User::whereId($userId)->first();
-        $teacher = Teacher::where("email",$user->email)->first();
-        // Start with the base query
-        $query = Exam::query();
+    $term = Term::whereStatus('true')->first();
+    $userId = Auth::id();
+    $user = User::whereId($userId)->first();
+    $teacher = Teacher::where("email", $user->email)->first();
 
-        // Apply filters separately based on whether $academy and $term are available
-        // if ($academy) {
-        //     $query->where('academic_year_id', $academy->id);
-        // }
-
-        // if ($term) {
-        //     $query->where('term_id', $term->id);
-        // }
-
-        return $table
-            ->query($query->whereHas('subject', function($q) use ($teacher) {
-                $q->whereHas('teacher', function($subQ) use ($teacher) {
-                    $subQ->where('id', $teacher->id);
-                });
-            })) // Apply the filtered query to the table
+    return $table
+        ->modifyQueryUsing(function (Builder $query) use ($teacher) {
+            // Add eager loading and optimize the relationship query
+            $query->with(['academic', 'term', 'subject.class', 'resultType'])
+                  ->whereHas('subject', function($q) use ($teacher) {
+                      $q->where('teacher_id', $teacher->id);
+                  });
+        }) // Apply the filtered query to the table
             ->columns([
                 TextColumn::make('academic.title')->searchable(),
                 TextColumn::make('term.name')->searchable()->default('Term 1'),

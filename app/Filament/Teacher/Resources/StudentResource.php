@@ -173,28 +173,24 @@ class StudentResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
-        ->modifyQueryUsing(function (Builder $query) {
-            $user = Auth::user();
-            if ($user) {
-                $teacher = Teacher::where('email', $user->email)->first();
+        return  $table
+            ->modifyQueryUsing(function (Builder $query) {
+                $teacher = static::getCachedTeacher();
                 if ($teacher) {
-                    $classIds = $teacher->classes()->pluck('id');
+                    $classIds = cache()->remember(
+                        "teacher_classes_{$teacher->id}",
+                        600, // 10 minutes
+                        fn() => $teacher->classes()->pluck('id')
+                    );
+
                     if ($classIds->isNotEmpty()) {
-                        $query->whereIn('class_id', $classIds);
+                        $query->with(['class', 'arm', 'guardian'])
+                              ->whereIn('class_id', $classIds);
                     } else {
-                        // Return an empty result if no classes are associated with the teacher
-                        $query->whereRaw('1 = 0'); // Always false condition
+                        $query->whereRaw('1 = 0');
                     }
-                } else {
-                    // Return an empty result if no teacher is found
-                    $query->whereRaw('1 = 0'); // Always false condition
                 }
-            } else {
-                // Return an empty result if no authenticated user
-                $query->whereRaw('1 = 0'); // Always false condition
-            }
-        })
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),

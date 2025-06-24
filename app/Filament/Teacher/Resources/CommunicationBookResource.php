@@ -112,17 +112,27 @@ class CommunicationBookResource extends Resource
 
 
     public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-        $user = User::whereId(Auth::id())->first();
-        $teacher = Teacher::with('arm')->whereEmail($user->email)->first();
-        // Teachers see only their students' communication books
+{
+    $query = parent::getEloquentQuery();
 
+    // Cache this lookup to avoid repeated queries
+    $teacher = cache()->remember(
+        'teacher_' . Auth::id(),
+        300, // 5 minutes
+        function() {
+            $user = User::whereId(Auth::id())->first();
+            return Teacher::with('arm')->whereEmail($user->email)->first();
+        }
+    );
 
-            return $query->where('teacher_id',$teacher->id);
-
-
+    if ($teacher) {
+        // Add eager loading
+        return $query->with(['student.class', 'student.arm', 'teacher'])
+                    ->where('teacher_id', $teacher->id);
     }
+
+    return $query;
+}
 
 
     public static function infolist(Infolist $infolist): Infolist

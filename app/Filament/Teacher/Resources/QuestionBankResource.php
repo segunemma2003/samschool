@@ -3,7 +3,6 @@
 namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\QuestionBankResource\Pages;
-use App\Filament\Teacher\Resources\QuestionBankResource\RelationManagers;
 use App\Models\AcademicYear;
 use App\Models\Exam;
 use App\Models\QuestionBank;
@@ -20,36 +19,58 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
-class QuestionBankResource extends Resource implements OptimizedTeacherLookup
+class QuestionBankResource extends Resource
 {
-     use OptimizedTeacherLookup;
+    use OptimizedTeacherLookup;
 
     protected static ?string $model = QuestionBank::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
-
     protected static ?string $label = 'Questions';
-
     protected static ?string $navigationGroup = 'Exams';
 
     public static function form(Form $form): Form
-{
+    {
+        try {
+            // Cache the academic year and term lookups
+            $academy = Cache::remember('current_academy', 300, function() {
+                return AcademicYear::where('status', 'true')->first();
+            });
 
-    $academy = AcademicYear::whereStatus('true')->first();
-    $term = Term::whereStatus('true')->first();
-    $exams = Exam::where('term_id', $term->id)
-                ->where('academic_year_id', $academy->id)
-                ->get()
-                ->mapWithKeys(function ($exam) {
-                    return [$exam->id => "{$exam->subject->code} - {$exam->assessment_type} - ({$exam->term->name}) - {$exam->academic->title}"];
-                });
-                // ->pluck('subject.code', 'id');
+            $term = Cache::remember('current_term', 300, function() {
+                return Term::where('status', 'true')->first();
+            });
 
-            return  $form
-            ->schema([
+            // Early return if no academy or term
+            if (!$academy || !$term) {
+                Log::warning('No active academic year or term found');
+                return $form->schema([
+                    Forms\Components\Placeholder::make('no_data')
+                        ->content('No active academic year or term found. Please contact administrator.')
+                ]);
+            }
+
+            // Get exams with better error handling
+            $exams = Cache::remember("exams_term_{$term->id}_academy_{$academy->id}", 300, function() use ($term, $academy) {
+                return Exam::with(['subject:id,code', 'term:id,name', 'academic:id,title'])
+                    ->where('term_id', $term->id)
+                    ->where('academic_year_id', $academy->id)
+                    ->get()
+                    ->mapWithKeys(function ($exam) {
+                        $subjectCode = $exam->subject?->code ?? 'Unknown Subject';
+                        $assessmentType = $exam->assessment_type ?? 'Unknown';
+                        $termName = $exam->term?->name ?? 'Unknown Term';
+                        $academyTitle = $exam->academic?->title ?? 'Unknown Year';
+
+                        return [$exam->id => "{$subjectCode} - {$assessmentType} - ({$termName}) - {$academyTitle}"];
+                    })
+                    ->toArray();
+            });
+
+            return $form->schema([
                 Forms\Components\Select::make('exam_id')
                     ->label('Select Exam')
                     ->options($exams)
@@ -102,7 +123,8 @@ class QuestionBankResource extends Resource implements OptimizedTeacherLookup
                                     ->directory('exam_images'),
 
                                 Forms\Components\Checkbox::make('is_correct')
-                                    ->label('Correct Answer')->fixIndistinctState(),
+                                    ->label('Correct Answer')
+                                    ->fixIndistinctState(),
                             ])
                             ->hidden(fn (callable $get) => $get('question_type') === 'open_ended')
                             ->columnSpan('full')
@@ -141,176 +163,72 @@ class QuestionBankResource extends Resource implements OptimizedTeacherLookup
                     ->required(),
             ]);
 
-    // return $form
-    //     ->schema([
-    //         Forms\Components\Select::make('exam_id')
-    //             ->label('Select Exam')
-    //             ->options($exams)
-    //             ->preload()
-    //             ->searchable()
-    //             ->required(),
+        } catch (\Exception $e) {
+            Log::error('Error in QuestionBankResource form: ' . $e->getMessage());
 
-    //         Forms\Components\Repeater::make('questions')
-    //             ->schema([
-    //                 Forms\Components\Textarea::make('question')
-    //                     ->required()
-    //                     ->label('Question')
-    //                     ->rows(3)
-    //                     ->columnSpan('full'),
-
-    //                     Forms\Components\Select::make('question_type')
-    //                     ->options([
-    //                         'multiple_choice' => 'Multiple Choice',
-    //                         'true_false' => 'True/False',
-    //                         'open_ended' => 'Open-Ended',
-    //                     ])
-    //                     ->required()
-    //                     ->reactive()
-    //                     ->searchable()
-    //                     ->afterStateUpdated(function (callable $get, callable $set) {
-    //                         // Initialize options with A if multiple_choice type is selected
-    //                         if ($get('type') === 'multiple_choice') {
-    //                             // Set initial option with key A
-    //                             $set('options', ['' => '']); // Correctly setting initial values
-    //                         }else if($get('type') === 'true_false'){
-    //                             $set('options', ['A' => 'True', 'B'=> 'False']);
-    //                          } else {
-    //                             $set('options', []); // Clear options if not multiple_choice
-    //                         }
-    //                     }),
-    //                 // Use the KeyValue component for options
-    //                 KeyValue::make('options')
-    //                 ->keyLabel('Option Key')   // Label for the key
-    //                 ->valueLabel('Option Text') // Label for the value
-    //                 ->required()
-    //                 ->reorderable()
-    //                 ->hidden(fn (callable $get) => (($get('question_type') !== 'multiple_choice')&& ($get('question_type') !== 'true_false')))
-
-    //                 ->columnSpan('full'), // Optional: to control column span
-
-
-    //                 Forms\Components\Textarea::make('answer')
-    //                     ->label('Answer')->required(),
-
-    //                 Forms\Components\TextInput::make('mark')
-    //                     ->numeric()
-    //                     ->default(1)
-    //                     ->label('Mark')
-    //                     ->columnSpan('full'),
-
-    //                 Forms\Components\Textarea::make('hint')
-    //                     ->nullable()
-    //                     ->label('Hint')
-    //                     ->columnSpan('full'),
-
-    //                 FileUpload::make('image')
-    //                     ->label('Image')
-    //                     ->disk('s3') // Specify Cloudinary as the storage disk
-    //                     ->nullable()
-    //                     ->image() // Restrict to image files
-    //                     ->directory('exam_images') // Optional: specify a directory in Cloudinary
-    //                     ->columnSpan('full'),
-    //             ])
-    //             ->columnSpanFull()
-    //             ->minItems(1)
-    //             ->collapsible()
-    //             ->maxItems(100)
-    //             ->required(),
-    //     ]);
-}
+            return $form->schema([
+                Forms\Components\Placeholder::make('error')
+                    ->content('An error occurred while loading the form. Please try again.')
+            ]);
+        }
+    }
 
     public static function table(Table $table): Table
     {
         return $table
-        ->modifyQueryUsing(function (Builder $query) {
-                $teacher = static::getCurrentTeacher();
+            ->modifyQueryUsing(function (Builder $query) {
+                try {
+                    $teacher = static::getCurrentTeacher();
 
-                if ($teacher) {
-                    $query->with(['exam.subject.class', 'exam.subject.teacher'])
-                          ->whereHas('exam.subject.teacher', function (Builder $subQuery) use ($teacher) {
-                              $subQuery->where('id', $teacher->id);
-                          });
+                    if ($teacher) {
+                        $query->with([
+                            'exam:id,subject_id,assessment_type,term_id,academic_year_id',
+                            'exam.subject:id,code,class_id,teacher_id',
+                            'exam.subject.class:id,name',
+                            'exam.subject.teacher:id,name'
+                        ])
+                        ->whereHas('exam.subject', function (Builder $subQuery) use ($teacher) {
+                            $subQuery->where('teacher_id', $teacher->id);
+                        });
+                    } else {
+                        // If no teacher found, return empty result
+                        $query->whereRaw('0 = 1');
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error in QuestionBankResource table query: ' . $e->getMessage());
+                    // Return empty result on error
+                    $query->whereRaw('0 = 1');
                 }
             })
             ->columns([
                 TextColumn::make('exam.subject.code')
-                ->label('Subject')
-                ->searchable(),
+                    ->label('Subject')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('exam.subject.class.name')
-                ->label('Class')
-                ->searchable(),
-                 TextColumn::make('exam.subject.teacher.name')
-                ->label('Teacher')
-                ->searchable(),
+                    ->label('Class')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('exam.subject.teacher.name')
+                    ->label('Teacher')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('exam.assessment_type')
+                    ->label('Assessment Type')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('question_type')
+                    ->label('Question Type')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('marks')
+                    ->label('Marks')
+                    ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                // Tables\Actions\EditAction::make()->form([
-                //     Forms\Components\Textarea::make('question')
-                //         ->required()
-                //         ->label('Question')
-                //         ->rows(3)
-                //         ->columnSpan('full'),
-
-                //         Forms\Components\Select::make('question_type')
-                //         ->options([
-                //             'multiple_choice' => 'Multiple Choice',
-                //             'true_false' => 'True/False',
-                //             'open_ended' => 'Open-Ended',
-                //         ])
-                //         ->required()
-                //         ->reactive()
-                //         ->searchable()
-                //         ->afterStateUpdated(function (callable $get, callable $set, $record) {
-                //             // Initialize options with A if multiple_choice type is selected
-                //             if ($get('question_type') === 'multiple_choice') {
-                //                 // Set initial option with key A
-                //                 $set('options', $record->options? json_decode($record->options, true): [''=>'']); // Correctly setting initial values
-                //             }else if($get('question_type') === 'true_false'){
-                //                 $set('options', ['A' => 'True', 'B'=> 'False']);
-                //             } else {
-                //                 $set('options', []); // Clear options if not multiple_choice
-                //             }
-                //         }),
-                //     // Use the KeyValue component for options
-                //     KeyValue::make('options')
-                //     ->keyLabel('Option Key')   // Label for the key
-                //     ->valueLabel('Option Text') // Label for the value
-                //     ->required()
-                //     ->reorderable()
-                //     ->hidden(fn (callable $get) => (($get('question_type') !== 'multiple_choice')&& ($get('question_type') !== 'true_false')))
-                //     ->formatStateUsing(fn ($state) => is_array($state) ? $state : json_decode($state, true))
-                //     ->columnSpan('full'), // Optional: to control column span
-
-
-                //     Forms\Components\Textarea::make('answer')
-                //         ->label('Answer'),
-
-                //     Forms\Components\Textarea::make('hint')
-                //         ->nullable()
-                //         ->label('Hint')
-                //         ->columnSpan('full'),
-
-                //     FileUpload::make('image')
-                //         ->label('Image')
-                //         ->disk('s3') // Specify Cloudinary as the storage disk
-                //         ->nullable()
-                //         ->image() // Restrict to image files
-                //         ->directory('exam_images') // Optional: specify a directory in Cloudinary
-                //         ->columnSpan('full'),
-
-                // ]) ->mutateRecordDataUsing(function (array $data, $record) {
-                //     // Modify or process data before saving
-                //     if (isset($data['options']) && is_array($data['options'])) {
-                //         $data['options'] = json_encode($data['options']); // Convert options to JSON
-                //     }
-
-                //     return $data;
-
-                // }),
-
                 Tables\Actions\EditAction::make()
                     ->form([
                         Forms\Components\Textarea::make('question')
@@ -363,7 +281,8 @@ class QuestionBankResource extends Resource implements OptimizedTeacherLookup
                                     ->directory('exam_images'),
 
                                 Forms\Components\Checkbox::make('is_correct')
-                                    ->label('Correct Answer')->fixIndistinctState(),
+                                    ->label('Correct Answer')
+                                    ->fixIndistinctState(),
                             ])
                             ->hidden(fn (callable $get) => $get('question_type') === 'open_ended')
                             ->columnSpan('full')
@@ -371,7 +290,6 @@ class QuestionBankResource extends Resource implements OptimizedTeacherLookup
                             ->maxItems(10)
                             ->collapsible()
                             ->formatStateUsing(function ($state) {
-                                // dd($state);
                                 if (is_string($state)) {
                                     return json_decode($state, true) ?? [];
                                 }
@@ -425,12 +343,11 @@ class QuestionBankResource extends Resource implements OptimizedTeacherLookup
                                 }
                             }
                         } else {
-                            $data['options'] = []; // Keep it as an array, not JSON
+                            $data['options'] = [];
                         }
 
-                        return $data; //
-                })
-
+                        return $data;
+                    })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -454,8 +371,4 @@ class QuestionBankResource extends Resource implements OptimizedTeacherLookup
             // 'edit' => Pages\EditQuestionBank::route('/{record}/edit'),
         ];
     }
-
-    // Hook to handle saving questions and options
-
-
 }

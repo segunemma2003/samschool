@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 
-class QuestionBankResource extends Resource
+class QuestionBankResource extends Resource implements OptimizedTeacherLookup
 {
      use OptimizedTeacherLookup;
 

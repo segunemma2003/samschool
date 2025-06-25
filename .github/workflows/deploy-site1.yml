@@ -42,6 +42,24 @@ jobs:
             git clean -fd
             echo "✅ Code updated successfully"
 
+            # Fix case-sensitive filename conflicts (ADDED)
+            echo "🔧 Fixing filename case conflicts..."
+
+            # Remove duplicate EBooks/Ebooks files if they exist
+            if [ -d "app/Filament/Ourstudent/Resources/EBooksResource" ] && [ -d "app/Filament/Ourstudent/Resources/EbooksResource" ]; then
+                echo "⚠️ Found duplicate EBooks/Ebooks directories, removing conflicting files..."
+
+                # Remove the incorrectly cased directory (keep the one that matches your intended naming)
+                # Assuming you want to keep "EbooksResource" (lowercase b)
+                sudo rm -rf app/Filament/Ourstudent/Resources/EBooksResource
+                echo "✅ Removed duplicate EBooksResource directory"
+            fi
+
+            # Alternative: if you want to keep EBooksResource (capital B), use this instead:
+            # sudo rm -rf app/Filament/Ourstudent/Resources/EbooksResource
+
+            echo "✅ Filename conflicts resolved"
+
             # Fix file permissions (ADDED THIS SECTION)
             echo "🔐 Setting proper file permissions..."
 

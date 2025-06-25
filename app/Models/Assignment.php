@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
+use App\Services\S3FileService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Assignment extends Model
 {
@@ -72,6 +74,56 @@ class Assignment extends Model
                 'updated_at'
             ])
             ->withTimestamps();
+    }
+
+    // S3 FILE HANDLING METHODS
+    public function getFileUrlAttribute(): ?string
+    {
+        if (!$this->file) {
+            return null;
+        }
+
+        $s3Service = app(S3FileService::class);
+        return $s3Service->getTemporaryUrl($this->file, 10); // 10-minute expiry
+    }
+
+    public function getFileMetadata(): ?array
+    {
+        if (!$this->file) {
+            return null;
+        }
+
+        $s3Service = app(S3FileService::class);
+        return $s3Service->getFileMetadata($this->file);
+    }
+
+    public function hasFile(): bool
+    {
+        if (!$this->file) {
+            return false;
+        }
+
+        $s3Service = app(S3FileService::class);
+        return $s3Service->fileExists($this->file);
+    }
+
+    public function getFilename(): ?string
+    {
+        if (!$this->file) {
+            return null;
+        }
+
+        return basename($this->file);
+    }
+
+    public function downloadFile(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        if (!$this->file) {
+            abort(404, 'File not found');
+        }
+
+        $s3Service = app(S3FileService::class);
+        return $s3Service->downloadFile($this->file, $this->getFilename());
     }
 
     // PERFORMANCE SCOPES - FIXED PIVOT QUERIES
@@ -202,19 +254,10 @@ class Assignment extends Model
         };
     }
 
-    public function getFileUrlAttribute(): ?string
-    {
-        if (!$this->file) {
-            return null;
-        }
-
-        return Storage::disk('s3')->url($this->file);
-    }
-
     public function getExcerptAttribute(): string
     {
         if ($this->description) {
-            return \Str::limit(strip_tags($this->description), 100);
+            return Str::limit(strip_tags($this->description), 100);
         }
 
         return 'No description provided';
@@ -314,7 +357,7 @@ class Assignment extends Model
 
         return Cache::remember($cacheKey, 300, function () {
             // Get all submissions for this assignment
-            $submissions = \DB::table('assignment_student')
+            $submissions = DB::table('assignment_student')
                 ->where('assignment_id', $this->id)
                 ->get();
 
@@ -362,8 +405,9 @@ class Assignment extends Model
 
         static::deleting(function ($assignment) {
             // Clean up file when assignment is deleted
-            if ($assignment->file && Storage::disk('s3')->exists($assignment->file)) {
-                Storage::disk('s3')->delete($assignment->file);
+            if ($assignment->file) {
+                $s3Service = app(S3FileService::class);
+                $s3Service->deleteFile($assignment->file);
             }
 
             // Clear caches

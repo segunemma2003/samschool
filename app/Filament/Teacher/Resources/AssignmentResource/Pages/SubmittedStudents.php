@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 
 class SubmittedStudents extends Page implements HasTable
 {
@@ -51,21 +52,20 @@ class SubmittedStudents extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('download_submissions')
-                ->label('Download All Submissions')
-                ->icon('heroicon-m-arrow-down-tray')
-                ->color('primary')
-                ->action(function () {
-                    // Implementation for downloading all submissions
-                    $this->downloadAllSubmissions();
-                }),
+            // Actions\Action::make('download_submissions')
+            //     ->label('Download All Submissions')
+            //     ->icon('heroicon-m-arrow-down-tray')
+            //     ->color('primary')
+            //     ->url(function () {
+            //         return route('secure.download.all.submissions', ['assignment' => $this->record->id]);
+            //     })
+            //     ->openUrlInNewTab(true),
 
             Actions\Action::make('export_grades')
                 ->label('Export Grades')
                 ->icon('heroicon-m-table-cells')
                 ->color('success')
                 ->action(function () {
-                    // Implementation for exporting grades
                     $this->exportGrades();
                 }),
 
@@ -81,14 +81,26 @@ class SubmittedStudents extends Page implements HasTable
     {
         return $table
             ->query(
+                // Get students who have submitted this assignment
                 Student::query()
                     ->whereHas('assignments', function (Builder $query) {
                         $query->where('assignment_id', $this->record->id);
                     })
                     ->with([
                         'assignments' => function ($query) {
-                            $query->where('assignment_id', $this->record->id);
-                        }
+                            $query->where('assignment_id', $this->record->id)
+                                ->withPivot([
+                                    'file',
+                                    'status',
+                                    'total_score',
+                                    'answer',
+                                    'comments_score',
+                                    'created_at',
+                                    'updated_at'
+                                ]);
+                        },
+                        'class:id,name',
+                        'arm:id,name'
                     ])
             )
             ->columns([
@@ -102,13 +114,24 @@ class SubmittedStudents extends Page implements HasTable
                     ->label('Student Name')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->formatStateUsing(fn (?string $state): string => $state ?: 'Unknown Student'),
 
                 TextColumn::make('registration_number')
                     ->label('Reg. Number')
                     ->searchable()
                     ->copyable()
-                    ->copyMessage('Registration number copied'),
+                    ->copyMessage('Registration number copied')
+                    ->formatStateUsing(fn (?string $state): string => $state ?: 'N/A'),
+
+                TextColumn::make('class.name')
+                    ->label('Class')
+                    ->icon('heroicon-m-academic-cap')
+                    ->formatStateUsing(fn (?string $state): string => $state ?: 'No Class'),
+
+                TextColumn::make('arm.name')
+                    ->label('Arm')
+                    ->formatStateUsing(fn (?string $state): string => $state ?: 'No Arm'),
 
                 BadgeColumn::make('submission_status')
                     ->label('Status')
@@ -136,7 +159,8 @@ class SubmittedStudents extends Page implements HasTable
                         $submission = $record->assignments->first()?->pivot;
                         return $submission?->updated_at?->format('M j, Y g:i A');
                     })
-                    ->placeholder('Not submitted'),
+                    ->placeholder('Not submitted')
+                    ->sortable(),
 
                 TextColumn::make('total_score')
                     ->label('Score')
@@ -166,7 +190,23 @@ class SubmittedStudents extends Page implements HasTable
                             $percentage >= 60 => 'warning',
                             default => 'danger',
                         };
-                    }),
+                    })
+                    ->sortable(),
+
+                TextColumn::make('percentage')
+                    ->label('Percentage')
+                    ->getStateUsing(function (Student $record): string {
+                        $submission = $record->assignments->first()?->pivot;
+                        $score = $submission?->total_score;
+
+                        if ($score === null || $this->record->weight_mark == 0) {
+                            return 'N/A';
+                        }
+
+                        $percentage = ($score / $this->record->weight_mark) * 100;
+                        return number_format($percentage, 1) . '%';
+                    })
+                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -182,30 +222,27 @@ class SubmittedStudents extends Page implements HasTable
 
                         return $query->whereHas('assignments', function (Builder $q) use ($data) {
                             $q->where('assignment_id', $this->record->id)
-                              ->where('status', $data['value']);
+                              ->where('assignment_student.status', $data['value']);
                         });
                     }),
+
+                SelectFilter::make('class')
+                    ->relationship('class', 'name')
+                    ->preload()
+                    ->searchable(),
             ])
             ->actions([
                 Action::make('view_submission')
                     ->label('View')
                     ->icon('heroicon-m-eye')
                     ->color('info')
-                    ->modalHeading('Student Submission')
-                    ->modalContent(function (Student $record) {
-                        $submission = $record->assignments->first()?->pivot;
-
-                        if (!$submission) {
-                            return view('filament.teacher.modals.no-submission');
-                        }
-
-                        return view('filament.teacher.modals.submission-details', [
-                            'student' => $record,
-                            'submission' => $submission,
-                            'assignment' => $this->record,
+                    ->url(function (Student $record): string {
+                        return static::getResource()::getUrl('view-submission', [
+                            'assignment' => $this->record->id,
+                            'student' => $record->id,
                         ]);
                     })
-                    ->modalWidth('4xl'),
+                    ->openUrlInNewTab(false),
 
                 Action::make('grade')
                     ->label('Grade')
@@ -237,10 +274,13 @@ class SubmittedStudents extends Page implements HasTable
                         $record->assignments()->updateExistingPivot($this->record->id, [
                             'total_score' => $data['total_score'],
                             'comments_score' => $data['comments_score'] ?? null,
-                            'status' => 'submitted', // Update status to submitted if graded
+                            'status' => 'submitted',
                         ]);
 
-                        $this->notify('success', 'Grade updated successfully!');
+                        Notification::make()
+                            ->title('Grade updated successfully!')
+                            ->success()
+                            ->send();
                     })
                     ->visible(fn (Student $record): bool =>
                         $record->assignments->first()?->pivot !== null
@@ -257,7 +297,10 @@ class SubmittedStudents extends Page implements HasTable
                             return Storage::disk('s3')->download($submission->file);
                         }
 
-                        $this->notify('warning', 'No file submitted by this student.');
+                        Notification::make()
+                            ->title('No file submitted by this student.')
+                            ->warning()
+                            ->send();
                     })
                     ->visible(fn (Student $record): bool =>
                         $record->assignments->first()?->pivot?->file !== null
@@ -288,33 +331,33 @@ class SubmittedStudents extends Page implements HasTable
                             ]);
                         }
 
-                        $this->notify('success', 'Bulk grading completed successfully!');
+                        Notification::make()
+                            ->title('Bulk grading completed successfully!')
+                            ->success()
+                            ->send();
                     }),
             ])
             ->emptyStateIcon('heroicon-o-clipboard-document-list')
             ->emptyStateHeading('No submissions yet')
             ->emptyStateDescription('Students haven\'t submitted their assignments yet.')
             ->striped()
-            ->paginated();
+            ->paginated()
+            ->defaultSort('name', 'asc');
     }
 
     private function downloadAllSubmissions(): void
     {
-        // Implementation for downloading all submissions as a ZIP file
-        $this->notify('info', 'Download functionality will be implemented.');
+        Notification::make()
+            ->title('Download functionality will be implemented.')
+            ->info()
+            ->send();
     }
 
     private function exportGrades(): void
     {
-        // Implementation for exporting grades to Excel/CSV
-        $this->notify('info', 'Export functionality will be implemented.');
-    }
-
-    private function notify(string $type, string $message): void
-    {
-        \Filament\Notifications\Notification::make()
-            ->title($message)
-            ->{$type}()
+        Notification::make()
+            ->title('Export functionality will be implemented.')
+            ->info()
             ->send();
     }
 }

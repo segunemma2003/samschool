@@ -4,6 +4,7 @@ namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Teacher\Resources\AssignmentResource\Pages;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\SubmittedStudents;
+use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewAssignmentSubmission;
 use App\Models\AcademicYear;
 use App\Models\Assignment;
 use App\Models\SchoolClass;
@@ -717,6 +718,7 @@ class AssignmentResource extends Resource
             'create' => Pages\CreateAssignment::route('/create'),
             'edit' => Pages\EditAssignment::route('/{record}/edit'),
             'view' => SubmittedStudents::route('/{record}/submissions'),
+            'view-submission' => ViewAssignmentSubmission::route('/{assignment}/submissions/{student}'),
         ];
     }
 

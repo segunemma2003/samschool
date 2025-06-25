@@ -12,6 +12,21 @@ class Student extends Model
     use HasFactory, HasRoles;
     protected $guarded = ['id'];
 
+
+     public function guardian()
+    {
+        // Choose the appropriate relationship type:
+
+        // If one student has one guardian:
+        return $this->belongsTo(Guardians::class);
+
+        // If one student can have multiple guardians:
+        // return $this->hasMany(Guardian::class);
+
+        // // If many students can have many guardians (many-to-many):
+        // return $this->belongsToMany(Guardian::class);
+    }
+
     public function class()
     {
         return $this->belongsTo(SchoolClass::class, 'class_id');

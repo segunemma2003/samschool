@@ -42,11 +42,54 @@ jobs:
             git clean -fd
             echo "✅ Code updated successfully"
 
+            # Fix file permissions (ADDED THIS SECTION)
+            echo "🔐 Setting proper file permissions..."
+
+            # Ensure storage and bootstrap/cache directories exist
+            sudo mkdir -p storage/framework/{sessions,views,cache,testing}
+            sudo mkdir -p storage/logs
+            sudo mkdir -p storage/app/public
+            sudo mkdir -p bootstrap/cache
+
+            # Set ownership to web server user
+            sudo chown -R www-data:www-data storage/
+            sudo chown -R www-data:www-data bootstrap/cache/
+
+            # Set proper permissions
+            sudo chmod -R 775 storage/
+            sudo chmod -R 775 bootstrap/cache/
+
+            # Ensure the web server can write to these directories
+            sudo chmod -R g+w storage/
+            sudo chmod -R g+w bootstrap/cache/
+
+            # Set executable permissions on artisan
+            sudo chmod +x artisan
+
+            echo "✅ File permissions set correctly"
+
             # Update Composer dependencies
             echo "📦 Updating dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
             composer dump-autoload --optimize
             echo "✅ Dependencies updated"
+
+            # Clear Laravel caches before fixing permissions again
+            echo "🧹 Clearing application caches..."
+            php artisan optimize:clear
+            php artisan view:clear
+            php artisan cache:clear
+            php artisan config:clear
+            php artisan route:clear
+            echo "✅ Caches cleared"
+
+            # Fix permissions again after clearing caches (IMPORTANT)
+            echo "🔐 Re-setting permissions after cache clear..."
+            sudo chown -R www-data:www-data storage/
+            sudo chown -R www-data:www-data bootstrap/cache/
+            sudo chmod -R 775 storage/
+            sudo chmod -R 775 bootstrap/cache/
+            echo "✅ Permissions re-applied"
 
             # Handle migration conflicts before running migrations
             echo "🔍 Checking for migration conflicts..."
@@ -121,6 +164,19 @@ jobs:
             php artisan view:cache
             echo "✅ Configurations cached (routes skipped for stability)"
 
+            # Final permission fix after all operations (CRITICAL)
+            echo "🔐 Final permission check and fix..."
+            sudo chown -R www-data:www-data storage/
+            sudo chown -R www-data:www-data bootstrap/cache/
+            sudo chmod -R 775 storage/
+            sudo chmod -R 775 bootstrap/cache/
+
+            # Verify permissions were set correctly
+            echo "📋 Verifying permissions..."
+            ls -la storage/framework/views/ || echo "Views directory verification failed"
+            ls -la bootstrap/cache/ || echo "Bootstrap cache verification failed"
+            echo "✅ Final permissions applied"
+
             # Restart queue workers
             echo "🔄 Restarting queue workers..."
             php artisan queue:restart
@@ -150,6 +206,7 @@ jobs:
             echo "🎉 Application update completed successfully!"
             echo "📊 Summary:"
             echo "  ✅ Code pulled from GitHub"
+            echo "  ✅ File permissions fixed"
             echo "  ✅ Dependencies updated"
             echo "  ✅ Database migrations handled"
             echo "  ✅ Tenant migrations handled"
@@ -193,8 +250,10 @@ jobs:
 
               sudo cp -r "$LATEST_BACKUP" /var/www/compasse || echo "Could not restore backup"
 
-              # Fix permissions
+              # Fix permissions after rollback (ADDED)
+              echo "🔐 Fixing permissions after rollback..."
               sudo chown -R www-data:www-data /var/www/compasse/storage /var/www/compasse/bootstrap/cache 2>/dev/null || true
+              sudo chmod -R 775 /var/www/compasse/storage /var/www/compasse/bootstrap/cache 2>/dev/null || true
               sudo chown -R $USER:$USER /var/www/compasse 2>/dev/null || true
 
               # Restart services safely
@@ -215,7 +274,7 @@ jobs:
                 sudo systemctl reload php8.4-fpm 2>/dev/null || true
               fi
 
-              echo "✅ Automatic rollback completed!"
+              echo "✅ Automatic rollback completed with permissions fixed!"
               echo "🔗 Your previous version should now be restored"
             else
               echo "❌ No backup found for rollback!"

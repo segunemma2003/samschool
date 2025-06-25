@@ -29,12 +29,16 @@ class SubjectResource extends Resource
     {
         return $form
             ->schema([
-                Select::make('subject_depot_id')
-                ->label('Subject')
-                ->options(SubjectDepot::all()->pluck('name', 'id'))
-                ->searchable()
-                ->preload()
-                ->required(),
+                 Select::make('subject_depot_id')
+                    ->label('Subject')
+                    ->options(function() {
+                        return cache()->remember('subject_depot_options', 300, function() {
+                            return SubjectDepot::all()->pluck('name', 'id');
+                        });
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->required(),
                 Forms\Components\Select::make('class_id')
                     ->label('Class Name')
                     ->options(SchoolClass::all()->pluck('name', 'id'))

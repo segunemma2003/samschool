@@ -174,27 +174,26 @@ class StudentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-        ->modifyQueryUsing(function (Builder $query) {
-            $user = Auth::user();
-            if ($user) {
-                $teacher = Teacher::where('email', $user->email)->first();
-                if ($teacher) {
-                    $classIds = $teacher->classes()->pluck('id');
-                    if ($classIds->isNotEmpty()) {
-                        $query->whereIn('class_id', $classIds);
+            ->modifyQueryUsing(function (Builder $query) {
+                $user = Auth::user();
+                if ($user) {
+                    $teacher = Teacher::where('email', $user->email)->first();
+                    if ($teacher) {
+                        $classIds = $teacher->classes()->pluck('id');
+                        if ($classIds->isNotEmpty()) {
+                            // Add eager loading here
+                            $query->with(['class', 'arm', 'guardian'])
+                                  ->whereIn('class_id', $classIds);
+                        } else {
+                            $query->whereRaw('1 = 0');
+                        }
                     } else {
-                        // Return an empty result if no classes are associated with the teacher
-                        $query->whereRaw('1 = 0'); // Always false condition
+                        $query->whereRaw('1 = 0');
                     }
                 } else {
-                    // Return an empty result if no teacher is found
-                    $query->whereRaw('1 = 0'); // Always false condition
+                    $query->whereRaw('1 = 0');
                 }
-            } else {
-                // Return an empty result if no authenticated user
-                $query->whereRaw('1 = 0'); // Always false condition
-            }
-        })
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),

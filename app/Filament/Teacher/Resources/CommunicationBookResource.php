@@ -67,7 +67,15 @@ class CommunicationBookResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+          return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                $user = User::whereId(Auth::id())->first();
+                $teacher = Teacher::with('arm')->whereEmail($user->email)->first();
+
+                // Add eager loading
+                $query->with(['student.class', 'student.arm', 'teacher'])
+                      ->where('teacher_id', $teacher->id);
+            })
             ->columns([
                 TextColumn::make('No')
                 ->rowIndex(),

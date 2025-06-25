@@ -69,10 +69,13 @@ class StudentAttendanceSummaryResource extends Resource
         $user = User::whereId(Auth::id())->first();
         $teacher = Teacher::whereEmail($user->email)->first();
         return $table
-        ->query(  StudentAttendanceSummary::query()
-        ->whereHas('student.class', function ($query) use ($teacher) {
-            $query->where('teacher_id', $teacher->id);
-        }))
+        ->query(
+                StudentAttendanceSummary::query()
+                    ->with(['student.class', 'term', 'academy'])
+                    ->whereHas('student.class', function ($query) use ($teacher) {
+                        $query->where('teacher_id', $teacher->id);
+                    })
+            )
             ->columns([
                 TextColumn::make('student.name')->searchable(),
                 TextColumn::make('term.name')->searchable(),

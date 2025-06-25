@@ -79,11 +79,14 @@ class AssignmentResource extends Resource
     {
         return $table
         ->modifyQueryUsing(function (Builder $query) {
-            $userId = Auth::user()->id;
-            $user = User::whereId($userId)->first();
-            $teacherId = Teacher::whereEmail($user->email)->first();
-            $query->where('teacher_id', $teacherId->id);
-        })
+                $userId = Auth::user()->id;
+                $user = User::whereId($userId)->first();
+                $teacherId = Teacher::whereEmail($user->email)->first();
+
+                // Add eager loading and optimize
+                $query->with(['class', 'term', 'academy', 'subject'])
+                      ->where('teacher_id', $teacherId->id);
+            })
             ->columns([
                 TextColumn::make('title'),
                 TextColumn::make('class.name'),

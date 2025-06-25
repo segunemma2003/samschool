@@ -116,29 +116,30 @@ class ExamResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $academy = AcademicYear::whereStatus('true')->first();
-        $term = Term::whereStatus('true')->first();
+        $academy = cache()->remember('current_academy', 300, function() {
+            return AcademicYear::whereStatus('true')->first();
+        });
+
+        $term = cache()->remember('current_term', 300, function() {
+            return Term::whereStatus('true')->first();
+        });
+
         $userId = Auth::id();
-        $user = User::whereId($userId)->first();
-        $teacher = Teacher::where("email",$user->email)->first();
-        // Start with the base query
-        $query = Exam::query();
-
-        // Apply filters separately based on whether $academy and $term are available
-        // if ($academy) {
-        //     $query->where('academic_year_id', $academy->id);
-        // }
-
-        // if ($term) {
-        //     $query->where('term_id', $term->id);
-        // }
+        $teacher = cache()->remember("teacher_for_user_{$userId}", 300, function() use ($userId) {
+            $user = User::whereId($userId)->first();
+            return Teacher::where("email", $user->email)->first();
+        });
 
         return $table
-            ->query($query->whereHas('subject', function($q) use ($teacher) {
-                $q->whereHas('teacher', function($subQ) use ($teacher) {
-                    $subQ->where('id', $teacher->id);
-                });
-            })) // Apply the filtered query to the table
+            ->query(
+                Exam::query()
+                    ->with(['academic', 'term', 'subject.class', 'resultType'])
+                    ->whereHas('subject', function($q) use ($teacher) {
+                        $q->whereHas('teacher', function($subQ) use ($teacher) {
+                            $subQ->where('id', $teacher->id);
+                        });
+                    })
+            )
             ->columns([
                 TextColumn::make('academic.title')->searchable(),
                 TextColumn::make('term.name')->searchable()->default('Term 1'),

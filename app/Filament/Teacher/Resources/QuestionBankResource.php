@@ -10,6 +10,7 @@ use App\Models\QuestionBank;
 use App\Models\Teacher;
 use App\Models\Term;
 use App\Models\User;
+use App\Traits\OptimizedTeacherLookup;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
@@ -24,6 +25,8 @@ use Illuminate\Support\Facades\Auth;
 
 class QuestionBankResource extends Resource
 {
+     use OptimizedTeacherLookup;
+
     protected static ?string $model = QuestionBank::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
@@ -220,17 +223,15 @@ class QuestionBankResource extends Resource
     {
         return $table
         ->modifyQueryUsing(function (Builder $query) {
-            $userId = Auth::user()->id;
-            $user = User::find($userId); // Fetch authenticated user
-            $teacher = Teacher::whereEmail($user->email)->first();
+                $teacher = static::getCurrentTeacher();
 
-            // Ensure the teacher record exists before applying filter
-            if ($teacher) {
-                $query->whereHas('exam.subject.teacher', function (Builder $subQuery) use ($teacher) {
-                    $subQuery->where('id', $teacher->id); // Correct column filtering
-                });
-            }
-        })
+                if ($teacher) {
+                    $query->with(['exam.subject.class', 'exam.subject.teacher'])
+                          ->whereHas('exam.subject.teacher', function (Builder $subQuery) use ($teacher) {
+                              $subQuery->where('id', $teacher->id);
+                          });
+                }
+            })
             ->columns([
                 TextColumn::make('exam.subject.code')
                 ->label('Subject')

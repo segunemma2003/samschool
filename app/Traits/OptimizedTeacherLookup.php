@@ -10,45 +10,61 @@ use Illuminate\Support\Facades\Log;
 
 trait OptimizedTeacherLookup
 {
-    protected function getCurrentTeacher()
+    // protected function getCurrentTeacher()
+    // {
+    //     try {
+    //         $userId = Auth::id();
+
+    //         // If not authenticated, return null
+    //         if (!$userId) {
+    //             return null;
+    //         }
+
+    //         // Cache with shorter duration and better error handling
+    //         return Cache::remember("teacher_for_user_{$userId}", 120, function() use ($userId) {
+    //             try {
+    //                 // Use more efficient query with select to limit data
+    //                 $user = User::select('id', 'email')->whereId($userId)->first();
+
+    //                 if (!$user || !$user->email) {
+    //                     Log::warning("User not found or has no email: {$userId}");
+    //                     return null;
+    //                 }
+
+    //                 $teacher = Teacher::select('id', 'name', 'email', 'designation')
+    //                     ->where('email', $user->email)
+    //                     ->first();
+
+    //                 if (!$teacher) {
+    //                     Log::info("No teacher found for user email: {$user->email}");
+    //                 }
+
+    //                 return $teacher;
+    //             } catch (\Exception $e) {
+    //                 Log::error("Error in teacher lookup cache for user {$userId}: " . $e->getMessage());
+    //                 return null;
+    //             }
+    //         });
+    //     } catch (\Exception $e) {
+    //         Log::error("Error in getCurrentTeacher: " . $e->getMessage());
+    //         return null;
+    //     }
+    // }
+
+
+    protected static function getCurrentTeacher(): ?Teacher
     {
-        try {
-            $userId = Auth::id();
+        $userId = auth()->id();
 
-            // If not authenticated, return null
-            if (!$userId) {
-                return null;
-            }
-
-            // Cache with shorter duration and better error handling
-            return Cache::remember("teacher_for_user_{$userId}", 120, function() use ($userId) {
-                try {
-                    // Use more efficient query with select to limit data
-                    $user = User::select('id', 'email')->whereId($userId)->first();
-
-                    if (!$user || !$user->email) {
-                        Log::warning("User not found or has no email: {$userId}");
-                        return null;
-                    }
-
-                    $teacher = Teacher::select('id', 'name', 'email', 'designation')
-                        ->where('email', $user->email)
-                        ->first();
-
-                    if (!$teacher) {
-                        Log::info("No teacher found for user email: {$user->email}");
-                    }
-
-                    return $teacher;
-                } catch (\Exception $e) {
-                    Log::error("Error in teacher lookup cache for user {$userId}: " . $e->getMessage());
-                    return null;
-                }
-            });
-        } catch (\Exception $e) {
-            Log::error("Error in getCurrentTeacher: " . $e->getMessage());
+        if (!$userId) {
             return null;
         }
+
+        return Cache::remember(
+            "current_teacher_{$userId}",
+            600, // 10 minutes
+            fn() => Teacher::where('email', auth()->user()->email)->first()
+        );
     }
 
     /**

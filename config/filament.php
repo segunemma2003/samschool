@@ -86,4 +86,17 @@ return [
 
     'livewire_loading_delay' => 'default',
 
+    'database_notifications' => [
+    'enabled' => true,
+    'polling_interval' => '30s',
+],
+
+'broadcasting' => [
+    'enabled' => false, // Disable if not needed
+],
+
+'livewire' => [
+    'lazy_loading' => true,
+],
+
 ];

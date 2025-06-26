@@ -13,23 +13,24 @@ class Student extends Model
     use HasFactory, HasRoles;
     protected $guarded = ['id'];
 
-    public function guardian()
+    protected $with = [];
+
+     protected $casts = [
+        'date_of_birth' => 'date',
+        'joining_date' => 'date',
+    ];
+
+   public function guardian()
     {
-        // Choose the appropriate relationship type:
-
-        // If one student has one guardian:
-        return $this->belongsTo(Guardians::class);
-
-        // If one student can have multiple guardians:
-        // return $this->hasMany(Guardian::class);
-
-        // // If many students can have many guardians (many-to-many):
-        // return $this->belongsToMany(Guardian::class);
+        return $this->belongsTo(Guardians::class, 'guardian_id')
+            ->select(['id', 'name', 'email', 'phone']);
     }
+
 
     public function class()
     {
-        return $this->belongsTo(SchoolClass::class, 'class_id');
+        return $this->belongsTo(SchoolClass::class, 'class_id')
+            ->select(['id', 'name', 'class_numeric', 'teacher_id']);
     }
 
     public function parent()
@@ -54,26 +55,29 @@ class Student extends Model
         );
     }
 
-    public function arm()
+     public function arm()
     {
-        return $this->belongsTo(Arm::class, 'arm_id');
+        return $this->belongsTo(Arm::class, 'arm_id')
+            ->select(['id', 'name']);
     }
 
     // ADD THIS MISSING RELATIONSHIP METHOD
-    public function assignments(): BelongsToMany
+     public function assignments(): BelongsToMany
     {
         return $this->belongsToMany(Assignment::class, 'assignment_student')
-            ->withPivot([
-                'file',
-                'status',
-                'total_score',
-                'answer',
-                'comments_score',
-                'teacher_id',
-                'created_at',
-                'updated_at'
-            ])
-            ->withTimestamps();
+            ->withPivot(['file', 'status', 'total_score', 'answer', 'comments_score', 'created_at'])
+            ->withTimestamps()
+            ->orderByPivot('created_at', 'desc');
+    }
+
+    // CACHED: Expensive aggregations
+    public function getSubmittedAssignmentsCountAttribute()
+    {
+        return cache()->remember(
+            "student_{$this->id}_submitted_assignments",
+            300, // 5 minutes
+            fn() => $this->assignments()->wherePivot('status', 'submitted')->count()
+        );
     }
 
     // HELPER METHOD TO GET SUBMITTED ASSIGNMENTS
@@ -122,5 +126,21 @@ class Student extends Model
     {
         return $this->hasMany(LibraryBookRequest::class, 'requester_id')
             ->where('requester_type', self::class);
+    }
+
+
+    public function scopeInClass($query, $classId)
+    {
+        return $query->where('class_id', $classId);
+    }
+
+    public function scopeWithArm($query, $armId)
+    {
+        return $query->where('arm_id', $armId);
+    }
+
+    public function scopeByGroup($query, $groupId)
+    {
+        return $query->where('group_id', $groupId);
     }
 }

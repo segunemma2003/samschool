@@ -15,6 +15,8 @@ class Message extends Model
 
     protected $casts = [
         'is_read' => 'boolean',
+        'created_at' => 'datetime',
+        'read_at' => 'datetime',
     ];
 
 
@@ -22,7 +24,11 @@ class Message extends Model
     {
         if (!$this->attachment) return null;
 
-        return Storage::disk('s3')->url($this->attachment);
+        return cache()->remember(
+            "message_attachment_{$this->id}",
+            3600, // 1 hour
+            fn() => Storage::disk('s3')->url($this->attachment)
+        );
     }
 
     public function getIsImageAttribute()
@@ -34,15 +40,26 @@ class Message extends Model
 
     public function conversation()
     {
-        return $this->belongsTo(Conversation::class);
+        return $this->belongsTo(Conversation::class)
+            ->select(['id', 'title', 'last_message_at']);
     }
 
     public function sender()
     {
-        return $this->belongsTo(User::class, 'sender_id');
+        return $this->belongsTo(User::class, 'sender_id')
+            ->select(['id', 'name', 'avatar', 'user_type']);
     }
 
+public function scopeUnread($query)
+    {
+        return $query->where('is_read', false);
+    }
 
+    public function scopeInConversation($query, $conversationId)
+    {
+        return $query->where('conversation_id', $conversationId)
+                    ->orderBy('created_at', 'desc');
+    }
     public function user()
     {
         return $this->belongsTo(User::class, 'sender_id');

@@ -10,6 +10,7 @@ use BezhanSalleh\FilamentShield\Traits\HasPanelShield;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Sevenspan\LaravelChat\Traits\HasConversations;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 // use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
@@ -22,6 +23,10 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
+         return cache()->remember(
+            "user_panel_access_{$this->id}_{$panel->getId()}",
+            600, // 10 minutes
+            function () use ($panel) {
         if ($panel->getId() === 'admin') {
             return $this->email == "myadmin@admin.com";
         }else if($panel->getId() === 'app'){
@@ -38,6 +43,9 @@ class User extends Authenticatable implements FilamentUser
             }
         }
         return true;
+        }
+        );
+
     }
 
     /**
@@ -60,14 +68,38 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+        'password' => 'hashed',
+        'active_status' => 'boolean',
+        'dark_mode' => 'boolean',
         ];
     }
 
 
-    public function teacher(){
-        return $this->hasOne(Teacher::class, 'user_id');
+     protected $with = [];
+
+    public function teacher(): HasOne
+    {
+        return $this->hasOne(Teacher::class, 'email', 'email')
+            ->select(['id', 'name', 'email', 'designation', 'avatar', 'signature']);
     }
+
+      public function student(): HasOne
+    {
+        return $this->hasOne(Student::class, 'email', 'email')
+            ->select(['id', 'name', 'email', 'class_id', 'registration_number', 'avatar']);
+    }
+
+    // PERFORMANCE: Add scopes for common queries
+    public function scopeByType($query, string $type)
+    {
+        return $query->where('user_type', $type);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('active_status', true);
+    }
+
 
 
     public function conversations()

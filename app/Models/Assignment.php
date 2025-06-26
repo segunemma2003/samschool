@@ -29,6 +29,7 @@ class Assignment extends Model
         'status' => 'available',
         'weight_mark' => 0,
     ];
+    protected $with = [];
 
     // OPTIMIZED RELATIONSHIPS with specific field selection
     public function class(): BelongsTo

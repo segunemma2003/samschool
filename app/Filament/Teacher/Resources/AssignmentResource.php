@@ -627,7 +627,7 @@ class AssignmentResource extends Resource
                         ->icon('heroicon-m-clipboard-document-check')
                         ->color('success')
                         ->url(fn (Assignment $record): string =>
-                            static::getUrl('view', ['record' => $record])
+                             static::getUrl('view', ['record' => $record->id])
                         )
                         ->iconButton(),
 

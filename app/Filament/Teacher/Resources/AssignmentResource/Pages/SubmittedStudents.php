@@ -232,17 +232,17 @@ class SubmittedStudents extends Page implements HasTable
                     ->searchable(),
             ])
             ->actions([
-                Action::make('view_submission')
-                    ->label('View')
-                    ->icon('heroicon-m-eye')
-                    ->color('info')
-                    ->url(function (Student $record): string {
-                        return static::getResource()::getUrl('view-submission', [
-                            'assignment' => $this->record->id,
-                            'student' => $record->id,
-                        ]);
-                    })
-                    ->openUrlInNewTab(false),
+               Action::make('view_submission')
+    ->label('View')
+    ->icon('heroicon-m-eye')
+    ->color('info')
+    ->url(function (Student $record): string {
+        return route('filament.teacher.resources.assignments.view-submission', [
+            'assignment' => $this->record->id,
+            'student' => $record->id,
+        ]);
+    })
+    ->openUrlInNewTab(false),
 
                 Action::make('grade')
                     ->label('Grade')

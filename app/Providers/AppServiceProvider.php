@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Stancl\Tenancy\Facades\Tenancy;
@@ -34,5 +36,15 @@ class AppServiceProvider extends ServiceProvider
     // if (config('app.env') !== 'local') {
     //     URL::forceScheme('https');
     // }
+
+    DB::listen(function ($query) {
+            if ($query->time > 1000) { // Queries slower than 1 second
+                Log::warning('Slow Query', [
+                    'sql' => $query->sql,
+                    'time' => $query->time,
+                    'bindings' => $query->bindings
+                ]);
+            }
+        });
     }
 }

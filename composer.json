@@ -24,6 +24,7 @@
         "filament/tables": "^3.2",
         "filament/widgets": "*",
         "firebase/php-jwt": "^6.11",
+        "genealabs/laravel-model-caching": "^11.0",
         "google/apiclient": "^2.18",
         "h4cc/wkhtmltoimage-amd64": "0.12.x",
         "h4cc/wkhtmltoimage-i386": "0.12.x",

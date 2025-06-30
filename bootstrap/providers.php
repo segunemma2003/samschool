@@ -12,4 +12,5 @@ return [
     App\Providers\Filament\OurteacherPanelProvider::class,
     App\Providers\Filament\TeacherPanelProvider::class,
     App\Providers\HorizonServiceProvider::class,
+    App\Providers\TelescopeServiceProvider::class,
 ];

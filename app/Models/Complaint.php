@@ -11,6 +11,14 @@ class Complaint extends Model
 {
     protected $guarded = ['id'];
 
+     protected $casts = [
+        'incident_date' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+        protected $with = ['user:id,name,email'];
+
     protected static function booted()
     {
         static::creating(function (Complaint $complaint) {

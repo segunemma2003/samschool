@@ -5,14 +5,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 
 if(!function_exists('getAuthName')){
     function getAuthName(){
         $auth = Auth::user();
-        return $auth->name?? "User";
+        return $auth->name ?? "User";
     }
-
 }
 
 function getCurrentTenant()
@@ -24,9 +24,19 @@ function getCurrentTenant()
 
     try {
         $domain = request()->getHost();
-        return \App\Models\School::where('domain', $domain)->first();
+
+        // Aggressive caching - 6 hours
+        return Cache::remember("tenant_domain_{$domain}", 21600, function () use ($domain) {
+            // Use select to limit columns and add index hint
+            $tenant = DB::select(
+                "SELECT * FROM schools USE INDEX (schools_domain_idx) WHERE domain = ? LIMIT 1",
+                [$domain]
+            );
+            return $tenant ? (object)$tenant[0] : null;
+        });
     } catch (\Exception $e) {
-        // Handle database connection issues gracefully in testing
+        Log::error("Error fetching tenant for domain: " . $e->getMessage());
+
         if (app()->environment(['local', 'testing'])) {
             return null;
         }
@@ -35,99 +45,199 @@ function getCurrentTenant()
 }
 
 if(!function_exists('getTenantLogo')){
-     function getTenantLogo()  // Replace School with your actual tenant model
+    function getTenantLogo()
     {
-        $domain = request()->getHost();
-        $subdomain = explode('.', $domain)[0];
+        try {
+            $domain = request()->getHost();
+            $subdomain = explode('.', $domain)[0];
 
+            // Try Redis first for ultra-fast access
+            $cacheKey = "tenant_logo_{$subdomain}";
 
-        // 🔹 Query the `domains` table directly
-        $domainEntry = DB::table('domains')->where('domain', $subdomain)->first();
-
-        if ($domainEntry && $domainEntry->tenant_id) {
-            $tenant = DB::table('tenants')->where('id', $domainEntry->tenant_id)->first();
-            if ($tenant && $tenant->logo) {
-                return Storage::disk('s3')->url($tenant->logo);
+            if (Redis::exists($cacheKey)) {
+                return Redis::get($cacheKey);
             }
-        }
-        return asset("images/2023-08-Compasse-Network-Limited.png");
-    }
 
-    //  function getTenantLogo(): string
-    // {
-    //     $tenant = $this->getTenantFromDomain(); // 🔹 Retrieve tenant (Replace this with your actual method)
-    //     return $tenant;
-    // }
+            // Database query with strict timeout and optimized query
+            $logo = Cache::remember($cacheKey, 3600, function () use ($subdomain) {
+                try {
+                    // Single optimized query with joins
+                    $result = DB::select("
+                        SELECT t.logo
+                        FROM domains d
+                        USE INDEX (domains_domain_idx)
+                        INNER JOIN tenants t ON t.id = d.tenant_id
+                        WHERE d.domain = ?
+                        AND t.logo IS NOT NULL
+                        LIMIT 1
+                    ", [$subdomain]);
+
+                    if (!empty($result) && $result[0]->logo) {
+                        return Storage::disk('s3')->url($result[0]->logo);
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Database error in getTenantLogo: " . $e->getMessage());
+                }
+
+                return asset("images/2023-08-Compasse-Network-Limited.png");
+            });
+
+            // Store in Redis for next request
+            Redis::setex($cacheKey, 3600, $logo);
+
+            return $logo;
+
+        } catch (\Exception $e) {
+            Log::error("Error in getTenantLogo: " . $e->getMessage());
+            return asset("images/2023-08-Compasse-Network-Limited.png");
+        }
+    }
 }
 
 if (!function_exists('getGeneralSettings')) {
     function getGeneralSettings()
     {
-        $tenantId = tenant('id'); // Retrieve the tenant's ID using tenancy
+        try {
+            $tenantId = tenant('id');
+            $cacheKey = "general_settings_{$tenantId}";
 
-        if (is_null($tenantId)) {
-            // If no tenant, query the central database's general_settings
-            return DB::table('general_settings')->first();
-        } else {
+            // Try Redis first
+            if (Redis::exists($cacheKey)) {
+                return json_decode(Redis::get($cacheKey));
+            }
 
-            // If tenant exists, dynamically set the tenant's database and query the general_settings
-            $tenantDatabase = 'tomatophp_' . $tenantId . '_db';
-            // dd($tenantDatabase);
-            return DB::connection($tenantDatabase)->table('general_settings')->first();
+            $settings = Cache::remember($cacheKey, 7200, function () use ($tenantId) {
+                if (is_null($tenantId)) {
+                    // Optimized query with specific columns
+                    $result = DB::select("
+                        SELECT site_name, email_from_address, logo, timezone
+                        FROM general_settings
+                        LIMIT 1
+                    ");
+                    return $result ? (object)$result[0] : null;
+                } else {
+                    $tenantDatabase = 'tomatophp_' . $tenantId . '_db';
+                    $result = DB::connection($tenantDatabase)->select("
+                        SELECT site_name, email_from_address, logo, timezone
+                        FROM general_settings
+                        LIMIT 1
+                    ");
+                    return $result ? (object)$result[0] : null;
+                }
+            });
+
+            // Store in Redis
+            if ($settings) {
+                Redis::setex($cacheKey, 7200, json_encode($settings));
+            }
+
+            return $settings ?: (object) [
+                'site_name' => env('APP_NAME', 'Application'),
+                'email_from_address' => env('MAIL_FROM_ADDRESS', 'noreply@example.com'),
+            ];
+
+        } catch (\Exception $e) {
+            Log::error("Error in getGeneralSettings: " . $e->getMessage());
+
+            return (object) [
+                'site_name' => env('APP_NAME', 'Application'),
+                'email_from_address' => env('MAIL_FROM_ADDRESS', 'noreply@example.com'),
+            ];
         }
     }
 }
 
-
-
-
-
-
 if (!function_exists('getStudentScore')) {
-    /**
-     * Fetch the score for a specific course and result section for a tenant.
-     *
-     * @param int $courseId
-     * @param int $resultSectionId
-     * @param int $studentId
-     * @return mixed
-     */
     function getStudentScore(int $courseId, int $resultSectionId, int $studentId)
     {
-        // Retrieve the tenant ID (assuming tenant ID is available in the context)
-        $tenantId = tenant('id');
-
-        // If no tenant is found, fallback to the central database
-        if (is_null($tenantId)) {
-            // Query the central database for student score (example)
-            return DB::table('student_scores')
-                ->where('course_id', $courseId)
-                ->where('result_section_id', $resultSectionId)
-                ->where('student_id', $studentId)
-                ->value('score');
-        }
-
         try {
-            // Construct the tenant-specific database name
-            $tenantDatabase = 'tomatophp_' . $tenantId . '_db';
+            $tenantId = tenant('id');
+            $cacheKey = "student_score_{$tenantId}_{$courseId}_{$resultSectionId}_{$studentId}";
 
-            // Dynamically set the tenant's database connection
-            return DB::connection($tenantDatabase)
-                ->table('student_scores') // Assuming you have a table like student_scores
-                ->where('course_id', $courseId)
-                ->where('result_section_id', $resultSectionId)
-                ->where('student_id', $studentId)
-                ->value('score');
+            // Try Redis first
+            if (Redis::exists($cacheKey)) {
+                return Redis::get($cacheKey);
+            }
+
+            $score = Cache::remember($cacheKey, 1800, function () use ($courseId, $resultSectionId, $studentId, $tenantId) {
+                if (is_null($tenantId)) {
+                    $result = DB::select("
+                        SELECT score
+                        FROM student_scores
+                        USE INDEX (student_scores_lookup_idx)
+                        WHERE course_id = ? AND result_section_id = ? AND student_id = ?
+                        LIMIT 1
+                    ", [$courseId, $resultSectionId, $studentId]);
+
+                    return $result ? $result[0]->score : null;
+                }
+
+                try {
+                    $tenantDatabase = 'tomatophp_' . $tenantId . '_db';
+
+                    $result = DB::connection($tenantDatabase)->select("
+                        SELECT score
+                        FROM student_scores
+                        USE INDEX (student_scores_lookup_idx)
+                        WHERE course_id = ? AND result_section_id = ? AND student_id = ?
+                        LIMIT 1
+                    ", [$courseId, $resultSectionId, $studentId]);
+
+                    return $result ? $result[0]->score : null;
+
+                } catch (\Exception $e) {
+                    Log::error("Error fetching tenant score: " . $e->getMessage());
+                    return null;
+                }
+            });
+
+            // Store in Redis
+            if ($score !== null) {
+                Redis::setex($cacheKey, 1800, $score);
+            }
+
+            return $score;
+
         } catch (\Exception $e) {
-            // Log the error if there's an issue with the tenant's database
-            Log::error("Error fetching score for student {$studentId} in course {$courseId} and result section {$resultSectionId}: " . $e->getMessage());
+            Log::error("Error in getStudentScore: " . $e->getMessage());
+            return null;
+        }
+    }
+}
 
-            // Fallback to central database or return null
-            return DB::table('student_scores')
-                ->where('course_id', $courseId)
-                ->where('result_section_id', $resultSectionId)
-                ->where('student_id', $studentId)
-                ->value('score');
+// Fast database health check
+if (!function_exists('checkDatabaseConnection')) {
+    function checkDatabaseConnection($connection = null): bool
+    {
+        try {
+            $db = $connection ? DB::connection($connection) : DB::connection();
+
+            // Quick ping query
+            $result = $db->select('SELECT 1 as ping');
+            return !empty($result);
+        } catch (\Exception $e) {
+            Log::error("Database connection check failed: " . $e->getMessage());
+            return false;
+        }
+    }
+}
+
+// Batch query helper to minimize database round trips
+if (!function_exists('batchQuery')) {
+    function batchQuery(array $queries, $connection = null): array
+    {
+        try {
+            $db = $connection ? DB::connection($connection) : DB::connection();
+            $results = [];
+
+            foreach ($queries as $key => $query) {
+                $results[$key] = $db->select($query['sql'], $query['bindings'] ?? []);
+            }
+
+            return $results;
+        } catch (\Exception $e) {
+            Log::error("Batch query failed: " . $e->getMessage());
+            return [];
         }
     }
 }

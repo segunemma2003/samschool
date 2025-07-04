@@ -1,0 +1,421 @@
+
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<< /Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<< /Type /Page
+/Parent 2 0 R
+/Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >>
+/XObject << /Logo 7 0 R >>
+>>
+/MediaBox [0 0 612 792]
+/Contents 8 0 R
+>>
+endobj
+4 0 obj
+<< /Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica-Bold
+>>
+endobj
+5 0 obj
+<< /Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+endobj
+6 0 obj
+<< /Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica-Oblique
+>>
+endobj
+7 0 obj
+<< /Type /XObject
+/Subtype /Image
+/Width 100
+/Height 100
+/ColorSpace /DeviceRGB
+/Filter /DCTDecode
+/BitsPerComponent 8
+/Length 9 0 R
+>>
+stream
+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
+endstream
+endobj
+9 0 obj
+7299
+endobj
+10 0 obj
+<< /Length 4500 >>
+stream
+BT
+/F1 28 Tf
+50 730 Td
+0 0 0.6 rg
+(Northstar) Tj
+/F1 18 Tf
+120 732 Td
+(School Management System) Tj
+/F2 12 Tf
+50 710 Td
+0 0 0 rg
+(Complete Solution for Nigerian Schools) Tj
+q
+460 730 Td
+50 0 0 50 0 0 cm
+/Logo Do
+Q
+
+/F1 22 Tf
+50 660 Td
+0.1 0.2 0.5 rg
+(Transform Your School's Operations) Tj
+
+/F2 12 Tf
+50 640 Td
+0 0 0 rg
+(Northstar is a comprehensive school management platform designed specifically for Nigerian) Tj
+0 -15 Td
+(educational institutions. Our cloud-based system streamlines administrative tasks, enhances) Tj
+0 -15 Td
+(communication between stakeholders, and improves overall educational outcomes.) Tj
+
+/F1 18 Tf
+50 580 Td
+0.1 0.2 0.5 rg
+(Core Management Modules) Tj
+
+/F2 12 Tf
+50 560 Td
+0 0 0 rg
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Student Management System) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Comprehensive digital student records with complete academic history, attendance tracking,) Tj
+0 -15 Td
+(  performance analytics, behavioral reports, and automatic grading systems. Generate report) Tj
+0 -15 Td
+(  cards with just a few clicks and monitor student progress through intuitive dashboards.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Academic Management) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Create courses, design curriculum plans, schedule classes, and manage examination processes.) Tj
+0 -15 Td
+(  Includes support for continuous assessment, CBT integration, and syllabus tracking to ensure) Tj
+0 -15 Td
+(  complete adherence to Nigerian educational standards and curricula.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Administrative Tools) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Simplify management tasks with powerful calendaring, resource allocation, inventory) Tj
+0 -15 Td
+(  management, and document handling. Generate custom reports and analytics for data-driven) Tj
+0 -15 Td
+(  decision making across all aspects of school operations.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Communication Platform) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Built-in messaging systems connect teachers, parents, and administrators. Send automated) Tj
+0 -15 Td
+(  notifications for important events, attendance issues, or academic achievements. Includes) Tj
+0 -15 Td
+(  parent portals for real-time access to student information and school announcements.) Tj
+
+/F1 18 Tf
+50 230 Td
+0.1 0.2 0.5 rg
+(Advanced Add-on Modules) Tj
+
+/F2 12 Tf
+50 210 Td
+0 0 0 rg
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Advanced Attendance Management) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Biometric integration, automated SMS alerts for absences, and comprehensive attendance) Tj
+0 -15 Td
+(  analytics with customizable reports for regulatory compliance and monitoring.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Transport Management System) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  GPS vehicle tracking, route optimization, driver management, and automated parent) Tj
+0 -15 Td
+(  notifications for pickup and dropoff with real-time location sharing.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Hostel Management) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Room allocation, maintenance scheduling, visitor management, and integrated billing) Tj
+0 -15 Td
+(  for boarding facilities with comprehensive reporting and monitoring tools.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Computer-Based Testing Platform) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Create and administer online examinations with advanced proctoring capabilities, automatic) Tj
+0 -15 Td
+(  grading, and detailed performance analytics with question-level insights.) Tj
+
+/F3 11 Tf
+50 25 Td
+0.2 0.2 0.4 rg
+(Page 1 of 2) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page
+/Parent 2 0 R
+/Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >>
+/MediaBox [0 0 612 792]
+/Contents 12 0 R
+>>
+endobj
+12 0 obj
+<< /Length 4000 >>
+stream
+BT
+/F1 22 Tf
+50 730 Td
+0.1 0.2 0.5 rg
+(Advanced Add-on Modules) Tj
+/F2 12 Tf
+0.1 0.2 0.5 rg
+
+/F2 12 Tf
+50 700 Td
+0 0 0 rg
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Financial Management System) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Comprehensive fee collection, expense tracking, budget planning, and financial reporting.) Tj
+0 -15 Td
+(  Includes payment reminders, online payment options, and detailed transaction history) Tj
+0 -15 Td
+(  with receipt generation and multi-currency support for international schools.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Library Management System) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Digital book cataloging, barcode integration, lending system, and overdue management.) Tj
+0 -15 Td
+(  Includes reading analytics, recommendation engines, and integration with online resources) Tj
+0 -15 Td
+(  to enhance student literacy and research capabilities.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Laboratory Management) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Inventory tracking for consumables, equipment maintenance scheduling, experiment planning,) Tj
+0 -15 Td
+(  and safety protocol management with detailed logging for science, computer, and language labs.) Tj
+
+/F1 18 Tf
+50 500 Td
+0.1 0.2 0.5 rg
+(Why Choose Northstar?) Tj
+
+/F2 12 Tf
+50 480 Td
+0 0 0 rg
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Designed for Nigerian Educational System) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Built specifically for Nigerian schools with complete understanding of local requirements,) Tj
+0 -15 Td
+(  reporting needs, and educational standards. Supports Nigerian curricula, grading systems,) Tj
+0 -15 Td
+(  and regulatory compliance with WAEC, NECO, and other examination boards.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Affordable Nigerian Pricing) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Transparent pricing in Naira - no foreign exchange concerns or hidden fees. Flexible) Tj
+0 -15 Td
+(  subscription models to fit schools of all sizes with modular options to add features) Tj
+0 -15 Td
+(  as your needs grow. Special discounts for new schools and multi-year commitments.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Local Support and Training) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Dedicated Nigerian-based support team available via phone, email, and in-person visits.) Tj
+0 -15 Td
+(  Comprehensive training programs, documentation in plain language, and regular webinars) Tj
+0 -15 Td
+(  to ensure your staff can maximize the platform's potential.) Tj
+
+0 -20 Td
+(• ) Tj
+10 0 Td
+/F1 12 Tf
+(Works with Limited Infrastructure) Tj
+/F2 12 Tf
+0 -15 Td
+-10 0 Td
+(  Optimized for low-bandwidth environments with offline capabilities and data synchronization) Tj
+0 -15 Td
+(  when connectivity returns. Mobile-friendly design works on smartphones, tablets, and older) Tj
+0 -15 Td
+(  computers, requiring minimal hardware investment to get started.) Tj
+
+/F1 18 Tf
+50 200 Td
+0.1 0.2 0.5 rg
+(Ready to Transform Your School?) Tj
+
+/F2 12 Tf
+50 180 Td
+0 0 0 rg
+(Contact our team today to schedule a personalized demonstration, discuss your specific needs,) Tj
+0 -15 Td
+(and learn how Northstar can help your school achieve educational excellence through efficient) Tj
+0 -15 Td
+(management and enhanced communication.) Tj
+
+/F1 14 Tf
+50 130 Td
+0.1 0.2 0.5 rg
+(Contact Information) Tj
+
+/F2 12 Tf
+50 110 Td
+0 0 0 rg
+(Phone: +234 701 234 5678) Tj
+0 -15 Td
+(Email: info@northstar.edu) Tj
+0 -15 Td
+(Address: Lagos, Nigeria) Tj
+0 -15 Td
+(Website: www.northstar.edu) Tj
+
+/F1 14 Tf
+330 130 Td
+0.1 0.2 0.5 rg
+(Schedule a Demo Today) Tj
+
+/F2 12 Tf
+330 110 Td
+0 0 0 rg
+(Scan the QR code or visit our website) Tj
+0 -15 Td
+(to book a free demonstration session) Tj
+0 -15 Td
+(and see how Northstar can transform) Tj
+0 -15 Td
+(your school's operations.) Tj
+
+/F3 11 Tf
+50 25 Td
+0.2 0.2 0.4 rg
+(Page 2 of 2) Tj
+
+/F3 10 Tf
+400 25 Td
+(© 2025 Northstar School Management System. All rights reserved.) Tj
+ET
+endstream
+endobj
+xref
+0 13
+0000000000 65535 f
+0000000010 00000 n
+0000000059 00000 n
+0000000116 00000 n
+0000000279 00000 n
+0000000351 00000 n
+0000000418 00000 n
+0000000489 00000 n
+0000007907 00000 n
+0000000655 00000 n
+0000007927 00000 n
+0000012480 00000 n
+0000012631 00000 n
+trailer
+<< /Size 13
+/Root 1 0 R
+>>
+startxref
+16684
+%%EOF

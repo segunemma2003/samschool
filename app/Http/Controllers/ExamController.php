@@ -26,31 +26,29 @@ class ExamController extends Controller
 
     public function generatePdf($studentId,$termId,$academyId){
         try {
-            // dd(Storage::disk('s3')->url("tt.jpg"));
-            $student = Student::with('class', 'class.group')->whereId($studentId)->firstOrFail();
-            $allStudents = Student::where('class_id', $student->class_id)->get();
+            // Eager load all students in the class with their courseForms, scoreBoard, and subject.subjectDepot
+            $student = Student::with(['class', 'class.group'])->whereId($studentId)->firstOrFail();
+            $allStudents = Student::with(['courseForms' => function($q) use ($termId, $academyId) {
+                $q->where('term_id', $termId)
+                  ->where('academic_year_id', $academyId)
+                  ->with(['scoreBoard', 'subject.subjectDepot']);
+            }])->where('class_id', $student->class_id)->get();
 
             $studentAverages = [];
             $totalStudents = $allStudents->count();
             if (!$student) {
                 throw new Exception('Student record not found.');
             }
-
             if (!$student->class || !$student->class->group) {
                 throw new Exception('Student class or group information is missing.');
             }
-
-
-
             $termAndAcademy = collect([
                 'term' => Term::find($termId),
                 'academy' => AcademicYear::find($academyId)
             ]);
-
             if (!$termAndAcademy['term'] || !$termAndAcademy['academy']) {
                 throw new \Exception('Term or Academic Year information is missing.');
             }
-
             $relatedData = collect([
                 'school' => SchoolInformation::where([
                     ['term_id', $termId],
@@ -71,37 +69,23 @@ class ExamController extends Controller
             if (!$relatedData['school']) $missingData[] = 'School Information';
             if (!$relatedData['studentAttendance']) $missingData[] = 'Student Attendance';
             if (!$relatedData['studentComment']) $missingData[] = 'Student Comment';
-
             if (count($missingData) > 0) {
                 throw new \Exception('The following information is missing and must be filled before generating the PDF: ' . implode(', ', $missingData));
             }
-
-            $courses = CourseForm::with([
-                'subject.subjectDepot',
-                'scoreBoard'
-            ])
-            ->where([
-                ['student_id', $student->id],
-                ['term_id', $termId],
-                ['academic_year_id', $academyId]
-            ])
-            ->get();
-
+            // Only get this student's courses (already eager loaded for all students)
+            $courses = $allStudents->firstWhere('id', $student->id)?->courseForms ?? collect();
             if(count($courses) < 1){
                 throw new \Exception('No courses found for this student in the selected term and academic year.');
             }
-
             $invalidCourses = [];
             foreach ($courses as $course) {
                 if (!$course->subject || !$course->subject->subjectDepot) {
                     $invalidCourses[] = $course->id;
                 }
             }
-
             if (count($invalidCourses) > 0) {
                 throw new \Exception('Some courses have missing subject information. Please complete the data for course IDs: ' . implode(', ', $invalidCourses));
             }
-
             $psychomotorAffective = Psychomotor::with(['psychomotorStudent' => function($query) use($student, $termId, $academyId) {
                 $query->where('student_id', $student->id);
             }])
@@ -110,7 +94,6 @@ class ExamController extends Controller
                 ['academic_id', $academyId],
                 ['type', 'affective']
             ])->get();
-
             $psychomotorNormal = Psychomotor::with(['psychomotorStudent' => function($query) use($student, $termId, $academyId) {
                 $query->where('student_id', $student->id);
             }])
@@ -119,24 +102,19 @@ class ExamController extends Controller
                 ['academic_id', $academyId],
                 ['type', 'psychomotor']
             ])->get();
-
             // Check for missing psychomotor ratings for current term and academic year
             $missingAffectiveRatings = [];
             $missingPsychomotorRatings = [];
-
             foreach ($psychomotorAffective as $affective) {
                 if (!$affective->psychomotorStudent || count($affective->psychomotorStudent) === 0) {
                     $missingAffectiveRatings[] = $affective->name;
                 }
             }
-
             foreach ($psychomotorNormal as $psychomotor) {
                 if (!$psychomotor->psychomotorStudent || count($psychomotor->psychomotorStudent) === 0) {
                     $missingPsychomotorRatings[] = $psychomotor->name;
                 }
             }
-            // dd($psychomotorNormal);
-
             if (count($missingAffectiveRatings) > 0 || count($missingPsychomotorRatings) > 0) {
                 $missingData = [];
                 if (count($missingAffectiveRatings) > 0) {
@@ -147,47 +125,27 @@ class ExamController extends Controller
                 }
                 throw new \Exception('The following psychomotor ratings are missing for ' . $termAndAcademy['term']->name . ' ' . $termAndAcademy['academy']->title . ' and must be filled before generating the PDF: ' . implode('; ', $missingData));
             }
-
             $headings = ResultSectionType::with('resultSection')
                 ->where('term_id', $termId)
                 ->whereHas('resultSection', function ($query) use ($student) {
                     $query->where('group_id', $student->class->group->id);
                 })
                 ->get();
-
             if ($headings->isEmpty()) {
                 throw new Exception('Result section types are not configured for this student\'s group.');
             }
-
             $groupedHeadings = $headings->groupBy('calc_pattern');
             $totalHeadings = $headings->where('calc_pattern', 'total');
-
             $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
-
             $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
-
             $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
-
             $remarks = $headings->whereIn('calc_pattern', ['remarks']) ?? collect([]);
-
-
+            // Batch process averages and positions using loaded data only
             foreach ($allStudents as $oneStudent) {
-                $studentCourses = CourseForm::with([
-                    'subject.subjectDepot',
-                    'scoreBoard'
-                ])
-                ->where([
-                    ['student_id', $oneStudent->id],
-                    ['term_id', $termId],
-                    ['academic_year_id', $academyId]
-                ])
-                ->get();
-
+                $studentCourses = $oneStudent->courseForms;
                 if ($studentCourses->isEmpty()) continue;
-
                 $studentTotal = 0;
                 $subjectCount = 0;
-
                 foreach ($studentCourses as $course) {
                     $subjectCount++;
                     $score = $course->scoreBoard
@@ -195,10 +153,8 @@ class ExamController extends Controller
                         ->sum(function ($item) {
                             return (int) $item->score;
                         });
-
                     $studentTotal += $score;
                 }
-
                 if ($subjectCount > 0) {
                     $studentAverage = $studentTotal / $subjectCount;
                     $studentAverages[] = [
@@ -207,113 +163,87 @@ class ExamController extends Controller
                     ];
                 }
             }
-
-
             usort($studentAverages, function ($a, $b) {
                 return $b['average'] <=> $a['average'];
             });
-
             $position = null;
-foreach ($studentAverages as $index => $data) {
-    if ($data['student_id'] == $student->id) {
-        $position = $index + 1;
-        break;
-    }
-}
-
-$classAverage = 0;
-if (count($studentAverages) > 0) {
-    $classAverage = round(array_sum(array_column($studentAverages, 'average')) / count($studentAverages), 2);
-}
-
-
+            foreach ($studentAverages as $index => $data) {
+                if ($data['student_id'] == $student->id) {
+                    $position = $index + 1;
+                    break;
+                }
+            }
+            $classAverage = 0;
+            if (count($studentAverages) > 0) {
+                $classAverage = round(array_sum(array_column($studentAverages, 'average')) / count($studentAverages), 2);
+            }
             $class = SchoolClass::with('teacher')->where('id', $student->class->id)->first() ?? collect([]);
             $scoreData = $courses->reduce(function ($carry, $course) use ($totalHeadings) {
                 $subject = strtolower($course->subject->subjectDepot->name);
-                // dd($course->scoreBoard);
                 $score = $course->scoreBoard
                     ->whereIn('result_section_type_id', $totalHeadings->pluck('id'))
                     ->sum(function($item) {
                         return (int) $item->score;
                     });
-
                 $carry['totalScore'] += $score;
-
                 if (str_starts_with($subject, 'english') || str_starts_with($subject, 'literacy')) {
                     $carry['englishScore'] = $score;
                 } elseif (str_starts_with($subject, 'math') || str_starts_with($subject, 'numeracy')) {
                     $carry['mathScore'] = $score;
                 }
-
                 return $carry;
             }, ['totalScore' => 0, 'englishScore' => 0, 'mathScore' => 0]);
             $totalScore = 0;
-                $englishScore = 0;
-                $mathScore = 0;
-                $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings, &$englishScore, &$mathScore) {
-                    foreach ($totalHeadings as $heading) {
-                        $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
-                        $scoreValue = (int) ($score->score ?? 0);
-
-                        // Add to the total score
-                        $carry += $scoreValue;
-
-                        // Check if the subject is English or Maths and store their scores
-                        $subject = $course->subject->subjectDepot->name;
-                        if ((strncasecmp($subject, 'english', 7) === 0) || (strncasecmp($subject, 'literacy', 8) === 0)){
-                            $englishScore = $scoreValue;
-                        } elseif ((strncasecmp($subject,'math', 4)  == 0)|| (strncasecmp($subject, 'numeracy', 8) === 0)) {
-                            $mathScore = $scoreValue;
-                        }
+            $englishScore = 0;
+            $mathScore = 0;
+            $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings, &$englishScore, &$mathScore) {
+                foreach ($totalHeadings as $heading) {
+                    $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
+                    $scoreValue = (int) ($score->score ?? 0);
+                    $carry += $scoreValue;
+                    $subject = $course->subject->subjectDepot->name;
+                    if ((strncasecmp($subject, 'english', 7) === 0) || (strncasecmp($subject, 'literacy', 8) === 0)){
+                        $englishScore = $scoreValue;
+                    } elseif ((strncasecmp($subject,'math', 4)  == 0)|| (strncasecmp($subject, 'numeracy', 8) === 0)) {
+                        $mathScore = $scoreValue;
                     }
-                    return $carry;
-                }, 0);
-
+                }
+                return $carry;
+            }, 0);
             $percent = round($scoreData['totalScore'] / $courses->count());
             $principalComment = self::getPerformanceComment($percent, $englishScore, $mathScore);
             $totalSubject =count($courses);
-
-            $classStudents = Student::where('class_id', $student->class_id)->get();
-
-// Find the current student's position and average
-$currentStudentAverage = 0;
-$currentStudentPosition = null;
-
-foreach ($studentAverages as $index => $data) {
-    if ($data['student_id'] == $student->id) {
-        $currentStudentAverage = $data['average'];
-        $currentStudentPosition = $index + 1; // Position is 1-based
-        break;
-    }
-}
-
-// Calculate the class average by averaging all students' averages
-$classAverageScore = count($studentAverages) > 0
-    ? array_sum(array_column($studentAverages, 'average')) / count($studentAverages)
-    : 0;
-
-
-$resultData =[
-            'class'=>$class,
-            'totalSubject'=>$totalSubject,
-            'totalScore'=>$totalScore,
-            'percent'=>$percent,
-            'markObtained'=>$markObtained,
-            'remarks'=>$remarks,
-            'studentSummary'=> $studentSummary,
-            'termSummary'=>$termSummary,
-            'courses'=>$courses,
-            'student'=>$student,
-            'classAverage' => $classAverage,
-            'totalStudents' => $totalStudents,
-            'studentPosition' => $position,
-            'principalComment' => $principalComment,
-            'studentAverage' => $currentStudentAverage,
-        ];
-
-
+            $classStudents = $allStudents;
+            $currentStudentAverage = 0;
+            $currentStudentPosition = null;
+            foreach ($studentAverages as $index => $data) {
+                if ($data['student_id'] == $student->id) {
+                    $currentStudentAverage = $data['average'];
+                    $currentStudentPosition = $index + 1;
+                    break;
+                }
+            }
+            $classAverageScore = count($studentAverages) > 0
+                ? array_sum(array_column($studentAverages, 'average')) / count($studentAverages)
+                : 0;
+            $resultData =[
+                'class'=>$class,
+                'totalSubject'=>$totalSubject,
+                'totalScore'=>$totalScore,
+                'percent'=>$percent,
+                'markObtained'=>$markObtained,
+                'remarks'=>$remarks,
+                'studentSummary'=> $studentSummary,
+                'termSummary'=>$termSummary,
+                'courses'=>$courses,
+                'student'=>$student,
+                'classAverage' => $classAverage,
+                'totalStudents' => $totalStudents,
+                'studentPosition' => $position,
+                'principalComment' => $principalComment,
+                'studentAverage' => $currentStudentAverage,
+            ];
             return view('exam.result', compact(
-
                 'student',
                 'class',
                 'scoreData',

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\App\Resources\QuestionBankResource\Pages;
+namespace App\Filament\App\Resources\ExamResource\Pages;
 
-use App\Filament\App\Resources\QuestionBankResource;
+use App\Filament\App\Resources\ExamResource;
 use App\Models\QuizScore;
 use App\Models\QuizSubmission;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
@@ -19,12 +19,12 @@ use Filament\Tables\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
 
-class ViewQuestionBank extends Page implements HasTable
+class ViewExamQuestions extends Page implements HasTable
 {
     use InteractsWithRecord, InteractsWithTable;
 
-protected static string $resource = QuestionBankResource::class;
-protected static string $view = 'filament.app.resources.question-bank-resource.pages.view-question-bank';
+    protected static string $resource = ExamResource::class;
+    protected static string $view = 'filament.app.resources.exam-resource.pages.view-exam-questions';
 
     public function mount(int | string $record): void
     {

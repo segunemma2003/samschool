@@ -167,6 +167,7 @@ class ExamResource extends Resource
 
         return $table
             ->query(
+                // Admin sees ALL exams without teacher filtering
                 Exam::query()
                     ->with([
                         'academic',
@@ -176,7 +177,6 @@ class ExamResource extends Resource
                         'subject.subjectDepot',
                         'resultType'
                     ])
-                    // No teacher filtering for admin - they can see all exams
             )
             ->columns([
                 TextColumn::make('subject.teacher.name')
@@ -246,6 +246,13 @@ class ExamResource extends Resource
                 TextColumn::make('resultType.name')
                     ->label('Result Type')
                     ->toggleable(isToggledHiddenByDefault: true),
+
+                // Add submission count column for admin overview
+                TextColumn::make('submissions_count')
+                    ->label('Submissions')
+                    ->getStateUsing(fn ($record) => QuizScore::where('exam_id', $record->id)->count())
+                    ->badge()
+                    ->color('warning'),
             ])
             ->filters([
                 SelectFilter::make('academic_year_id')
@@ -258,6 +265,7 @@ class ExamResource extends Resource
                     ->options(Term::pluck('name', 'id'))
                     ->default($term?->id),
 
+                // Admin can filter by any teacher
                 SelectFilter::make('teacher')
                     ->label('Teacher')
                     ->options(function () {
@@ -293,6 +301,24 @@ class ExamResource extends Resource
                         true => 'Set',
                         false => 'Not Set'
                     ]),
+
+                // Admin-specific filter for exam submissions
+                SelectFilter::make('has_submissions')
+                    ->label('Has Submissions')
+                    ->options([
+                        'yes' => 'Has Submissions',
+                        'no' => 'No Submissions'
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'] === 'yes',
+                            fn (Builder $query): Builder => $query->whereHas('quizScores'),
+                            fn (Builder $query): Builder => $query->when(
+                                $data['value'] === 'no',
+                                fn (Builder $query): Builder => $query->whereDoesntHave('quizScores')
+                            )
+                        );
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
@@ -306,6 +332,14 @@ class ExamResource extends Resource
                     ->icon('heroicon-o-user-group')
                     ->color('info')
                     ->url(fn ($record) => static::getUrl('view-students', ['record' => $record->getKey()]))
+                    ->iconButton(),
+
+                // Admin can view exam questions
+                Tables\Actions\Action::make('view-questions')
+                    ->label('View Questions')
+                    ->icon('heroicon-o-question-mark-circle')
+                    ->color('warning')
+                    ->url(fn ($record) => static::getUrl('view-exam-questions', ['record' => $record->getKey()]))
                     ->iconButton(),
 
                 Tables\Actions\Action::make('regenerate_results')
@@ -347,17 +381,76 @@ class ExamResource extends Resource
                     ->modalCancelActionLabel('No, cancel')
                     ->iconButton(),
 
+                // Admin can bulk approve/disapprove submissions
+                Tables\Actions\Action::make('bulk_approve_submissions')
+                    ->label('Bulk Approve')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->action(function ($record) {
+                        $updated = QuizScore::where('exam_id', $record->id)
+                            ->where('approved', 'no')
+                            ->update(['approved' => 'yes']);
+
+                        Notification::make()
+                            ->title('Success')
+                            ->body("Approved {$updated} submissions")
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->iconButton(),
+
                 Tables\Actions\DeleteAction::make()
                     ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+
+                    // Admin bulk actions
+                    Tables\Actions\BulkAction::make('bulk_set_status')
+                        ->label('Set as Complete')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->action(function ($records) {
+                            $updated = $records->count();
+                            foreach ($records as $record) {
+                                $record->update(['is_set' => true]);
+                            }
+
+                            Notification::make()
+                                ->title('Success')
+                                ->body("Updated {$updated} exams")
+                                ->success()
+                                ->send();
+                        })
+                        ->requiresConfirmation(),
+
+                    Tables\Actions\BulkAction::make('bulk_approve_all_submissions')
+                        ->label('Approve All Submissions')
+                        ->icon('heroicon-o-check-badge')
+                        ->color('warning')
+                        ->action(function ($records) {
+                            $totalUpdated = 0;
+                            foreach ($records as $record) {
+                                $updated = QuizScore::where('exam_id', $record->id)
+                                    ->where('approved', 'no')
+                                    ->update(['approved' => 'yes']);
+                                $totalUpdated += $updated;
+                            }
+
+                            Notification::make()
+                                ->title('Success')
+                                ->body("Approved {$totalUpdated} submissions across all selected exams")
+                                ->success()
+                                ->send();
+                        })
+                        ->requiresConfirmation(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
             ->striped()
-            ->paginated([10, 25, 50]);
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -436,7 +529,7 @@ class ExamResource extends Resource
 
                 InfoSection::make('Statistics')
                     ->schema([
-                        InfoGrid::make(3)
+                        InfoGrid::make(4)
                             ->schema([
                                 TextEntry::make('questions_count')
                                     ->label('Total Questions')
@@ -449,6 +542,12 @@ class ExamResource extends Resource
                                     ->getStateUsing(fn ($record) => QuizScore::where('exam_id', $record->id)->count())
                                     ->badge()
                                     ->color('warning'),
+
+                                TextEntry::make('approved_submissions')
+                                    ->label('Approved Submissions')
+                                    ->getStateUsing(fn ($record) => QuizScore::where('exam_id', $record->id)->where('approved', 'yes')->count())
+                                    ->badge()
+                                    ->color('success'),
 
                                 TextEntry::make('average_score')
                                     ->label('Average Score')
@@ -501,6 +600,7 @@ class ExamResource extends Resource
             'edit' => Pages\EditExam::route('/{record}/edit'),
             'view-students' => Pages\ViewExamStudents::route('/students/{record}'),
             'exam-student-details' => Pages\ExamStudentDetails::route('/exam-student-details/{quizScoreId}'),
+            'view-exam-questions' => Pages\ViewExamQuestions::route('/questions/{record}'),
         ];
     }
 

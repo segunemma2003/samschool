@@ -81,17 +81,32 @@ class CreateQuestionBank extends CreateRecord
 
         foreach ($questions as $questionData) {
             $processedData = $this->processQuestion($questionData, $examId);
+
+            // JSON encode arrays before batch insert
+            if (isset($processedData['options']) && is_array($processedData['options'])) {
+                $processedData['options'] = json_encode($processedData['options']);
+            }
+
             $processedData['created_at'] = $now;
             $processedData['updated_at'] = $now;
             $batchData[] = $processedData;
         }
 
-        // Insert in batches to improve performance
-        $chunks = array_chunk($batchData, 50); // 50 questions per batch
+        // Insert using Eloquent to ensure proper casting and validation
+        foreach ($batchData as $questionData) {
+            // Decode options back to array for Eloquent
+            if (isset($questionData['options']) && is_string($questionData['options'])) {
+                $questionData['options'] = json_decode($questionData['options'], true);
+            }
 
-        foreach ($chunks as $chunk) {
-            QuestionBank::insert($chunk);
+            QuestionBank::create($questionData);
         }
+
+        // Alternative: If you want to keep batch insert for performance, ensure proper JSON encoding
+        // $chunks = array_chunk($batchData, 50);
+        // foreach ($chunks as $chunk) {
+        //     QuestionBank::insert($chunk);
+        // }
     }
 
     private function processQuestion(array $questionData, int $examId): array

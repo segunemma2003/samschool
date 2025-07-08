@@ -30,4 +30,12 @@ class HostelBuilding extends Model
     {
         return $this->hasManyThrough(HostelRoom::class, HostelFloor::class, 'hostel_building_id', 'hostel_floor_id');
     }
+
+    public function scopeWithCurrentMaster($query)
+    {
+        return $query->with([
+            'currentHouseMaster.teacher:id,name,email',
+            'currentHouseMaster.academicYear:id,title'
+        ]);
+    }
 }

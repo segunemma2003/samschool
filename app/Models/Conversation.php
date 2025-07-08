@@ -52,7 +52,11 @@ class Conversation extends Model
 
     public function getOtherUserAttribute()
     {
-        return $this->users->where('id', '!=', Auth::id())->first();
+        return cache()->remember(
+            "conversation_other_user_{$this->id}_" . Auth::id(),
+            600,
+            fn() => $this->users->where('id', '!=', Auth::id())->first()
+        );
     }
 
     // Add this method to update last_message_at

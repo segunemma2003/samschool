@@ -23,6 +23,14 @@ class LibraryBookLoan extends Model
         return $this->morphTo();
     }
 
+
+    public function scopeOverdueForNotification($query)
+    {
+        return $query->where('due_date', '<', now())
+            ->where('status', '!=', 'returned')
+            ->with(['borrower:id,name,email', 'book:id,title']);
+    }
+
     // Scope for borrowed books
     public function scopeBorrowed($query)
     {

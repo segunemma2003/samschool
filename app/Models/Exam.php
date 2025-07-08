@@ -16,6 +16,27 @@ class Exam extends Model
         return $this->belongsTo(Subject::class, 'subject_id');
     }
 
+
+    public function scopeWithBasicInfo($query)
+    {
+        return $query->select([
+            'id', 'subject_id', 'assessment_type', 'term_id', 'academic_year_id'
+        ])->with([
+            'subject:id,name,code',
+            'term:id,name',
+            'academic:id,title,year'
+        ]);
+    }
+
+
+    public function scopeForTeacher($query, $teacherId)
+    {
+        return $query->whereHas('subject', function ($q) use ($teacherId) {
+            $q->where('teacher_id', $teacherId);
+        });
+    }
+
+
     public function academic()
     {
         return $this->belongsTo(AcademicYear::class, 'academic_year_id');

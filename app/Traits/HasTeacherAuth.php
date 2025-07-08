@@ -1,5 +1,5 @@
 <?php
-
+namespace App\Traits;
 // Create a helper trait for teacher authentication
 
 use App\Models\Teacher;

@@ -27,12 +27,15 @@ class LibraryShelf extends Model
 
     public function getAvailablePositions(): array
     {
-        $occupied = $this->books()
-            ->select('row_number', 'position_number')
-            ->get()
-            ->map(fn($book) => "{$book->row_number}-{$book->position_number}")
-            ->toArray();
-
+         return cache()->remember(
+        "shelf_available_positions_{$this->id}",
+        3600,
+        function () {
+            $occupied = $this->books()
+                ->select('row_number', 'position_number')
+                ->get()
+                ->map(fn($book) => "{$book->row_number}-{$book->position_number}")
+                ->toArray();
         $allPositions = [];
         for ($row = 1; $row <= $this->row_count; $row++) {
             for ($pos = 1; $pos <= $this->position_count; $pos++) {
@@ -44,5 +47,7 @@ class LibraryShelf extends Model
         }
 
         return $allPositions;
-    }
+      }
+    );
+}
 }

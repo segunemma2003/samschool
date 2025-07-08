@@ -165,16 +165,32 @@ class S3FileService
      */
     public function getFileMetadata(string $filePath): array
     {
-        if (!$this->fileExists($filePath)) {
+        $disk = Storage::disk('s3');
+
+        if (!$disk->exists($filePath)) {
             return [];
         }
 
+        // Get all metadata in one go to avoid multiple S3 calls
+        $size = $disk->size($filePath);
+
         return [
-            'size' => $this->getFileSize($filePath),
-            'human_size' => $this->getHumanFileSize($filePath),
-            'last_modified' => Storage::disk('s3')->lastModified($filePath),
-            'mime_type' => Storage::disk('s3')->mimeType($filePath),
+            'size' => $size,
+            'human_size' => $this->formatBytes($size),
+            'last_modified' => $disk->lastModified($filePath),
+            'mime_type' => $disk->mimeType($filePath),
             'url' => $this->getTemporaryUrl($filePath),
         ];
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+            $bytes /= 1024;
+        }
+
+        return round($bytes, 2) . ' ' . $units[$i];
     }
 }

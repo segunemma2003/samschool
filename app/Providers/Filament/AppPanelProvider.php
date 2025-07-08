@@ -67,17 +67,12 @@ class AppPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            // ->brandLogo("https://res.cloudinary.com/iamdevmaniac/client_cat/".setting('site_logo'))
-            // ->favicon()
-            // ->brandLogo(fn () =>
-            //     Setting::where('name','site_logo')->first()
-            // )
+
             ->defaultThemeMode(ThemeMode::Dark)
-            // ->brandLogo(asset('latest/image/FSSLOGO1-1.png'))
+
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([
-                // Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
+
             ])
 
             ->middleware([
@@ -115,17 +110,53 @@ class AppPanelProvider extends PanelProvider
                     \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
                     \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
                     \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
-                ])->plugins([
-                    FilamentProgressbarPlugin::make()->color('#29b'),
-                    LightSwitchPlugin::make(),
-                    // FilamentAuthenticationLogPlugin::make(),
-                    CustomAuthUIEnhancerAdmin::make()
-                    ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
-                    ->emptyPanelBackgroundImageOpacity('100%') // Optional: Adjust opacity
-                    ->formPanelPosition('right') // Form position
-                    ->formPanelWidth('45%') // Adjust form width
-                    ->showEmptyPanelOnMobile(false)
+                ])->plugins($this->getOptimizedPlugins())
+                ->viteTheme('resources/css/filament/app/theme.css');
+    }
 
-                ])->viteTheme('resources/css/filament/app/theme.css');
+
+
+
+    private function getOptimizedPlugins(): array
+    {
+        // Fast-loading plugins that everyone gets
+        $plugins = [
+            FilamentProgressbarPlugin::make()->color('#29b'),
+            LightSwitchPlugin::make(),
+            \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make(), // PWA is lightweight
+        ];
+
+        $user = auth()->user();
+
+        // Admin-only heavy plugins
+        if ($user && ($user->user_type === 'admin' || $user->email === 'myadmin@admin.com')) {
+            $plugins[] = FilamentGeneralSettingsPlugin::make(
+                SettingHold::make()
+                ->order(1)
+                ->label('Site Settings')
+                ->icon('heroicon-o-globe-alt')
+                ->route('filament.app.pages.site-settings')
+                ->description('Name, Logo, Site Profile')
+                ->group('General'),
+            )->setIcon('heroicon-o-cog');
+
+            $plugins[] = \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make();
+            $plugins[] = \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make();
+        }
+
+        // Media manager for admins and teachers (they need file uploads)
+        if ($user && in_array($user->user_type, ['admin', 'teacher'])) {
+            $plugins[] = \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make();
+        }
+
+        // Your custom auth enhancer
+        $plugins[] = CustomAuthUIEnhancerAdmin::make()
+            ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
+            ->emptyPanelBackgroundImageOpacity('100%')
+            ->formPanelPosition('right')
+            ->formPanelWidth('45%')
+            ->showEmptyPanelOnMobile(false);
+
+        return $plugins;
     }
 }

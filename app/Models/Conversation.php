@@ -54,7 +54,7 @@ class Conversation extends Model
     {
         return cache()->remember(
             "conversation_other_user_{$this->id}_" . Auth::id(),
-            600,
+            1800,
             fn() => $this->users->where('id', '!=', Auth::id())->first()
         );
     }

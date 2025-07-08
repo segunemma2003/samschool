@@ -28,6 +28,8 @@ class ClassStory extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class, 'commentable_id')
-            ->where('commentable_type', self::class);
+            ->where('commentable_type', self::class)
+            ->with('user:id,name,avatar')
+            ->latest();
     }
 }

@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Sevenspan\LaravelChat\Traits\HasConversations;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Cache;
+
 // use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
 
 class User extends Authenticatable implements FilamentUser
@@ -25,7 +27,7 @@ class User extends Authenticatable implements FilamentUser
     {
          return cache()->remember(
             "user_panel_access_{$this->id}_{$panel->getId()}",
-            600, // 10 minutes
+            3600, // 10 minutes
             function () use ($panel) {
         if ($panel->getId() === 'admin') {
             return $this->email == "myadmin@admin.com";
@@ -46,6 +48,19 @@ class User extends Authenticatable implements FilamentUser
         }
         );
 
+    }
+
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updated(function ($user) {
+            // Clear only relevant caches
+            Cache::forget("user_panel_access_{$user->id}_admin");
+            Cache::forget("user_panel_access_{$user->id}_app");
+            Cache::forget("user_admin_check_{$user->id}");
+        });
     }
 
     /**
@@ -73,6 +88,14 @@ class User extends Authenticatable implements FilamentUser
         'dark_mode' => 'boolean',
         ];
     }
+
+    public function scopeWithProfile($query)
+{
+    return $query->with([
+        'teacher:id,name,email,designation',
+        'student:id,name,email,class_id,registration_number'
+    ]);
+}
 
 
      protected $with = [];
@@ -114,11 +137,14 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Message::class, 'sender_id');
     }
 
-    public function isAdmin()
+    public function isAdmin(): bool
     {
-        return $this->user_type == 'admin';
+        return cache()->remember(
+            "user_admin_check_{$this->id}",
+            1800, // 30 minutes
+            fn() => $this->user_type === 'admin'
+        );
     }
-
 
     public function readingProgress(): HasMany
     {

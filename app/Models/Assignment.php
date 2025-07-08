@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use App\Services\S3FileService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Assignment extends Model
@@ -176,15 +177,24 @@ class Assignment extends Model
     // CACHED ATTRIBUTES for better performance
     public function getTotalStudentsAnsweredAttribute(): int
     {
-        $cacheKey = "assignment_{$this->id}_submitted_count";
-
-        return Cache::remember($cacheKey, 300, function () {
+        return Cache::remember("assignment_{$this->id}_submitted_count", 300, function () {
             return $this->students()
                 ->where('assignment_student.status', 'submitted')
                 ->count();
         });
     }
 
+
+    public function getAttachmentUrlAttribute()
+    {
+        if (!$this->attachment) return null;
+
+        return cache()->remember(
+            "message_attachment_{$this->id}",
+            3600,
+            fn() => Storage::disk('s3')->url($this->attachment)
+        );
+    }
     public function getTotalStudentsInClassAttribute(): int
     {
         $cacheKey = "assignment_{$this->id}_class_total";
@@ -432,13 +442,11 @@ class Assignment extends Model
     // BULK OPERATIONS
     public static function bulkUpdateStatus(array $assignmentIds, string $status): int
     {
-        $updated = static::whereIn('id', $assignmentIds)->update(['status' => $status]);
+        $updated = static::whereIn('id', $assignmentIds)
+            ->update(['status' => $status]);
 
-        // Clear related caches
-        foreach ($assignmentIds as $id) {
-            Cache::forget("assignment_{$id}_submitted_count");
-            Cache::forget("assignment_{$id}_submission_stats");
-        }
+        // Clear related caches efficiently
+        Cache::tags(['assignments'])->flush();
 
         return $updated;
     }

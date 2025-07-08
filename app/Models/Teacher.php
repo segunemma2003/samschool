@@ -17,6 +17,13 @@ class Teacher extends Model
         return $this->hasMany(SchoolClass::class, 'teacher_id');
     }
 
+    public function scopeWithBasicInfo($query)
+{
+    return $query->select([
+        'id', 'name', 'email', 'designation', 'avatar'
+    ]);
+}
+
     public function arm()
     {
         return $this->belongsTo(ArmsTeacher::class, 'id','teacher_id');

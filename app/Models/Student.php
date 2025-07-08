@@ -20,6 +20,33 @@ class Student extends Model
         'joining_date' => 'date',
     ];
 
+
+public function scopeWithEssentials($query)
+{
+    return $query->with([
+        'class:id,name,class_numeric',
+        'guardian:id,name,email,phone',
+        'arm:id,name'
+    ]);
+}
+
+public function scopeWithAssignmentStats($query)
+{
+    return $query->withCount([
+        'assignments as total_assignments_count',
+        'assignments as submitted_assignments_count' => function ($query) {
+            $query->wherePivot('status', 'submitted');
+        }
+    ]);
+}
+
+public function scopeWithMinimalData($query)
+{
+    return $query->select([
+        'id', 'name', 'email', 'class_id', 'arm_id', 'guardian_id'
+    ]);
+}
+
    public function guardian()
     {
         return $this->belongsTo(Guardians::class, 'guardian_id')
@@ -48,12 +75,13 @@ class Student extends Model
         return $this->hasManyThrough(
             Subject::class,
             CourseForm::class,
-            'student_id',    // Foreign key on CourseForm table
-            'id',            // Foreign key on Subject table
-            'id',            // Local key on Student table
-            'subject_id'     // Local key on CourseForm table
-        );
+            'student_id',
+            'id',
+            'id',
+            'subject_id'
+        )->select(['subjects.id', 'subjects.name', 'subjects.code']);
     }
+
 
      public function arm()
     {
@@ -69,6 +97,40 @@ class Student extends Model
             ->withTimestamps()
             ->orderByPivot('created_at', 'desc');
     }
+
+
+    public function getAverageScoreAttribute(): float
+    {
+        return cache()->remember(
+            "student_avg_score_{$this->id}",
+            600, // 10 minutes
+            function () {
+                return $this->assignments()
+                    ->wherePivot('status', 'submitted')
+                    ->avg('assignment_student.total_score') ?? 0;
+            }
+        );
+    }
+
+
+    public static function loadWithEssentials(array $studentIds)
+    {
+        return static::whereIn('id', $studentIds)
+            ->with([
+                'class:id,name',
+                'guardian:id,name,phone',
+                'arm:id,name'
+            ])
+            ->get();
+    }
+
+
+    public static function processInChunks(callable $callback, int $chunkSize = 100)
+        {
+            return static::with(['class:id,name'])
+                ->chunk($chunkSize, $callback);
+        }
+
 
     // CACHED: Expensive aggregations
     public function getSubmittedAssignmentsCountAttribute()
@@ -133,6 +195,13 @@ class Student extends Model
     {
         return $query->where('class_id', $classId);
     }
+
+
+    public function scopeForClass($query, $classId)
+{
+    return $query->where('class_id', $classId)
+        ->with(['guardian:id,name,phone']);
+}
 
     public function scopeWithArm($query, $armId)
     {

@@ -59,11 +59,11 @@ class AppPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            // ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
+            ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
             ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
             ->discoverPages(in: app_path('Filament/Auth'), for: 'App\\Filament\\Auth')
             ->discoverPages(in: app_path('Filament/Plugins'), for: 'App\\Filament\\Plugins')
-            // ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
+            ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
             ->pages([
                 Pages\Dashboard::class,
             ])

@@ -33,20 +33,15 @@ use Joaopaulolndev\FilamentGeneralSettings\FilamentGeneralSettingsPlugin;
 use Joaopaulolndev\FilamentGeneralSettings\Models\GeneralSetting;
 use Stancl\Tenancy\Facades\Tenancy;
 use TomatoPHP\FilamentSettingsHub\Models\Setting;
-// use TomatoPHP\FilamentSettingsHub\Models\Setting;
 use TomatoPHP\FilamentSettingsHub\Services\Contracts\SettingHold;
 use Awcodes\LightSwitch\LightSwitchPlugin;
-use App\Traits\CachedResourceDiscovery;
 use Njxqlus\FilamentProgressbar\FilamentProgressbarPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
 
 class AppPanelProvider extends PanelProvider
 {
-     use CachedResourceDiscovery;
-
     public function panel(Panel $panel): Panel
     {
-
         return $panel
             ->id('app')
             ->path('app')
@@ -57,37 +52,23 @@ class AppPanelProvider extends PanelProvider
             ->sidebarFullyCollapsibleOnDesktop(false)
             ->sidebarCollapsibleOnDesktop()
             ->brandLogoHeight('5rem')
-            // ->topbar(false)
             ->collapsedSidebarWidth('4.5rem')
             ->colors([
                 'primary' => Color::Amber,
             ])
-            // ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
-             ->resources($this->getCachedResources(
-                app_path('Filament/App/Resources'),
-                $panel,
-                'App\\Filament\\App\\Resources'
-            ))
-            ->pages($this->getCachedPages(
-                app_path('Filament/App/Pages'),
-                $panel,
-                'App\\Filament\\App\\Pages'
-            ))
-            // ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
+            ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
+            ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
             ->discoverPages(in: app_path('Filament/Auth'), for: 'App\\Filament\\Auth')
             ->discoverPages(in: app_path('Filament/Plugins'), for: 'App\\Filament\\Plugins')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
             ->pages([
                 Pages\Dashboard::class,
             ])
-
             ->defaultThemeMode(ThemeMode::Dark)
-
             ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')
             ->widgets([
-
+                // Keep empty for performance
             ])
-
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -99,50 +80,43 @@ class AppPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
                 FilamentUnauthorizedRedirect::class,
-
             ])
             ->routes(fn() => FilamentMails::routes())
-
             ->authMiddleware([
                 Authenticate::class,
-            ])->plugin(
-                // FilamentMailsPlugin::make(),
-                // \TomatoPHP\FilamentDocs\FilamentDocsPlugin::make(),
-                FilamentTenancyAppPlugin::make())
-                ->plugins([
-                    FilamentGeneralSettingsPlugin::make(
-                        SettingHold::make()
-                        ->order(1)
-                        ->label('Site Settings')
-                        ->icon('heroicon-o-globe-alt')
-                        ->route('filament.app.pages.site-settings')
-                        ->description('Name, Logo, Site Profile')
-                        ->group('General'),
-                    )->setIcon('heroicon-o-cog'),
-                    // \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-                    // \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
-                    \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
-                    // \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
-                ])->plugins($this->getOptimizedPlugins())
-                ->viteTheme('resources/css/filament/app/theme.css');
+            ])
+            ->plugin(FilamentTenancyAppPlugin::make())
+            ->plugins($this->getOptimizedPlugins())
+            ->viteTheme('resources/css/filament/app/theme.css');
     }
-
-
-
 
     private function getOptimizedPlugins(): array
     {
-        // Fast-loading plugins that everyone gets
+        // Always load lightweight plugins
         $plugins = [
             FilamentProgressbarPlugin::make()->color('#29b'),
             LightSwitchPlugin::make(),
-            \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make(), // PWA is lightweight
+            \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make(),
         ];
 
         $user = Auth::user();
 
-        // Admin-only heavy plugins
-        if ($user && ($user->user_type === 'admin' || $user->email === 'myadmin@admin.com')) {
+        // Debug: Log user info to help troubleshoot
+        if ($user) {
+            \Log::info('AppPanel User Info', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'user_type' => $user->user_type ?? 'not_set',
+                'all_attributes' => $user->toArray()
+            ]);
+        }
+
+        // More flexible admin detection
+        $isAdmin = $this->isUserAdmin($user);
+
+        if ($isAdmin) {
+            \Log::info('Loading admin plugins for user', ['user_id' => $user->id]);
+
             $plugins[] = FilamentGeneralSettingsPlugin::make(
                 SettingHold::make()
                 ->order(1)
@@ -157,19 +131,53 @@ class AppPanelProvider extends PanelProvider
             $plugins[] = \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make();
         }
 
-        // Media manager for admins and teachers (they need file uploads)
-        if ($user && in_array($user->user_type, ['admin', 'teacher'])) {
+        // Media manager for admins and teachers
+        if ($user && $this->userCanUploadFiles($user)) {
             $plugins[] = \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make();
         }
 
-        // Your custom auth enhancer
-        $plugins[] = CustomAuthUIEnhancerAdmin::make()
-            ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
-            ->emptyPanelBackgroundImageOpacity('100%')
-            ->formPanelPosition('right')
-            ->formPanelWidth('45%')
-            ->showEmptyPanelOnMobile(false);
+        // Auth enhancer only on login pages
+        if (!auth()->check()) {
+            $plugins[] = CustomAuthUIEnhancerAdmin::make()
+                ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
+                ->emptyPanelBackgroundImageOpacity('100%')
+                ->formPanelPosition('right')
+                ->formPanelWidth('45%')
+                ->showEmptyPanelOnMobile(false);
+        }
+
+        \Log::info('AppPanel plugins loaded', ['plugin_count' => count($plugins), 'is_admin' => $isAdmin]);
 
         return $plugins;
+    }
+
+    /**
+     * More flexible admin detection
+     */
+    private function isUserAdmin($user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        // Check multiple possible admin indicators
+        return $user->user_type === 'admin' ||
+               $user->email === 'myadmin@admin.com' ||
+               str_contains(strtolower($user->email), 'admin') ||
+               (method_exists($user, 'hasRole') && $user->hasRole('admin')) ||
+               (method_exists($user, 'can') && $user->can('access_admin_panel'));
+    }
+
+    /**
+     * Check if user can upload files
+     */
+    private function userCanUploadFiles($user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return in_array($user->user_type, ['admin', 'teacher']) ||
+               $this->isUserAdmin($user);
     }
 }

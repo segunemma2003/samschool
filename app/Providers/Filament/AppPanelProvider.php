@@ -36,11 +36,14 @@ use TomatoPHP\FilamentSettingsHub\Models\Setting;
 // use TomatoPHP\FilamentSettingsHub\Models\Setting;
 use TomatoPHP\FilamentSettingsHub\Services\Contracts\SettingHold;
 use Awcodes\LightSwitch\LightSwitchPlugin;
+use App\Traits\CachedResourceDiscovery;
 use Njxqlus\FilamentProgressbar\FilamentProgressbarPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
 
 class AppPanelProvider extends PanelProvider
 {
+     use CachedResourceDiscovery;
+
     public function panel(Panel $panel): Panel
     {
 
@@ -59,8 +62,18 @@ class AppPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
-            ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
+            // ->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')
+             ->resources($this->getCachedResources(
+                app_path('Filament/App/Resources'),
+                $panel,
+                'App\\Filament\\App\\Resources'
+            ))
+            ->pages($this->getCachedPages(
+                app_path('Filament/App/Pages'),
+                $panel,
+                'App\\Filament\\App\\Pages'
+            ))
+            // ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')
             ->discoverPages(in: app_path('Filament/Auth'), for: 'App\\Filament\\Auth')
             ->discoverPages(in: app_path('Filament/Plugins'), for: 'App\\Filament\\Plugins')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
@@ -106,10 +119,10 @@ class AppPanelProvider extends PanelProvider
                         ->description('Name, Logo, Site Profile')
                         ->group('General'),
                     )->setIcon('heroicon-o-cog'),
-                    \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-                    \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
+                    // \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
+                    // \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make(),
                     \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make(),
-                    \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
+                    // \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make()
                 ])->plugins($this->getOptimizedPlugins())
                 ->viteTheme('resources/css/filament/app/theme.css');
     }
@@ -126,7 +139,7 @@ class AppPanelProvider extends PanelProvider
             \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make(), // PWA is lightweight
         ];
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Admin-only heavy plugins
         if ($user && ($user->user_type === 'admin' || $user->email === 'myadmin@admin.com')) {

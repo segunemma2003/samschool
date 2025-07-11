@@ -41,9 +41,31 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class StudentResource extends Resource
 {
-    protected static ?string $model = Student::class;
+   protected static ?string $model = Student::class;
+    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static ?string $navigationLabel = 'Students';
+    protected static ?string $navigationGroup = '👥 Student Management';
+    protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'class:id,name,class_numeric',
+                'guardian:id,name,phone',
+                'arm:id,name',
+                'group:id,name'
+            ])
+            ->select([
+                'id', 'name', 'email', 'registration_number', 'avatar',
+                'class_id', 'guardian_id', 'arm_id', 'group_id',
+                'gender', 'phone', 'created_at'
+            ])
+            ->latest('created_at');
+    }
+
 
     public static function form(Form $form): Form
     {

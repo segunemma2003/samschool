@@ -79,16 +79,19 @@ class Assignment extends Model
     }
 
     // S3 FILE HANDLING METHODS
-    public function getFileUrlAttribute(): ?string
-    {
-        if (!$this->file) {
-            return null;
+   public function getFileUrlAttribute(): ?string
+{
+    if (!$this->file) return null;
+
+    return cache()->remember(
+        "s3_url_{$this->id}_{$this->updated_at->timestamp}",
+        480, // 8 minutes (less than S3 10-min expiry)
+        function () {
+            $s3Service = app(S3FileService::class);
+            return $s3Service->getTemporaryUrl($this->file, 10);
         }
-
-        $s3Service = app(S3FileService::class);
-        return $s3Service->getTemporaryUrl($this->file, 10); // 10-minute expiry
-    }
-
+    );
+}
     public function getFileMetadata(): ?array
     {
         if (!$this->file) {
@@ -177,11 +180,23 @@ class Assignment extends Model
     // CACHED ATTRIBUTES for better performance
     public function getTotalStudentsAnsweredAttribute(): int
     {
-        return Cache::remember("assignment_{$this->id}_submitted_count", 300, function () {
-            return $this->students()
-                ->where('assignment_student.status', 'submitted')
-                ->count();
-        });
+        return cache()->remember(
+            "assignment_stats_batch_" . floor($this->id / 100), // Batch cache keys
+            300,
+            function () {
+                // Load stats for multiple assignments at once
+                $assignments = Assignment::whereBetween('id', [
+                    floor($this->id / 100) * 100,
+                    (floor($this->id / 100) + 1) * 100 - 1
+                ])->pluck('id');
+
+                return DB::table('assignment_student')
+                    ->whereIn('assignment_id', $assignments)
+                    ->where('status', 'submitted')
+                    ->groupBy('assignment_id')
+                    ->pluck('count', 'assignment_id');
+            }
+        )[$this->id] ?? 0;
     }
 
 
@@ -406,14 +421,10 @@ class Assignment extends Model
             }
         });
 
-        static::saved(function ($assignment) {
-            // Clear related caches when assignment is updated
-            Cache::forget("assignment_{$assignment->id}_submitted_count");
-            Cache::forget("assignment_{$assignment->id}_class_total");
-            Cache::forget("assignment_{$assignment->id}_submission_stats");
-            Cache::forget("assignment_stats_teacher_{$assignment->teacher_id}");
+       static::saved(function ($assignment) {
+            // Use cache tags for efficient clearing
+            Cache::tags(['assignments', "assignment_{$assignment->id}"])->flush();
         });
-
         static::deleting(function ($assignment) {
             // Clean up file when assignment is deleted
             if ($assignment->file) {

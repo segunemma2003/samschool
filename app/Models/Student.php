@@ -33,9 +33,9 @@ public function scopeWithEssentials($query)
 public function scopeWithAssignmentStats($query)
 {
     return $query->withCount([
-        'assignments as total_assignments_count',
-        'assignments as submitted_assignments_count' => function ($query) {
-            $query->wherePivot('status', 'submitted');
+        'assignments as total_assignments',
+        'assignments as submitted_assignments' => function ($q) {
+            $q->wherePivot('status', 'submitted');
         }
     ]);
 }
@@ -211,5 +211,12 @@ public function scopeWithMinimalData($query)
     public function scopeByGroup($query, $groupId)
     {
         return $query->where('group_id', $groupId);
+    }
+
+
+    public function group()
+    {
+        return $this->belongsTo(StudentGroup::class, 'group_id')
+            ->select(['id', 'name']);
     }
 }

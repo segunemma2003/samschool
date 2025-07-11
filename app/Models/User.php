@@ -24,32 +24,35 @@ class User extends Authenticatable implements FilamentUser
     protected $guarded = ['id'];
 
     public function canAccessPanel(Panel $panel): bool
-    {
-         return cache()->remember(
-            "user_panel_access_{$this->id}_{$panel->getId()}",
-            3600, // 10 minutes
-            function () use ($panel) {
-        if ($panel->getId() === 'admin') {
-            return $this->email == "myadmin@admin.com";
-        }else if($panel->getId() === 'app'){
-            return  is_null($this->user_type) || $this->user_type=="admin" ||  $this->email == "admin@admin.com" ||  $this->email == "myadmin@admin.com";
-        }else if($panel->getId() === 'parent'){
-            return $this->user_type=="parent";
-        }else if($panel->getId() === 'student'){
-            return $this->user_type=="student";
-        }else if($panel->getId() === 'teacher'){
-            return $this->user_type=="teacher";
-        }else if($panel->getId()=="finance"){
-            if($this->user_type =="admin"){
-                return true;
-            }
-        }
-        return true;
-        }
-        );
+{
+    // Use static cache to avoid repeated DB calls
+    static $accessCache = [];
 
+    $key = "{$this->id}_{$panel->getId()}";
+
+    if (!isset($accessCache[$key])) {
+        $accessCache[$key] = $this->calculatePanelAccess($panel);
     }
 
+    return $accessCache[$key];
+}
+
+private function calculatePanelAccess(Panel $panel): bool
+{
+    $panelId = $panel->getId();
+    $userType = $this->user_type;
+
+    return match($panelId) {
+        'admin' => $this->email === "myadmin@admin.com",
+        'app' => in_array($userType, [null, 'admin']) ||
+                $this->email === "admin@admin.com",
+        'parent' => $userType === "parent",
+        'student' => $userType === "student",
+        'teacher' => $userType === "teacher",
+        'finance' => $userType === "admin",
+        default => true
+    };
+}
 
     protected static function boot()
     {

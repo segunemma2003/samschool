@@ -45,11 +45,12 @@ class QuestionBank extends Model
         return $query->where('exam_id', $examId);
     }
 
-    public function scopeForTeacher(Builder $query, int $teacherId): Builder
+ public function scopeForTeacher(Builder $query, int $teacherId): Builder
     {
-        return $query->whereHas('exam.subject', function (Builder $subQuery) use ($teacherId) {
-            $subQuery->where('teacher_id', $teacherId);
-        });
+        return $query->join('exams', 'question_banks.exam_id', '=', 'exams.id')
+                    ->join('subjects', 'exams.subject_id', '=', 'subjects.id')
+                    ->where('subjects.teacher_id', $teacherId)
+                    ->select('question_banks.*'); // Avoid column conflicts
     }
 
     public function scopeWithMinMarks(Builder $query, float $minMarks): Builder

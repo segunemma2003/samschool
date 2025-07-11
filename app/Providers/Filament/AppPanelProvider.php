@@ -90,66 +90,35 @@ class AppPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/app/theme.css');
     }
 
-    private function getOptimizedPlugins(): array
-    {
-        // Always load lightweight plugins
-        $plugins = [
-            FilamentProgressbarPlugin::make()->color('#29b'),
-            LightSwitchPlugin::make(),
-            \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make(),
-        ];
+private function getOptimizedPlugins(): array
+{
+    $plugins = [
+        FilamentProgressbarPlugin::make()->color('#29b'),
+        LightSwitchPlugin::make(),
+    ];
 
-        $user = Auth::user();
-
-        // Debug: Log user info to help troubleshoot
-        if ($user) {
-            \Log::info('AppPanel User Info', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'user_type' => $user->user_type ?? 'not_set',
-                'all_attributes' => $user->toArray()
-            ]);
-        }
-
-        // More flexible admin detection
-        $isAdmin = $this->isUserAdmin($user);
-
-        if ($isAdmin) {
-            \Log::info('Loading admin plugins for user', ['user_id' => $user->id]);
-
-            $plugins[] = FilamentGeneralSettingsPlugin::make(
-                SettingHold::make()
-                ->order(1)
-                ->label('Site Settings')
-                ->icon('heroicon-o-globe-alt')
-                ->route('filament.app.pages.site-settings')
-                ->description('Name, Logo, Site Profile')
-                ->group('General'),
-            )->setIcon('heroicon-o-cog');
-
-            $plugins[] = \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make();
-            $plugins[] = \Ercogx\FilamentOpenaiAssistant\OpenaiAssistantPlugin::make();
-        }
-
-        // Media manager for admins and teachers
-        if ($user && $this->userCanUploadFiles($user)) {
-            $plugins[] = \TomatoPHP\FilamentMediaManager\FilamentMediaManagerPlugin::make();
-        }
-
-        // Auth enhancer only on login pages
-        if (!auth()->check()) {
-            $plugins[] = CustomAuthUIEnhancerAdmin::make()
+    $plugins[] = CustomAuthUIEnhancerAdmin::make()
                 ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
                 ->emptyPanelBackgroundImageOpacity('100%')
                 ->formPanelPosition('right')
                 ->formPanelWidth('45%')
                 ->showEmptyPanelOnMobile(false);
-        }
-
-        \Log::info('AppPanel plugins loaded', ['plugin_count' => count($plugins), 'is_admin' => $isAdmin]);
-
-        return $plugins;
+    // Defer heavy plugin loading until after authentication
+    if (app()->runningInConsole()) {
+        return $plugins; // Skip heavy plugins in console
     }
+
+    // Only load admin plugins when actually needed
+    $request = request();
+    if ($request->user()?->user_type === 'admin') {
+        $plugins[] = FilamentGeneralSettingsPlugin::make();
+        $plugins[] = \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make();
+    }
+
+    return $plugins;
+}
+
+
 
     /**
      * More flexible admin detection

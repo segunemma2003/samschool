@@ -97,12 +97,12 @@ private function getOptimizedPlugins(): array
         LightSwitchPlugin::make(),
     ];
 
-    $plugins[] = CustomAuthUIEnhancerAdmin::make()
-                ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
-                ->emptyPanelBackgroundImageOpacity('100%')
-                ->formPanelPosition('right')
-                ->formPanelWidth('45%')
-                ->showEmptyPanelOnMobile(false);
+    // $plugins[] = CustomAuthUIEnhancerAdmin::make()
+    //             ->emptyPanelBackgroundImageUrl(asset('images/swisnl/filament-backgrounds/curated-by-swis/27.jpg'))
+    //             ->emptyPanelBackgroundImageOpacity('100%')
+    //             ->formPanelPosition('right')
+    //             ->formPanelWidth('45%')
+    //             ->showEmptyPanelOnMobile(false);
     // Defer heavy plugin loading until after authentication
     if (app()->runningInConsole()) {
         return $plugins; // Skip heavy plugins in console

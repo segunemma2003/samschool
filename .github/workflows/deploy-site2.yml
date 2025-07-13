@@ -7,7 +7,7 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/prod' # ✅ Changed from 'main' to 'prod'
 
     steps:
       - name: Deploy Updates to Server
@@ -19,13 +19,10 @@ jobs:
           timeout: 2400s
           script: |
             set -e
-
             echo "🚀 Starting application update..."
-
-            # Navigate to application directory
             cd /var/www/northstar
 
-            # Create quick backup
+            # Create backup
             BACKUP_DIR="/var/www/northstar_backup_$(date +%Y%m%d_%H%M%S)"
             echo "💾 Creating backup..."
             sudo cp -r /var/www/northstar $BACKUP_DIR
@@ -35,10 +32,10 @@ jobs:
             echo "🔧 Enabling maintenance mode..."
             php artisan down --retry=60 --refresh=15 || echo "Could not enable maintenance mode"
 
-            # Pull latest changes from GitHub
-            echo "📥 Pulling latest changes..."
+            # Pull latest changes from prod branch
+            echo "📥 Pulling latest changes from prod branch..."
             git fetch --all
-            git reset --hard origin/main
+            git reset --hard origin/prod  # ✅ Changed from 'main' to 'prod'
             git clean -fd
             echo "✅ Code updated successfully"
 

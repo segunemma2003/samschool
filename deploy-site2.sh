@@ -3,7 +3,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 
 REPO_URL="https://github.com/segunemma2003/samschool.git"
 APP_DIR="/var/www/northstar"
-BRANCH="main"
+BRANCH="prod"
 
 echo "Deploying Northstar from $BRANCH branch..."
 

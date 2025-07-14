@@ -53,26 +53,25 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
-    {
-        // if (app()->environment('local', 'development')) {
-        //     DB::listen(function ($query) {
-        //         if ($query->time > 100) { // Lower threshold
-        //             Log::warning('Slow Query Detected', [
-        //                 'sql' => $query->sql,
-        //                 'time' => $query->time . 'ms',
-        //                 'bindings' => $query->bindings,
-        //                 'location' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5)
-        //             ]);
-        //         }
-        //     });
+{
+    // Force close database connections after each request
+    if (!app()->runningInConsole()) {
+        register_shutdown_function(function() {
+            try {
+                // Disconnect all connections
+                DB::disconnect();
+                DB::purge('mysql');
+                DB::purge('dynamic');
 
-        //     // Memory usage monitoring
-        //     register_shutdown_function(function() {
-        //         $memory = memory_get_peak_usage(true) / 1024 / 1024;
-        //         if ($memory > 128) { // MB
-        //             Log::warning("High memory usage: {$memory}MB");
-        //         }
-        //     });
-        // }
+                // Force garbage collection
+                if (function_exists('gc_collect_cycles')) {
+                    gc_collect_cycles();
+                }
+            } catch (\Exception $e) {
+                // Log but don't break the response
+                Log::error('Connection cleanup error: ' . $e->getMessage());
+            }
+        });
     }
+}
 }

@@ -42,17 +42,6 @@ return [
             'synchronous' => null,
         ],
 
-        // 'dynamic' => [
-        //     'driver' => 'sqlite',
-        //     'url' => env('DB_URL'),
-        //     'database' => env('DB_DATABASE', database_path('database.sqlite')),
-        //     'prefix' => '',
-        //     'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-        //     'busy_timeout' => null,
-        //     'journal_mode' => null,
-        //     'synchronous' => null,
-        // ],
-
         'dynamic' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),
@@ -71,8 +60,9 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-                PDO::ATTR_PERSISTENT => true,
-                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='', time_zone='+00:00'",
+                PDO::ATTR_PERSISTENT => false, // CHANGED: Disable persistent connections
+                PDO::ATTR_TIMEOUT => 30, // ADDED: Connection timeout
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='', time_zone='+00:00', wait_timeout=300, interactive_timeout=300", // ADDED: Shorter timeouts
             ]) : [],
         ],
 
@@ -94,8 +84,9 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-                PDO::ATTR_PERSISTENT => true,
-                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='', time_zone='+00:00'",
+                PDO::ATTR_PERSISTENT => false, // CHANGED: Disable persistent connections
+                PDO::ATTR_TIMEOUT => 30, // ADDED: Connection timeout
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='', time_zone='+00:00', wait_timeout=300, interactive_timeout=300", // ADDED: Shorter timeouts
             ]) : [],
         ],
 
@@ -117,7 +108,8 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-                PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_PERSISTENT => false, // CHANGED: Disable persistent connections
+                PDO::ATTR_TIMEOUT => 30, // ADDED: Connection timeout
             ]) : [],
         ],
 

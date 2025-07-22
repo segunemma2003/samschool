@@ -13,11 +13,11 @@ use Illuminate\Support\Facades\Cache;
 
 class RecentAssignmentsWidget extends BaseWidget
 {
+    protected static ?string $heading = 'Recent Assignments';
+    protected static ?string $description = 'Your latest assignments at a glance';
     protected static ?int $sort = 2;
 
     protected int | string | array $columnSpan = 'full';
-
-    protected static ?string $heading = 'Recent Assignments';
 
     public function table(Table $table): Table
     {

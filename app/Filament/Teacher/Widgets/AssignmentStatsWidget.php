@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Cache;
 
 class AssignmentStatsWidget extends BaseWidget
 {
+    protected ?string $heading = 'Assignment Stats';
+    protected ?string $description = 'Overview of your assignments';
     protected static ?int $sort = 1;
 
     protected static bool $isLazy = false;

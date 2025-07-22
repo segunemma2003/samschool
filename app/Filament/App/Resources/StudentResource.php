@@ -602,6 +602,45 @@ class StudentResource extends Resource
                             })
                             ->icon('heroicon-s-document')
                             ->color('success'),
+                    Tables\Actions\BulkAction::make('bulkDownloadResults')
+                        ->label('Bulk Download Results')
+                        ->requiresConfirmation()
+                        ->form([
+                            Select::make('term_id')
+                                ->label('Term')
+                                ->options(Term::all()->pluck('name', 'id'))
+                                ->preload()
+                                ->searchable()
+                                ->required(),
+                            Select::make('academic_id')
+                                ->label('Academy')
+                                ->options(AcademicYear::all()->pluck('title', 'id'))
+                                ->preload()
+                                ->searchable()
+                                ->required(),
+                            Select::make('class_id')
+                                ->label('Class')
+                                ->options(SchoolClass::all()->pluck('name', 'id'))
+                                ->preload()
+                                ->searchable()
+                                ->required(),
+                        ])
+                        ->action(function (array $data, $records) {
+                            $studentIds = $records->pluck('id')->toArray();
+                            $downId = uniqid('bulk_result_', true); // Use a unique ID for tracking
+                            \App\Jobs\GenerateBroadSheet::dispatch([
+                                'term_id' => $data['term_id'],
+                                'academic_id' => $data['academic_id'],
+                                'class_id' => $data['class_id'],
+                            ], $records, $downId);
+                            Notification::make()
+                                ->title('Bulk result generation started')
+                                ->body('You will be notified when your download is ready.')
+                                ->success()
+                                ->send();
+                        })
+                        ->icon('heroicon-s-document')
+                        ->color('info'),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);

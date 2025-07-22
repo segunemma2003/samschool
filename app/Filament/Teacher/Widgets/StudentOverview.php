@@ -16,15 +16,22 @@ use Illuminate\Support\Facades\Auth;
 
 class StudentOverview extends BaseWidget
 {
+    protected ?string $heading = 'Student Overview';
+    protected ?string $description = 'Quick stats about your students and subjects';
+
     protected function getStats(): array
     {
         return [
-            Stat::make('Total Number of Subjects', $this->getTotalNumberOfSubjects())
+            Stat::make('Total Subjects', $this->getTotalNumberOfSubjects())
                 ->icon('heroicon-o-book-open')
-                ->color('success'),
-            Stat::make('Total Number of Students in Arms Class', $this->getTotalNumberOfStudents())
+                ->color('info')
+                ->description('Subjects you teach')
+                ->descriptionIcon('heroicon-m-academic-cap'),
+            Stat::make('Students in Your Class', $this->getTotalNumberOfStudents())
                 ->icon('heroicon-o-users')
-                ->color('primary'),
+                ->color('success')
+                ->description('Current class roster')
+                ->descriptionIcon('heroicon-m-user-group'),
         ];
     }
 

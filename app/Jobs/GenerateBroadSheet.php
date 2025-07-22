@@ -20,6 +20,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
+use ZipArchive;
 
 class GenerateBroadSheet implements ShouldQueue
 {
@@ -44,17 +45,13 @@ class GenerateBroadSheet implements ShouldQueue
      */
     public function handle(): void
     {
-        // Log::info('Handle method started in GenerateStudentResultPdf', ['data' => $this->data, 'students' => $this->students]);
         try{
-            // Log::info('Starting PDF generation for student: ' );
             $academy = AcademicYear::find($this->data['academic_id']);
             $term = Term::find($this->data['term_id']);
             $school = SchoolInformation::where([
                 ['term_id', $term->id],
                 ['academic_id', $academy->id]
             ])->first();
-
-
             $courses = CourseForm::with([
                 'subject.subjectDepot',
                 'scoreBoard'
@@ -64,59 +61,28 @@ class GenerateBroadSheet implements ShouldQueue
                 ])
                 ->get();
             $schoolClass = SchoolClass::whereId($this->data['class_id'])->first();
-                // Log::info($schoolClass->group->id);
-                // dd($schoolClass);
-                $students = $this->students;
-                $headings = ResultSectionType::with('resultSection')
+            $students = $this->students;
+            $headings = ResultSectionType::with('resultSection')
                 ->whereHas('resultSection', function ($query) use ($schoolClass) {
                     $query->where('group_id', $schoolClass->group->id);
                 })
                 ->get();
-                $markObtained = $headings->where('calc_pattern', 'total')->first();
-                $className = $schoolClass->name ?? 'N/A';
-                $classTeacherName =$schoolClass->teacher->name ?? 'N/A';
-                $totalSubjects = 0;
-                $studentData = [];
-                $courseTotals = [];
-                $totalPassed = 0;
-                foreach ($this->students as $student) {
+            $markObtained = $headings->where('calc_pattern', 'total')->first();
+            $className = $schoolClass->name ?? 'N/A';
+            $classTeacherName =$schoolClass->teacher->name ?? 'N/A';
+            $pdfPaths = [];
+            // Chunk students for memory efficiency
+            collect($students)->chunk(1000)->each(function($studentChunk) use ($courses, $school, $term, $academy, $className, $classTeacherName, $headings, $markObtained, &$pdfPaths) {
+                foreach ($studentChunk as $student) {
                     $studentCourses = $courses->where('student_id', $student->id);
-                    $passCount = 0;
-                    $passedEnglish = false;
-                    $passedMaths = false;
-                    // Log::info('Student Courses:', ['student_id' => $student->id, 'courses' => $studentCourses]);
-                    $studentScores = $studentCourses->map(function ($coursex) use ($markObtained, &$passCount, &$passedEnglish, &$passedMaths) {
-                        Log::info('Processing Course:', [
-                            // 'course' => $coursex,
-                            // 'markObtained' => $markObtained,
-                            'scoreBoard' => $coursex->scoreBoard,
-                            'markOb'=>$markObtained->id
-                            // 'scoreBoard2' => $coursex->scoreBoard,
-                        ]);
+                    $studentScores = $studentCourses->map(function ($coursex) use ($markObtained) {
                         $score = $coursex->scoreBoard->filter(function ($item) use ($markObtained) {
-                            Log::info('Checking Item:', ['item_id' => $item['result_section_type_id'], 'markObtained_id' => $markObtained->id]);
                             return $item['result_section_type_id'] == $markObtained->id;
                         })->first();
-                        Log::info('Score Found:', ['score' => $score]);
                         $scoreValue = $score->score ?? 0;
                         $courseName = $coursex->subject->subjectDepot->name;
                         $passMark = $coursex->subject->pass_mark;
-                        // Check if the student passed this subject
                         $isPassed = $scoreValue >= $passMark;
-
-                        if ($isPassed) {
-                            $passCount++;
-                            if (strtolower($courseName) === 'english') {
-                                $passedEnglish = true;
-                            } elseif (in_array(strtolower($courseName), ['math', 'mathematics'])) {
-                                $passedMaths = true;
-                            }
-                        }
-                        if (!isset($courseTotals[$courseName])) {
-                            $courseTotals[$courseName] = 0;
-                        }
-                        $courseTotals[$courseName] += $scoreValue;
-
                         return [
                             'subject' => $coursex->subject->subjectDepot->name,
                             'score' => $score->score ?? 'N/A',
@@ -124,100 +90,58 @@ class GenerateBroadSheet implements ShouldQueue
                             'status' => $isPassed ? 'Pass' : 'Fail',
                         ];
                     });
- // Determine the final remark
-                    $remark = ($passedEnglish && $passedMaths && $passCount >= 6) ? 'Pass' : 'Fail';
-                    $studentData[] = [
+                    $data = [
+                        'school'=>$school,
+                        'className' => $className,
+                        'classTeacherName' => $classTeacherName,
+                        'term'=>$term,
+                        'academy'=>$academy,
+                        'courses'=>$studentCourses,
                         'student' => $student,
                         'scores' => $studentScores,
-                        'remark' => $remark,
+                        'headings'=> $headings,
+                        'markObtained'=>$markObtained
                     ];
-                    if($remark == "Pass"){
-                        $totalPassed += 1;
-                    }
+                    $pdf = Pdf::loadView('template.student_result',compact('data'))->setPaper('A4', 'portrait');
+                    $time = time();
+                    $fileName = "result-{$student->id}-$time.pdf";
+                    $filePath = "results/{$fileName}";
+                    Storage::disk('s3')->put($filePath, $pdf->output());
+                    $pdfPaths[] = $filePath;
                 }
-
-                $passPercent = ($totalPassed/count($this->students))*100;
-                Log::info(  $studentData);
-                // dd($markObtained);
-            $data = [
-                'school'=>$school,
-                'totalPassed'=>$totalPassed,
-                'passPercent'=>$passPercent,
-                'className' => $className,
-                'classTeacherName' => $classTeacherName,
-                'term'=>$term,
-                'academy'=>$academy,
-                'courses'=>$courses,
-                // 'students'=> $this->students,
-                'students' => $studentData,
-                'headings'=> $headings,
-                'markObtained'=>$markObtained
-            ];
-            $students= $this->students;
-            if (empty($data['students'])) {
-                throw new \Exception('No student data found. Please check the input.');
+            });
+            // Zip all PDFs
+            $zipFileName = 'results/bulk_results_' . time() . '.zip';
+            $zip = new ZipArchive;
+            $localZipPath = storage_path('app/' . basename($zipFileName));
+            if ($zip->open($localZipPath, ZipArchive::CREATE) === TRUE) {
+                foreach ($pdfPaths as $pdfPath) {
+                    $localPdf = tempnam(sys_get_temp_dir(), 'pdf');
+                    file_put_contents($localPdf, Storage::disk('s3')->get($pdfPath));
+                    $zip->addFile($localPdf, basename($pdfPath));
+                }
+                $zip->close();
+                Storage::disk('s3')->put($zipFileName, file_get_contents($localZipPath));
+                unlink($localZipPath);
             }
-            // Log::info('PDF Data:', compact('data'));
-            // dd($students);
-            $subjectCount = count($data['students'][0]['scores']);
-            $baseWidth = 842; // Base width for A4 landscape in points
-            $extraWidthPerSubject = 30; // Approximate additional width per subject
-            $calculatedWidth = $baseWidth + ($extraWidthPerSubject * $subjectCount);
-            $pdf = Pdf::loadView('template.broadsheet',compact('data'))->setPaper('A4', 'landscape');
-            $time = time();
-            $fileName = "broadsheet-$time.pdf";
-            $filePath = "results/{$fileName}";
-            Storage::disk('s3')->put($filePath, $pdf->output());
             $downloadStatus = DownloadStatus::whereId($this->downId)->first();
             $downloadStatus->status ='completed';
-            $downloadStatus->download_links = Storage::disk('s3')->url($filePath);
+            $downloadStatus->download_links = Storage::disk('s3')->url($zipFileName);
             $downloadStatus->save();
             Notification::make()
-                ->title('Your download is ready')
+                ->title('Your bulk download is ready')
                 ->success()
                 ->send();
-
-        }catch (QueryException $e) {
+        }catch (\Exception $e) {
             $downloadStatus = DownloadStatus::whereId($this->downId)->first();
             $downloadStatus->status ='failed';
             $downloadStatus->download_links = "";
             $downloadStatus->error = $e->getMessage();
             $downloadStatus->save();
-
             Notification::make()
             ->title('Your download failed')
             ->danger()
             ->send();
-            // Handle database errors
-            Log::error('Database error:', ['error' => $e->getMessage()]);
         }
-        catch (Throwable $e) {
-            $downloadStatus = DownloadStatus::whereId($this->downId)->first();
-            $downloadStatus->status ='failed';
-            $downloadStatus->download_links = "";
-            $downloadStatus->error = $e->getMessage();
-            $downloadStatus->save();
-
-            Notification::make()
-            ->title('Your download failed')
-            ->danger()
-            ->send();
-            // Handle all other errors
-            Log::error('Error:', ['error' => $e->getMessage()]);
-        } catch (\Exception $e) {
-            $downloadStatus = DownloadStatus::whereId($this->downId)->first();
-            $downloadStatus->status ='failed';
-            $downloadStatus->download_links = "";
-            $downloadStatus->error = $e->getMessage();
-            $downloadStatus->save();
-
-            Notification::make()
-            ->title('Your download failed')
-            ->danger()
-            ->send();
-            // Log the error for debugging purposes
-            Log::error('Error generating student result PDF:', ['error' => $e->getMessage()]);
-        }
-
     }
 }

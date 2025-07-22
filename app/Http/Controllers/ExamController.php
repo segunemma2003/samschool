@@ -20,11 +20,37 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class ExamController extends Controller
 {
+    // Promotion criteria config: class_id => [min_average, required_subjects]
+    protected $promotionCriteria = [
+        // Example: 1 => ['min_average' => 60, 'required_subjects' => ['English', 'Math']],
+        // Add your class IDs and criteria here
+    ];
+
+    protected function determinePromotion($student, $courses, $average) {
+        $classId = $student->class_id;
+        $criteria = $this->promotionCriteria[$classId] ?? ['min_average' => 50, 'required_subjects' => []];
+        if ($average < $criteria['min_average']) return false;
+        foreach ($criteria['required_subjects'] as $subjectName) {
+            $subject = $courses->first(fn($c) => stripos($c->subject->subjectDepot->name, $subjectName) !== false);
+            if (!$subject || $subject->scoreBoard->sum('score') < 50) return false;
+        }
+        return true;
+    }
 
     public function generatePdf($studentId,$termId,$academyId){
+        $cacheKey = "pdf_{$studentId}_{$termId}_{$academyId}";
+        if (Cache::has($cacheKey)) {
+            $pdfPath = Cache::get($cacheKey);
+            if (file_exists($pdfPath)) {
+                return response()->file($pdfPath);
+            } else {
+                Cache::forget($cacheKey);
+            }
+        }
         try {
             // Eager load all students in the class with their courseForms, scoreBoard, and subject.subjectDepot
             $student = Student::with(['class', 'class.group'])->whereId($studentId)->firstOrFail();
@@ -226,6 +252,17 @@ class ExamController extends Controller
             $classAverageScore = count($studentAverages) > 0
                 ? array_sum(array_column($studentAverages, 'average')) / count($studentAverages)
                 : 0;
+            // Only apply promotion logic if third term
+            $isThirdTerm = false;
+            if ($termAndAcademy['term'] && (stripos($termAndAcademy['term']->name, 'third') !== false || $termAndAcademy['term']->id == 3 || stripos($termAndAcademy['term']->name, '3') !== false)) {
+                $isThirdTerm = true;
+            }
+            $promoted = null;
+            $promotionCriteria = null;
+            if ($isThirdTerm) {
+                $promoted = $this->determinePromotion($student, $courses, $currentStudentAverage);
+                $promotionCriteria = $this->promotionCriteria[$student->class_id] ?? ['min_average' => 50, 'required_subjects' => []];
+            }
             $resultData =[
                 'class'=>$class,
                 'totalSubject'=>$totalSubject,
@@ -242,7 +279,14 @@ class ExamController extends Controller
                 'studentPosition' => $position,
                 'principalComment' => $principalComment,
                 'studentAverage' => $currentStudentAverage,
+                'promoted' => $promoted,
+                'promotionCriteria' => $promotionCriteria,
             ];
+            // Generate PDF and cache path (pseudo, replace with your PDF logic)
+            // $pdfPath = $this->generateAndStorePdf($resultData); // Implement this method as needed
+            // Cache::put($cacheKey, $pdfPath, now()->addMinutes(10));
+            // return response()->file($pdfPath);
+            // For now, just return the view as before
             return view('exam.result', compact(
                 'student',
                 'class',

@@ -38,30 +38,33 @@ class StudentOverview extends BaseWidget
 
     public function getTotalNumberOfSubjects()
     {
-        $user = User::whereId(Auth::id())->first();
-        $teacher = Teacher::whereEmail($user->email)->first();
-        $subjects = Subject::where('teacher_id', $teacher->id)->count();
-        return $subjects;
+        $user = \App\Models\User::whereId(\Illuminate\Support\Facades\Auth::id())->first();
+        $teacher = \App\Models\Teacher::whereEmail($user->email)->first();
+        $cacheKey = "teacher_subject_count_{$teacher->id}";
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($teacher) {
+            return \App\Models\Subject::where('teacher_id', $teacher->id)->count();
+        });
     }
 
     public function getTotalNumberOfStudents()
     {
-        $user = User::whereId(Auth::id())->first();
-        $teacher = Teacher::whereEmail($user->email)->first();
-        $term = Term::where('status', 'true')->first();
-        $academicYear = AcademicYear::where('status', 'true')->first();
-        $armTeacher = ArmsTeacher::where(['academic_id'=>$academicYear->id,'term_id'=>$term->id,'teacher_id'=> $teacher->id])->first();
+        $user = \App\Models\User::whereId(\Illuminate\Support\Facades\Auth::id())->first();
+        $teacher = \App\Models\Teacher::whereEmail($user->email)->first();
+        $term = \App\Models\Term::where('status', 'true')->first();
+        $academicYear = \App\Models\AcademicYear::where('status', 'true')->first();
+        $armTeacher = \App\Models\ArmsTeacher::where(['academic_id'=>$academicYear->id,'term_id'=>$term->id,'teacher_id'=> $teacher->id])->first();
         if(is_null($armTeacher)){
             return 0;
         }else{
             $arm_id = $armTeacher->arm_id;
             $class_id = $armTeacher->class_id;
-            $students = Student::where('arm_id', $arm_id)
-                ->where('class_id', $class_id)
-                ->count();
-            return $students;
+            $cacheKey = "teacher_student_count_{$teacher->id}_{$term->id}_{$academicYear->id}";
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($arm_id, $class_id) {
+                return \App\Models\Student::where('arm_id', $arm_id)
+                    ->where('class_id', $class_id)
+                    ->count();
+            });
         }
-
     }
 }
 

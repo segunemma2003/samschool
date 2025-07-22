@@ -450,7 +450,11 @@ class ExamResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->striped()
-            ->paginated([10, 25, 50, 100]);
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
+            ->persistFiltersInSession()
+            ->persistSortInSession()
+            ->persistSearchInSession();
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -625,13 +629,14 @@ class ExamResource extends Resource
     {
         return parent::getEloquentQuery()
             ->with([
-                'academic:id,title',
-                'term:id,name',
-                'subject:id,code,class_id,teacher_id',
-                'subject.class:id,name',
+                'subject:id,name,code,teacher_id',
                 'subject.teacher:id,name',
-                'subject.subjectDepot:id,name',
-                'resultType:id,name'
-            ]);
+                'term:id,name',
+                'academic:id,title'
+            ])
+            ->select([
+                'id', 'subject_id', 'term_id', 'academic_year_id', 'assessment_type', 'exam_date', 'created_at', 'updated_at'
+            ])
+            ->latest('created_at');
     }
 }

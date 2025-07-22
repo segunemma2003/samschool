@@ -10,8 +10,7 @@ return new class extends Migration
     /**
      * CRITICAL INDEXES STILL NEEDED WITH TOMATOPHP/FILAMENT-TENANCY
      *
-     * The tenancy package handles tenant isolation, but you still need
-     * these performance optimizations within each tenant database.
+     * If you add a new table or relationship, always add an index for the foreign key and any column used in WHERE, JOIN, or ORDER BY.
      */
     public function up(): void
     {

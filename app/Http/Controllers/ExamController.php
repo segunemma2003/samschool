@@ -54,11 +54,16 @@ class ExamController extends Controller
         try {
             // Eager load all students in the class with their courseForms, scoreBoard, and subject.subjectDepot
             $student = Student::with(['class', 'class.group'])->whereId($studentId)->firstOrFail();
-            $allStudents = Student::with(['courseForms' => function($q) use ($termId, $academyId) {
+            // Use chunking to avoid memory overload for large classes
+            $allStudents = collect();
+            Student::with(['courseForms' => function($q) use ($termId, $academyId) {
                 $q->where('term_id', $termId)
                   ->where('academic_year_id', $academyId)
                   ->with(['scoreBoard', 'subject.subjectDepot']);
-            }])->where('class_id', $student->class_id)->get();
+            }])->where('class_id', $student->class_id)
+              ->chunk(100, function($students) use (&$allStudents) {
+                  $allStudents = $allStudents->merge($students);
+              });
 
             $studentAverages = [];
             $totalStudents = $allStudents->count();
@@ -112,6 +117,7 @@ class ExamController extends Controller
             if (count($invalidCourses) > 0) {
                 throw new \Exception('Some courses have missing subject information. Please complete the data for course IDs: ' . implode(', ', $invalidCourses));
             }
+            // For psychomotor, limit to 100 records (adjust as needed for your data size)
             $psychomotorAffective = Psychomotor::with(['psychomotorStudent' => function($query) use($student, $termId, $academyId) {
                 $query->where('student_id', $student->id);
             }])
@@ -119,7 +125,7 @@ class ExamController extends Controller
                 ['term_id', $termId],
                 ['academic_id', $academyId],
                 ['type', 'affective']
-            ])->get();
+            ])->limit(100)->get();
             $psychomotorNormal = Psychomotor::with(['psychomotorStudent' => function($query) use($student, $termId, $academyId) {
                 $query->where('student_id', $student->id);
             }])
@@ -127,7 +133,7 @@ class ExamController extends Controller
                 ['term_id', $termId],
                 ['academic_id', $academyId],
                 ['type', 'psychomotor']
-            ])->get();
+            ])->limit(100)->get();
             // Check for missing psychomotor ratings for current term and academic year
             $missingAffectiveRatings = [];
             $missingPsychomotorRatings = [];

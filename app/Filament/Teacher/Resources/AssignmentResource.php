@@ -360,36 +360,14 @@ class AssignmentResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) {
-                $teacher = static::getCurrentTeacher();
-
-                if (!$teacher) {
-                    return $query->whereRaw('1 = 0'); // Return no results
+                $user = Auth::user();
+                if ($user) {
+                    $teacher = Teacher::where('email', $user->email)->first();
+                    if ($teacher) {
+                        $query->with(['class', 'subject', 'term', 'academy'])
+                              ->where('teacher_id', $teacher->id);
+                    }
                 }
-
-                return $query
-                    ->select([
-                        'assignments.id',
-                        'assignments.title',
-                        'assignments.description',
-                        'assignments.deadline',
-                        'assignments.weight_mark',
-                        'assignments.status',
-                        'assignments.class_id',
-                        'assignments.subject_id',
-                        'assignments.term_id',
-                        'assignments.academic_id',
-                        'assignments.file',
-                        'assignments.created_at',
-                        'assignments.updated_at',
-                    ])
-                    ->with([
-                        'class:id,name,class_numeric',
-                        'subject:id,name,code',
-                        'term:id,name',
-                        'academy:id,title',
-                    ])
-                    ->where('teacher_id', $teacher->id)
-                    ->orderBy('created_at', 'desc');
             })
             ->defaultSort('created_at', 'desc')
             ->columns([
@@ -699,7 +677,7 @@ class AssignmentResource extends Resource
                     ->icon('heroicon-m-plus'),
             ])
             ->striped()
-            ->paginated([10, 25, 50])
+            ->paginated([10, 25, 50, 100])
             ->defaultPaginationPageOption(25)
             ->persistFiltersInSession()
             ->persistSortInSession()

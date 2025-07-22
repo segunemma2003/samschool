@@ -10,6 +10,9 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * This migration ensures all new tables/columns are indexed for foreign keys and frequently queried columns.
+     * If you add a new table or relationship, always add an index for the foreign key and any column used in WHERE, JOIN, or ORDER BY.
      */
     public function up(): void
     {

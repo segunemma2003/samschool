@@ -179,121 +179,121 @@ class StudentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-        ->headerActions([
-            Tables\Actions\Action::make('generateBulkInvoices')
-            ->label('Generate Bulk Invoices')
-            ->requiresConfirmation()
-            ->form([
-                Select::make('term_id')
-                    ->label('Term')
-                    ->options(Term::all()->pluck('name', 'id'))
-                    ->preload()
-                    ->searchable()
-                    ->required(),
+            ->headerActions([
+                Tables\Actions\Action::make('generateBulkInvoices')
+                ->label('Generate Bulk Invoices')
+                ->requiresConfirmation()
+                ->form([
+                    Select::make('term_id')
+                        ->label('Term')
+                        ->options(Term::all()->pluck('name', 'id'))
+                        ->preload()
+                        ->searchable()
+                        ->required(),
 
-                Select::make('academic_id')
-                    ->label('Academy')
-                    ->options(AcademicYear::all()->pluck('title', 'id'))
-                    ->preload()
-                    ->searchable()
-                    ->required(),
-                Select::make('class_id')
-                    ->label('Class')
-                    ->options(SchoolClass::all()->pluck('name', 'id'))
-                    ->preload()
-                    ->searchable()
-                    ->required(),
-                    RichEditor::make('note')
-                    ->required(),
-                Repeater::make('invoice_details')
-                    ->label('Invoice Details')
-                    ->schema([
-                        Select::make('invoice_group_id')
-                            ->label('Name')
-                            ->options(InvoiceGroup::all()->pluck('name', 'id'))
-                            ->preload()
-                            ->searchable()
-                            ->required(),
+                    Select::make('academic_id')
+                        ->label('Academy')
+                        ->options(AcademicYear::all()->pluck('title', 'id'))
+                        ->preload()
+                        ->searchable()
+                        ->required(),
+                    Select::make('class_id')
+                        ->label('Class')
+                        ->options(SchoolClass::all()->pluck('name', 'id'))
+                        ->preload()
+                        ->searchable()
+                        ->required(),
+                        RichEditor::make('note')
+                        ->required(),
+                    Repeater::make('invoice_details')
+                        ->label('Invoice Details')
+                        ->schema([
+                            Select::make('invoice_group_id')
+                                ->label('Name')
+                                ->options(InvoiceGroup::all()->pluck('name', 'id'))
+                                ->preload()
+                                ->searchable()
+                                ->required(),
 
-                        TextInput::make('amount')
-                            ->label('Amount')
-                            ->prefix('₦')
-                            ->numeric()
-                            ->live('blur')
-                            ->hint(new HtmlString(Blade::render('<x-filament::loading-indicator class="w-5 h-5" wire:loading wire-target="data.invoice_student_id"/>')))
-                            ->required(),
-                    ])
-                    ->columnSpanFull()
-                    ->minItems(1)
-                    ->hiddenLabel()
-                    ->collapsible()
-                    ->collapsed(fn($record) => $record)
-                    ->cloneable()
-                    ->afterStateUpdated(function (callable $get, callable $set) {
-                        // Calculate the total dynamically
-                        $details = $get('invoice_details');
-                        $total = collect($details)->sum('amount'); // Sum the 'amount' field
-                        $set('total_amount', $total); // Update the total_amount field
-                    })
+                            TextInput::make('amount')
+                                ->label('Amount')
+                                ->prefix('₦')
+                                ->numeric()
+                                ->live('blur')
+                                ->hint(new HtmlString(Blade::render('<x-filament::loading-indicator class="w-5 h-5" wire:loading wire-target="data.invoice_student_id"/>')))
+                                ->required(),
+                        ])
+                        ->columnSpanFull()
+                        ->minItems(1)
+                        ->hiddenLabel()
+                        ->collapsible()
+                        ->collapsed(fn($record) => $record)
+                        ->cloneable()
+                        ->afterStateUpdated(function (callable $get, callable $set) {
+                            // Calculate the total dynamically
+                            $details = $get('invoice_details');
+                            $total = collect($details)->sum('amount'); // Sum the 'amount' field
+                            $set('total_amount', $total); // Update the total_amount field
+                        })
 
-                    ->required(),
+                        ->required(),
 
-                    TextInput::make('total_amount')
-                    ->label('Total Amount')
-                    ->prefix('₦')
-                    ->numeric()
-                    ->live()
-                    ->required(),
+                        TextInput::make('total_amount')
+                        ->label('Total Amount')
+                        ->prefix('₦')
+                        ->numeric()
+                        ->live()
+                        ->required(),
 
-                    ]) ->action(function (array $data) {
-                        $students = Student::where('class_id', $data['class_id'])->get();
-                        foreach ($students as $student) {
-                            // dd($record);
-                            // $student = Student::where("class_id",$record);
+                        ]) ->action(function (array $data) {
+                            $students = Student::where('class_id', $data['class_id'])->get();
+                            foreach ($students as $student) {
+                                // dd($record);
+                                // $student = Student::where("class_id",$record);
 
-                            if (!$student) {
-                                continue;
+                                if (!$student) {
+                                    continue;
+                                }
+
+                                // Generate unique order code
+                                do {
+                                    $orderCode = 'ORD-' . random_int(100000000, 999999999);
+                                } while (InvoiceStudent::where('order_code', $orderCode)->exists());
+
+                                $invoiceStudent = InvoiceStudent::create([
+                                    'order_code' => $orderCode,
+                                    'term_id' => $data['term_id'],
+                                    'academic_id' => $data['academic_id'],
+                                    'student_id' => $student->id,
+                                    'note'=> $data['note'],
+                                    'total_amount' => $data['total_amount'],
+                                    'amount_owed' => $data['total_amount'],
+                                ]);
+
+                                foreach ($data['invoice_details'] as $detail) {
+                                    $invoiceStudent->invoice_details()->create($detail);
+                                }
                             }
 
-                            // Generate unique order code
-                            do {
-                                $orderCode = 'ORD-' . random_int(100000000, 999999999);
-                            } while (InvoiceStudent::where('order_code', $orderCode)->exists());
-
-                            $invoiceStudent = InvoiceStudent::create([
-                                'order_code' => $orderCode,
-                                'term_id' => $data['term_id'],
-                                'academic_id' => $data['academic_id'],
-                                'student_id' => $student->id,
-                                'note'=> $data['note'],
-                                'total_amount' => $data['total_amount'],
-                                'amount_owed' => $data['total_amount'],
-                            ]);
-
-                            foreach ($data['invoice_details'] as $detail) {
-                                $invoiceStudent->invoice_details()->create($detail);
-                            }
-                        }
-
+                            Notification::make()
+                                ->title('Bulk Invoices Created Successfully')
+                                ->success()
+                                ->send();
+                        })
+                        ->icon('heroicon-s-document')
+                        ->color('success'),
+                Tables\Actions\Action::make('migrate_images')
+                    ->label('Migrate Images to S3')
+                    ->icon('heroicon-o-arrow-path')
+                    ->action(function () {
+                        MigrateImagesToS3::dispatch(Student::class, 'avatar');
                         Notification::make()
-                            ->title('Bulk Invoices Created Successfully')
+                            ->title('Migration Started')
+                            ->body('Image migration to S3 has been queued')
                             ->success()
                             ->send();
                     })
-                    ->icon('heroicon-s-document')
-                    ->color('success'),
-            Tables\Actions\Action::make('migrate_images')
-                ->label('Migrate Images to S3')
-                ->icon('heroicon-o-arrow-path')
-                ->action(function () {
-                    MigrateImagesToS3::dispatch(Student::class, 'avatar');
-                    Notification::make()
-                        ->title('Migration Started')
-                        ->body('Image migration to S3 has been queued')
-                        ->success()
-                        ->send();
-                })
-        ])
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                 ->searchable(),
@@ -301,15 +301,24 @@ class StudentResource extends Resource
                 ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                 ->searchable(),
-                Tables\Columns\TextColumn::make('class.name')
-                ->searchable(),
+                Tables\Columns\TextColumn::make('arm.name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('class.name')->searchable()->sortable(),
             ])
             ->filters([
                 SelectFilter::make('class')
-                ->relationship('class', 'name')
-                ->searchable()
-                ->preload()
+                    ->relationship('class', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('arm')
+                    ->relationship('arm', 'name')
+                    ->searchable()
+                    ->preload()
             ])
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
+            ->persistFiltersInSession()
+            ->persistSortInSession()
+            ->persistSearchInSession()
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

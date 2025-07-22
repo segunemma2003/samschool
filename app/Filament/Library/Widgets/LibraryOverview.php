@@ -19,30 +19,35 @@ class LibraryOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $user = User::whereId(Auth::id())->first();
-
-
+        $user = \App\Models\User::whereId(\Illuminate\Support\Facades\Auth::id())->first();
+        $cacheKey = "library_overview_stats";
+        $stats = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($user) {
+            return [
+                'total_books' => \App\Models\LibraryBookLoan::count(),
+                'borrowed' => \App\Models\LibraryBookLoan::where('borrower_type', $user->getMorphClass())
+                    ->where('status', 'borrowed')
+                    ->count(),
+                'overdue' => \App\Models\LibraryBookLoan::where('borrower_type', $user->getMorphClass())
+                    ->where('status', 'overdue')
+                    ->count(),
+                'returned' => \App\Models\LibraryBookLoan::where('borrower_type', $user->getMorphClass())
+                    ->where('status', 'returned')
+                    ->count(),
+                'total_locations' => \App\Models\LibraryLocation::count(),
+                'total_shelves' => \App\Models\LibraryShelf::count(),
+                'avg_books_per_shelf' => number_format(\App\Models\LibraryShelf::withCount('books')->get()->avg('books_count'), 1),
+                'books_without_location' => \App\Models\LibraryBook::whereNull('shelf_id')->count(),
+            ];
+        });
         return [
-            Stat::make(' Total Books', LibraryBookLoan::count())
-            ,
-            Stat::make('Books Borrowed', LibraryBookLoan::where('borrower_type', $user->getMorphClass())
-                // ->where('borrower_id', $user->id)
-                ->where('status', 'borrowed')
-                ->count()),
-            Stat::make('Overdue Books', LibraryBookLoan::where('borrower_type', $user->getMorphClass())
-                // ->where('borrower_id', $user->id)
-                ->where('status', 'overdue')
-                ->count()),
-            Stat::make('Books Returned', LibraryBookLoan::where('borrower_type', $user->getMorphClass())
-                // ->where('borrower_id', $user->id)
-                ->where('status', 'returned')
-                ->count()),
-                Stat::make('Total Locations', LibraryLocation::count()),
-                Stat::make('Total Shelves', LibraryShelf::count()),
-                Stat::make('Average Books per Shelf',
-                    number_format(LibraryShelf::withCount('books')->get()->avg('books_count'), 1)),
-                Stat::make('Books Without Location',
-                    \App\Models\LibraryBook::whereNull('shelf_id')->count()),
+            Stat::make(' Total Books', $stats['total_books']),
+            Stat::make('Books Borrowed', $stats['borrowed']),
+            Stat::make('Overdue Books', $stats['overdue']),
+            Stat::make('Books Returned', $stats['returned']),
+            Stat::make('Total Locations', $stats['total_locations']),
+            Stat::make('Total Shelves', $stats['total_shelves']),
+            Stat::make('Average Books per Shelf', $stats['avg_books_per_shelf']),
+            Stat::make('Books Without Location', $stats['books_without_location']),
         ];
     }
 }

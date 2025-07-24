@@ -23,7 +23,8 @@ class SubjectResource extends Resource
 {
     protected static ?string $model = Subject::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-book-open'; // More relevant icon for subjects
+    protected static ?string $navigationGroup = 'Academic Management';
 
     public static function form(Form $form): Form
     {
@@ -87,11 +88,18 @@ class SubjectResource extends Resource
         })
             ->columns([
                 Tables\Columns\TextColumn::make('subjectDepot.name')
+                ->label('Subject')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('class.name')
+                ->label('Class')
                 ->searchable(),
                 Tables\Columns\TextColumn::make('code')
+                ->label('Subject Code')
                 ->searchable(),
+                Tables\Columns\TextColumn::make('pass_mark')
+                ->label('Pass Mark'),
+                Tables\Columns\TextColumn::make('final_mark')
+                ->label('Final Mark'),
             ])
             ->filters([
                 //
@@ -104,7 +112,8 @@ class SubjectResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped(); // Zebra striping for readability
     }
 
     public static function getRelations(): array

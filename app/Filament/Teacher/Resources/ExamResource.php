@@ -35,7 +35,8 @@ class ExamResource extends Resource
 {
     protected static ?string $model = Exam::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list'; // More relevant icon for exams
+    protected static ?string $navigationGroup = 'Academic Management';
 
     public static function form(Form $form): Form
     {
@@ -141,30 +142,31 @@ class ExamResource extends Resource
                     })
             )
             ->columns([
-                TextColumn::make('academic.title')->searchable(),
-                TextColumn::make('term.name')->searchable()->default('Term 1'),
-                TextColumn::make('subject.code')->searchable(),
-                TextColumn::make('subject.class.name')->searchable(),
-                TextColumn::make('resultType.name')
+                TextColumn::make('academic.title')->label('Academic Year')->searchable(),
+                TextColumn::make('term.name')->label('Term')->searchable()->default('Term 1'),
+                TextColumn::make('subject.code')->label('Subject Code')->searchable(),
+                TextColumn::make('subject.class.name')->label('Class')->searchable(),
+                TextColumn::make('resultType.name')->label('Assessment Detail'),
+                Tables\Columns\BadgeColumn::make('assessment_type')
+                    ->label('Assessment Type')
+                    ->colors([
+                        'success' => fn($state) => $state === 'exam',
+                        'warning' => fn($state) => $state === 'test',
+                    ])
+                    ->formatStateUsing(fn($state) => ucfirst($state)),
+                TextColumn::make('exam_date')->label('Exam Date')->date(),
+                TextColumn::make('duration')->label('Duration (min)'),
+                TextColumn::make('total_score')->label('Total Score'),
             ])
             ->filters([
-                // Filter for Academic Year with default value
                 SelectFilter::make('academic_year_id')
                     ->label('Academic Year')
                     ->options(AcademicYear::pluck('title', 'id'))
-                    ->default($academy?->id),// Set default if an active academic year exists
-                //     ->query(function ($query, $value) {
-                //         $query->where('academic_year_id', $value);
-                //     }),
-
-                // // Filter for Term with default value
+                    ->default($academy?->id),
                 SelectFilter::make('term_id')
                     ->label('Term')
                     ->options(Term::pluck('name', 'id'))
-                    ->default($term?->id) // Set default if an active term exists
-                //     ->query(function ($query, $value) {
-                //         $query->where('term_id', $value);
-                //     }),
+                    ->default($term?->id),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -177,29 +179,14 @@ class ExamResource extends Resource
                     ->label('Regenerate Results')
                     ->icon('heroicon-o-arrow-path')
                     ->action(function ($record) {
-                        // Get all students who have attempted the exam
                         $quizScores = QuizScore::where('exam_id', $record->id)->get();
-
                         $updatedCount = 0;
-
                         foreach ($quizScores as $quizScore) {
-                            // Get all scores for this student and exam
-                            $scores = QuizSubmission::where('quiz_score_id', $quizScore->id)
-                                ->get();
-
-                            // Calculate total score
+                            $scores = QuizSubmission::where('quiz_score_id', $quizScore->id)->get();
                             $totalScore = $scores->sum('score');
-
-
-
-                            // Update the total score
-                            $quizScore->update([
-                                'total_score' => $totalScore
-                            ]);
-
+                            $quizScore->update(['total_score' => $totalScore]);
                             $updatedCount++;
                         }
-
                         Notification::make()
                             ->title('Success')
                             ->body("Updated {$updatedCount} student results")
@@ -216,7 +203,8 @@ class ExamResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped(); // Zebra striping for readability
     }
 
 

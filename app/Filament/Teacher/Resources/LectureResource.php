@@ -31,7 +31,8 @@ class LectureResource extends Resource
 {
     protected static ?string $model = Lecture::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-bar'; // More relevant icon for lectures
+    protected static ?string $navigationGroup = 'Academic Management';
 
     public static function form(Form $form): Form
     {
@@ -90,14 +91,16 @@ class LectureResource extends Resource
                 })
             ->columns([
                 TextColumn::make('subject.code')
+                ->label('Subject Code')
                 ->searchable()
                 ->sortable(),
                 TextColumn::make('title')
+                ->label('Topic')
                 ->searchable()
                 ->sortable(),
                 TextColumn::make('subject.class.name')
-                ->searchable()
                 ->label('Class')
+                ->searchable()
                 ->sortable(),
                 TextColumn::make('meeting_link')
                 ->label('Meeting Link')
@@ -110,8 +113,15 @@ class LectureResource extends Resource
                 ->label('Time of Meeting')
                 ->time(),
                 TextColumn::make('created_at')
-                ->since()
-
+                ->label('Created')
+                ->since(),
+                Tables\Columns\BadgeColumn::make('meeting_link')
+                    ->label('Has Meeting?')
+                    ->colors([
+                        'success' => fn($state) => !empty($state),
+                        'danger' => fn($state) => empty($state),
+                    ])
+                    ->formatStateUsing(fn($state) => empty($state) ? 'No' : 'Yes'),
             ])
             ->filters([
                 //
@@ -124,7 +134,8 @@ class LectureResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped(); // Zebra striping for readability
     }
 
     public static function getRelations(): array

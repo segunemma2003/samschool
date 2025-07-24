@@ -22,7 +22,8 @@ class SyllabusResource extends Resource
 {
     protected static ?string $model = Syllabus::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text'; // More relevant icon for syllabi
+    protected static ?string $navigationGroup = 'Academic Management';
 
     public static function form(Form $form): Form
     {
@@ -56,9 +57,14 @@ class SyllabusResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                ->label('Syllabus Title')
                 ->searchable(),
-                TextColumn::make('subject.code')->searchable(),
-                TextColumn::make('class.name')->searchable()
+                TextColumn::make('subject.code')
+                ->label('Subject Code')
+                ->searchable(),
+                TextColumn::make('class.name')
+                ->label('Class')
+                ->searchable(),
             ])
             ->filters([
                 //
@@ -71,7 +77,8 @@ class SyllabusResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->striped(); // Zebra striping for readability
     }
 
     public static function getRelations(): array

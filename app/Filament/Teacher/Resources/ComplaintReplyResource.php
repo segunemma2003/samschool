@@ -17,7 +17,8 @@ class ComplaintReplyResource extends Resource
 {
     protected static ?string $model = ComplaintReply::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-uturn-right';
+    protected static ?string $navigationGroup = 'Wellbeing & Support';
 
     protected static bool  $shouldRegisterNavigation = false;
 

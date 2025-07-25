@@ -1,3 +1,8 @@
+@if(isset($errorMessage) && $errorMessage)
+    <div class="p-4 my-6 bg-red-100 border border-red-300 text-red-800 rounded-lg shadow">
+        <strong>Error:</strong> {{ $errorMessage }}
+    </div>
+@else
 <div class="flex flex-col gap-4 space-y-5">
     <!-- Student Name Section -->
     <div class="flex items-center justify-between p-4 bg-gray-100 rounded-lg shadow dark:bg-gray-800">
@@ -50,3 +55,4 @@
         });
     });
 </script>
+@endif

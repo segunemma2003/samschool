@@ -27,9 +27,9 @@ class ClassStoryResource extends Resource
 {
     protected static ?string $model = ClassStory::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static ?string $navigationIcon = 'heroicon-o-bookmark-square';
 
-    protected static ?string $navigationGroup = 'Stories';
+    protected static ?string $navigationGroup = 'Stories & Community';
 
     public static function form(Form $form): Form
     {

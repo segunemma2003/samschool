@@ -17,7 +17,8 @@ class RoutineResource extends Resource
 {
     protected static ?string $model = Routine::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar';
+    protected static ?string $navigationGroup = 'Academic Management';
 
     public static function form(Form $form): Form
     {

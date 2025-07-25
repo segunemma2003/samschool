@@ -17,7 +17,8 @@ class CourseFormResource extends Resource
 {
     protected static ?string $model = CourseForm::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard';
+    protected static ?string $navigationGroup = 'Academic Management';
 
     public static function shouldRegisterNavigation(): bool
     {

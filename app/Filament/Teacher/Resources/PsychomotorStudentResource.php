@@ -17,7 +17,8 @@ class PsychomotorStudentResource extends Resource
 {
     protected static ?string $model = PyschomotorStudent::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-heart';
+    protected static ?string $navigationGroup = 'Wellbeing & Support';
 
     public static function form(Form $form): Form
     {

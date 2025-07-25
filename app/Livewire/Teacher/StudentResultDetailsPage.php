@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Teacher;
 
 use App\Models\AcademicYear;
@@ -19,6 +21,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 
 class StudentResultDetailsPage extends Component implements HasForms, HasTable
@@ -26,70 +29,125 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     use InteractsWithTable;
     use InteractsWithForms;
 
-    public $terms;
-    public $termId;
-    public $classId;
-    public $academic;
-    public $courses = [];
-    public $record;
-    public $academicYears;
-    public $student;
-    public $total;
-    public $totalSubject;
-    public $average;
-    public $comment;
+    public Collection $terms;
+    public ?int $termId = null;
+    public ?int $classId = null;
+    public ?int $academic = null;
+    public array $courses = [];
+    public int|string $record;
+    public Collection $academicYears;
+    public ?Student $student = null;
+    public ?float $total = null;
+    public ?int $totalSubject = null;
+    public ?float $average = null;
+    public ?string $comment = null;
     public ?array $data = [];
+    public ?string $errorMessage = null;
 
     protected $listeners = ['refreshTable' => '$refresh'];
 
-    public function mount($record)
+    /**
+     * Mount the component and initialize data.
+     */
+    public function mount($record): void
     {
         $this->record = $record;
-        $this->terms = Term::all();
-        $this->academicYears = AcademicYear::all();
-        $this->termId = Term::where('status', "true")->first()?->id;
-        $this->academic = AcademicYear::where('status', "true")->first()?->id;
-        $this->student = Student::where('id', $record)->first();
-        $this->classId = $this->student->class->group->id;
-
+        $this->loadStudent();
+        $this->loadTermsAndYears();
+        $this->setDefaultTermAndYear();
+        $this->setClassId();
+        if ($this->errorMessage) {
+            return;
+        }
         $this->loadComment();
         $this->getDynamicScoreBoardColumns();
     }
 
-    public function updatedTableFilters()
+    /**
+     * Load the student model.
+     */
+    private function loadStudent(): void
     {
+        $this->student = Student::find($this->record);
+        if (! $this->student) {
+            $this->errorMessage = 'Student not found.';
+        }
+    }
 
+    /**
+     * Load all terms and academic years.
+     */
+    private function loadTermsAndYears(): void
+    {
+        $this->terms = Term::all();
+        $this->academicYears = AcademicYear::all();
+    }
+
+    /**
+     * Set the default term and academic year.
+     */
+    private function setDefaultTermAndYear(): void
+    {
+        $this->termId = Term::where('status', "true")->first()?->id;
+        $this->academic = AcademicYear::where('status', "true")->first()?->id;
+    }
+
+    /**
+     * Set the class group ID for the student.
+     */
+    private function setClassId(): void
+    {
+        if (! $this->student) {
+            return;
+        }
+        if ($this->student->class && $this->student->class->group) {
+            $this->classId = $this->student->class->group->id;
+        } else {
+            $this->errorMessage = 'Student class or group is missing.';
+        }
+    }
+
+    /**
+     * Handle table filter updates.
+     */
+    public function updatedTableFilters(): void
+    {
         $filters = $this->tableFilters;
-
         if (isset($filters['term_id'])) {
             $this->termId = $filters['term_id']['value'];
-
             $this->updateTableData();
         }
-
         if (isset($filters['academic_year_id'])) {
             $this->academic = $filters['academic_year_id']['value'];
             $this->updateTableData();
         }
     }
 
-    public function loadComment($termId = null)
+    /**
+     * Load the comment for the student, term, and academic year.
+     */
+    public function loadComment($termId = null): void
     {
+        if (! $this->student) {
+            $this->comment = null;
+            return;
+        }
         $termId = $termId ?? $this->termId;
         $academicId = $this->academic ?? AcademicYear::where('status', "true")->first()?->id;
-
         $studentComment = StudentComment::query()
             ->where('student_id', $this->student->id)
             ->where('term_id', $termId)
             ->where('academic_id', $this->academic)
             ->first();
-
         $this->comment = $studentComment?->comment ?? '';
         $this->form->fill([
             'comment' => $this->comment,
         ]);
     }
 
+    /**
+     * Define the form schema for comments.
+     */
     public function form(Form $form): Form
     {
         return $form
@@ -99,10 +157,20 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->statePath('data');
     }
 
-    public function saveComment()
+    /**
+     * Save the teacher's comment for the student.
+     */
+    public function saveComment(): void
     {
+        if (! $this->student) {
+            Notification::make()
+                ->danger()
+                ->title('Error')
+                ->body('Student not found.')
+                ->send();
+            return;
+        }
         $validatedData = $this->form->getState();
-
         StudentComment::updateOrCreate(
             [
                 'student_id' => $this->student->id,
@@ -113,18 +181,20 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 'comment' => $validatedData['comment'],
             ]
         );
-
         Notification::make()
             ->title('Comment saved successfully!')
             ->success()
             ->send();
     }
 
+    /**
+     * Define the Filament table for displaying results.
+     */
     public function table(Table $table): Table
     {
         return $table
             ->query(function () {
-                return CourseForm::query()
+                return CourseForm::with(['scoreBoard', 'subject.subjectDepot'])
                     ->where('student_id', $this->record)
                     ->when($this->termId, fn($query) => $query->where('term_id', $this->termId))
                     ->when($this->academic, fn($query) => $query->where('academic_year_id', $this->academic));
@@ -139,7 +209,6 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     ->options($this->terms->pluck('name', 'id')->toArray())
                     ->default($this->termId)
                     ->searchable(),
-
                 SelectFilter::make('academic_year_id')
                     ->label('Academic Year')
                     ->options($this->academicYears->pluck('title', 'id')->toArray())
@@ -156,36 +225,47 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             );
     }
 
-    protected function updateTableData()
+    /**
+     * Update table data and recalculate totals/comments.
+     */
+    protected function updateTableData(): void
     {
-
         $this->getDynamicScoreBoardColumns();
         $this->calculateTotals();
         $this->loadComment();
         $this->dispatch('refreshTable');
     }
 
-    public function calculateTotals()
+    /**
+     * Calculate total, subject count, and average for the student.
+     */
+    public function calculateTotals(): void
     {
-        $courseForms = CourseForm::query()
+        if (! $this->student) {
+            $this->total = $this->average = null;
+            $this->totalSubject = 0;
+            return;
+        }
+        $courseForms = CourseForm::with('scoreBoard')
             ->where('student_id', $this->record)
             ->where('term_id', $this->termId)
             ->where('academic_year_id', $this->academic)
             ->get();
-
         $this->total = $courseForms->reduce(function ($carry, $courseForm) {
             return $carry + $courseForm->scoreBoard
                 ->where('resultSectionType.calc_pattern', 'total')
                 ->sum('score');
-        }, 0);
-
+        }, 0.0);
         $this->totalSubject = $courseForms->count();
         $this->average = $this->totalSubject > 0
             ? round($this->total / $this->totalSubject, 2)
-            : 0;
+            : 0.0;
     }
 
-    protected function remarksStatement($total)
+    /**
+     * Get the remarks statement for a given total.
+     */
+    protected function remarksStatement(float $total): string
     {
         if ($total >= 80) return 'EXCELLENT';
         if ($total >= 70) return 'VERY GOOD';
@@ -198,16 +278,19 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         return 'FAIL';
     }
 
+    /**
+     * Dynamically generate columns for the result table based on section types.
+     */
     protected function getDynamicScoreBoardColumns(): array
     {
-
-
+        if (! $this->termId || ! $this->classId) {
+            return [];
+        }
         $dynamicFields = ResultSectionType::where('term_id', $this->termId)
             ->whereHas('resultSection', function ($query) {
                 $query->where('group_id', $this->classId);
             })
             ->get(['id', 'name']);
-
         return $dynamicFields->map(function ($field) {
             return TextColumn::make("scoreBoard.{$field->id}")
                 ->label($field->name)
@@ -216,14 +299,18 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                         ->where('result_section_type_id', $field->id)
                         ->pluck('score')
                         ->first();
-
                     return $score ?? 'N/A';
                 });
         })->toArray();
     }
 
+    /**
+     * Render the Livewire component view.
+     */
     public function render()
     {
-        return view('livewire.teacher.student-result-details-page');
+        return view('livewire.teacher.student-result-details-page', [
+            'errorMessage' => $this->errorMessage,
+        ]);
     }
 }

@@ -33,10 +33,10 @@ class QuestionBankResource extends Resource
     use OptimizedTeacherLookup;
 
     protected static ?string $model = QuestionBank::class;
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
     protected static ?string $label = 'Question Bank';
     protected static ?string $pluralLabel = 'Question Bank';
-    protected static ?string $navigationGroup = 'Exam Management';
+    protected static ?string $navigationGroup = 'Academic Management';
     protected static ?int $navigationSort = 2;
 
     // Cache duration in seconds

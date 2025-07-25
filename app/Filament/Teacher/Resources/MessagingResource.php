@@ -22,7 +22,8 @@ class MessagingResource extends Resource
 
     protected static ?string $label = "Message";
 
-    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
+    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-ellipsis';
+    protected static ?string $navigationGroup = 'Communication';
 
     public static function form(Form $form): Form
     {

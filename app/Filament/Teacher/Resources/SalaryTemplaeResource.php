@@ -17,7 +17,8 @@ class SalaryTemplaeResource extends Resource
 {
     protected static ?string $model = SalaryTemplae::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static ?string $navigationGroup = 'Finance & Payroll';
 
     protected static ?string $label = "pay check";
     public static function form(Form $form): Form

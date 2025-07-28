@@ -181,20 +181,21 @@ class Assignment extends Model
     public function getTotalStudentsAnsweredAttribute(): int
     {
         return cache()->remember(
-            "assignment_stats_batch_" . floor($this->id / 100), // Batch cache keys
+            "assignment_stats_batch_" . floor($this->id / 100),
             300,
             function () {
-                // Load stats for multiple assignments at once
-                $assignments = Assignment::whereBetween('id', [
-                    floor($this->id / 100) * 100,
-                    (floor($this->id / 100) + 1) * 100 - 1
-                ])->pluck('id');
+                $startId = floor($this->id / 100) * 100;
+                $endId = ($startId + 100) - 1;
+
+                $assignments = Assignment::whereBetween('id', [$startId, $endId])->pluck('id');
 
                 return DB::table('assignment_student')
                     ->whereIn('assignment_id', $assignments)
                     ->where('status', 'submitted')
                     ->groupBy('assignment_id')
-                    ->pluck('count', 'assignment_id');
+                    ->selectRaw('assignment_id, COUNT(*) as count')
+                    ->pluck('count', 'assignment_id')
+                    ->toArray();
             }
         )[$this->id] ?? 0;
     }
@@ -424,6 +425,8 @@ class Assignment extends Model
        static::saved(function ($assignment) {
             // Use cache tags for efficient clearing
             Cache::tags(['assignments', "assignment_{$assignment->id}"])->flush();
+            Cache::forget("assignment_{$assignment->id}_submitted_count");
+
         });
         static::deleting(function ($assignment) {
             // Clean up file when assignment is deleted

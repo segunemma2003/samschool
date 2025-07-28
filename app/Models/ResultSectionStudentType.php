@@ -14,4 +14,9 @@ class ResultSectionStudentType extends Model
     {
         return $this->belongsTo(ResultSection::class, 'result_section_id');
     }
+
+    public function resultSectionType()
+    {
+        return $this->belongsTo(ResultSectionType::class, 'result_section_type_id');
+    }
 }

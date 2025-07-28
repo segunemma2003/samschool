@@ -408,7 +408,21 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     public function updatedTermId($value): void
     {
         Log::info('Term ID updated', ['new_value' => $value]);
+
+        // Clear the cache for dynamic columns since term changed
+        $cacheKey = "result_sections_{$this->termId}_{$this->classId}";
+        Cache::forget($cacheKey);
+
+        // Regenerate dynamic columns
+        $this->getDynamicScoreBoardColumns();
+
+        // Update table data
         $this->updateTableData();
+
+        Log::info('Term filter updated - columns regenerated', [
+            'new_termId' => $value,
+            'cache_cleared' => $cacheKey,
+        ]);
     }
 
     /**
@@ -417,7 +431,21 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     public function updatedAcademic($value): void
     {
         Log::info('Academic year updated', ['new_value' => $value]);
+
+        // Clear the cache for dynamic columns since academic year changed
+        $cacheKey = "result_sections_{$this->termId}_{$this->classId}";
+        Cache::forget($cacheKey);
+
+        // Regenerate dynamic columns
+        $this->getDynamicScoreBoardColumns();
+
+        // Update table data
         $this->updateTableData();
+
+        Log::info('Academic filter updated - columns regenerated', [
+            'new_academic' => $value,
+            'cache_cleared' => $cacheKey,
+        ]);
     }
 
     /**
@@ -782,6 +810,13 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
      */
     protected function getDynamicScoreBoardColumns(): array
     {
+        Log::info('getDynamicScoreBoardColumns called', [
+            'termId' => $this->termId,
+            'classId' => $this->classId,
+            'has_termId' => !empty($this->termId),
+            'has_classId' => !empty($this->classId),
+        ]);
+
         if (!$this->termId || !$this->classId) {
             Log::warning('Missing termId or classId for dynamic columns', [
                 'termId' => $this->termId,
@@ -793,15 +828,20 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         // Cache the dynamic fields for 5 minutes
         $cacheKey = "result_sections_{$this->termId}_{$this->classId}";
 
-        $dynamicFields = Cache::remember($cacheKey, 300, function () {
-            return ResultSectionType::select(['id', 'name', 'code', 'calc_pattern'])
-                ->where('term_id', $this->termId)
-                ->whereHas('resultSection', function ($query) {
-                    $query->where('group_id', $this->classId);
-                })
-                ->orderBy('name')
-                ->get();
-        });
+        $dynamicFields = ResultSectionType::select(['id', 'name', 'code', 'calc_pattern', 'type', 'score_weight'])
+            ->where('term_id', $this->termId)
+            ->whereHas('resultSection', function ($query) {
+                $query->where('group_id', $this->classId);
+            })
+            ->orderBy('name')
+            ->get();
+
+        Log::info('Dynamic fields fetched from database', [
+            'term_id' => $this->termId,
+            'class_id' => $this->classId,
+            'fields_count' => $dynamicFields->count(),
+            'fields' => $dynamicFields->map(fn($f) => ['id' => $f->id, 'name' => $f->name, 'code' => $f->code, 'calc_pattern' => $f->calc_pattern])->toArray(),
+        ]);
 
         $columns = $dynamicFields->map(function ($field) {
             // Create a better label that includes both name and code
@@ -864,21 +904,42 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         $cacheKey = "scoreboard_structure_{$this->termId}_{$this->classId}";
 
         return Cache::remember($cacheKey, 300, function () {
-            $structure = ResultSectionType::select(['id', 'name', 'code', 'calc_pattern', 'type'])
-                ->where('term_id', $this->termId)
-                ->whereHas('resultSection', function ($query) {
-                    $query->where('group_id', $this->classId);
-                })
-                ->orderBy('name')
-                ->get()
-                ->groupBy('calc_pattern');
+            try {
+                $resultSections = ResultSectionType::select(['id', 'name', 'code', 'calc_pattern', 'type'])
+                    ->where('term_id', $this->termId)
+                    ->whereHas('resultSection', function ($query) {
+                        $query->where('group_id', $this->classId);
+                    })
+                    ->orderBy('name')
+                    ->get();
 
-            return [
-                'input_sections' => $structure->get('input', collect())->map(fn($s) => ['name' => $s->name, 'code' => $s->code]),
-                'total_sections' => $structure->get('total', collect())->map(fn($s) => ['name' => $s->name, 'code' => $s->code]),
-                'calculated_sections' => $structure->except(['input', 'total'])->flatten(1)->map(fn($s) => ['name' => $s->name, 'code' => $s->code, 'calc_pattern' => $s->calc_pattern]),
-                'all_sections' => $structure->flatten(1)->map(fn($s) => ['name' => $s->name, 'code' => $s->code, 'calc_pattern' => $s->calc_pattern]),
-            ];
+                // Filter out records with null calc_pattern to avoid groupBy issues
+                $validSections = $resultSections->filter(function ($section) {
+                    return !empty($section->calc_pattern);
+                });
+
+                $structure = $validSections->groupBy('calc_pattern');
+
+                return [
+                    'input_sections' => $structure->has('input') ? $structure->get('input')->map(fn($s) => ['name' => $s->name, 'code' => $s->code]) : collect(),
+                    'total_sections' => $structure->has('total') ? $structure->get('total')->map(fn($s) => ['name' => $s->name, 'code' => $s->code]) : collect(),
+                    'calculated_sections' => $structure->except(['input', 'total'])->flatten(1)->map(fn($s) => ['name' => $s->name, 'code' => $s->code, 'calc_pattern' => $s->calc_pattern]),
+                    'all_sections' => $structure->flatten(1)->map(fn($s) => ['name' => $s->name, 'code' => $s->code, 'calc_pattern' => $s->calc_pattern]),
+                ];
+            } catch (\Exception $e) {
+                Log::error('Error in getScoreboardStructure', [
+                    'error' => $e->getMessage(),
+                    'termId' => $this->termId,
+                    'classId' => $this->classId,
+                ]);
+
+                return [
+                    'input_sections' => collect(),
+                    'total_sections' => collect(),
+                    'calculated_sections' => collect(),
+                    'all_sections' => collect(),
+                ];
+            }
         });
     }
 

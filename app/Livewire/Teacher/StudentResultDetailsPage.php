@@ -175,7 +175,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     public function loadComment($termId = null): void
     {
         if (!$this->student) {
-            $this->comment = null;
+            $this->comment = '';
             return;
         }
 
@@ -184,7 +184,6 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
         if (!$termId || !$academicId) {
             $this->comment = '';
-            $this->form->fill(['comment' => '']);
             return;
         }
 
@@ -194,7 +193,14 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->first();
 
         $this->comment = $studentComment?->comment ?? '';
-        $this->form->fill(['comment' => $this->comment]);
+    }
+
+    public function updatedData($value, $key): void
+    {
+        // Update the comment property when form data changes
+        if ($key === 'comment') {
+            $this->comment = $value;
+        }
     }
 
     public function form(Form $form): Form
@@ -203,9 +209,13 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->schema([
                 MarkdownEditor::make('comment')
                     ->label('Teacher Comment')
-                    ->placeholder('Enter your comment for this student...'),
-            ])
-            ->statePath('data');
+                    ->placeholder('Enter your comment for this student...')
+                    ->default($this->comment ?? '')
+                    ->live()
+                    ->afterStateUpdated(function ($state) {
+                        $this->comment = $state;
+                    }),
+            ]);
     }
 
     public function saveComment(): void
@@ -220,21 +230,24 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         }
 
         try {
-            $validatedData = $this->form->getState();
+            // Use the comment property directly
+            $commentText = $this->comment ?? '';
 
-            StudentComment::updateOrCreate(
+            // Create or update the comment
+            $studentComment = StudentComment::updateOrCreate(
                 [
                     'student_id' => $this->student->id,
                     'term_id' => $this->termId,
                     'academic_id' => $this->academic,
                 ],
                 [
-                    'comment' => $validatedData['comment'] ?? '',
+                    'comment' => $commentText,
                 ]
             );
 
             Notification::make()
                 ->title('Comment saved successfully!')
+                ->body("Comment saved for {$this->student->name}")
                 ->success()
                 ->send();
 
@@ -242,7 +255,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             Notification::make()
                 ->danger()
                 ->title('Error saving comment')
-                ->body('Please try again.')
+                ->body('Error: ' . $e->getMessage())
                 ->send();
         }
     }

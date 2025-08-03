@@ -45,6 +45,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     public ?string $comment = null;
     public ?array $data = [];
     public ?string $errorMessage = null;
+    public ?int $selectedTermId = null;
+    public ?int $selectedAcademicId = null;
 
     protected $listeners = ['refreshTable' => '$refresh'];
 
@@ -84,6 +86,10 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         $this->loadTermsAndYears();
         $this->setDefaultTermAndYear();
         $this->setClassId();
+
+        // Initialize selected filter values
+        $this->selectedTermId = $this->termId;
+        $this->selectedAcademicId = $this->academic;
 
         if ($this->errorMessage) {
             return;
@@ -303,12 +309,10 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     ->options($this->terms->pluck('name', 'id')->toArray())
                     ->default($this->termId)
                     ->searchable()
-                    ->query(function ($query, array $data) {
-                        if (isset($data['value']) && $data['value']) {
-                            $this->termId = $data['value'];
-                            $this->updateTableData();
-                        }
-                        return $query;
+                    ->live(false)
+                    ->afterStateUpdated(function ($state) {
+                        // Store the selected value but don't apply immediately
+                        $this->selectedTermId = $state;
                     }),
 
                 SelectFilter::make('academic_year_id')
@@ -316,12 +320,10 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     ->options($this->academicYears->pluck('title', 'id')->toArray())
                     ->default($this->academic)
                     ->searchable()
-                    ->query(function ($query, array $data) {
-                        if (isset($data['value']) && $data['value']) {
-                            $this->academic = $data['value'];
-                            $this->updateTableData();
-                        }
-                        return $query;
+                    ->live(false)
+                    ->afterStateUpdated(function ($state) {
+                        // Store the selected value but don't apply immediately
+                        $this->selectedAcademicId = $state;
                     }),
             ])
             ->actions([])
@@ -330,8 +332,23 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->filtersTriggerAction(
                 fn (Action $action) => $action
                     ->button()
-                    ->label('Filters')
+                    ->label('Apply Filters')
+                    ->color('primary')
+                    ->icon('heroicon-o-funnel')
+                    ->action('applyFilters')
             )
+            ->filtersFormActions([
+                Action::make('apply')
+                    ->label('Apply Filters')
+                    ->color('primary')
+                    ->icon('heroicon-o-funnel')
+                    ->action('applyFilters'),
+                Action::make('reset')
+                    ->label('Reset Filters')
+                    ->color('gray')
+                    ->icon('heroicon-o-arrow-path')
+                    ->action('resetFilters'),
+            ])
             ->striped()
             ->paginated(false)
             ->defaultSort('subject.subjectDepot.name')
@@ -340,6 +357,46 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->deferFilters() // Defer filter loading to prevent multiple renders
             ->persistFiltersInSession() // Persist filters to avoid reloading
             ->extremePaginationLinks(); // Simplify pagination
+    }
+
+        public function applyFilters(): void
+    {
+        // Apply the selected filter values
+        if ($this->selectedTermId !== null) {
+            $this->termId = $this->selectedTermId;
+        }
+
+        if ($this->selectedAcademicId !== null) {
+            $this->academic = $this->selectedAcademicId;
+        }
+
+        // Update the table data
+        $this->updateTableData();
+
+        // Show success notification
+        Notification::make()
+            ->success()
+            ->title('Filters Applied')
+            ->body('Results have been filtered successfully.')
+            ->send();
+    }
+
+    public function resetFilters(): void
+    {
+        // Reset to default values
+        $this->setDefaultTermAndYear();
+        $this->selectedTermId = $this->termId;
+        $this->selectedAcademicId = $this->academic;
+
+        // Update the table data
+        $this->updateTableData();
+
+        // Show success notification
+        Notification::make()
+            ->success()
+            ->title('Filters Reset')
+            ->body('Filters have been reset to default values.')
+            ->send();
     }
 
     protected function updateTableData(): void

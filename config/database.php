@@ -80,13 +80,15 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => false,
-            'engine' => null,
+            'engine' => 'InnoDB',
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-                PDO::ATTR_PERSISTENT => false, // CHANGED: Disable persistent connections
-                PDO::ATTR_TIMEOUT => 30, // ADDED: Connection timeout
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='', time_zone='+00:00', wait_timeout=300, interactive_timeout=300", // ADDED: Shorter timeouts
+                PDO::ATTR_PERSISTENT => false, // AWS RDS: Disable persistent connections
+                PDO::ATTR_TIMEOUT => 60, // AWS RDS: Longer timeout for network latency
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='', time_zone='+00:00', wait_timeout=600, interactive_timeout=600, max_connections=200", // AWS RDS: Optimized settings
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, // AWS RDS: SSL optimization
             ]) : [],
         ],
 

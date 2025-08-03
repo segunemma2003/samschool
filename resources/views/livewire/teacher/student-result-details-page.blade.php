@@ -47,12 +47,12 @@
                 <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Academic Results
-                    </h2>
-                </div>
+        </h2>
+    </div>
                 <div class="p-4">
-                    {{ $this->table }}
+        {{ $this->table }}
                 </div>
-            </div>
+    </div>
 
             {{-- SINGLE COMMENT FORM --}}
             <div class="bg-white rounded-lg shadow dark:bg-gray-800">
@@ -63,12 +63,12 @@
                 </div>
                 <div class="p-4">
                     <form wire:submit.prevent="saveComment" wire:key="comment-form-{{ $record }}">
-                        {{ $this->form }}
+            {{ $this->form }}
                         <div class="mt-6">
-                            <button
-                                type="submit"
-                                wire:loading.attr="disabled"
-                                wire:target="saveComment"
+            <button
+            type="submit"
+            wire:loading.attr="disabled"
+            wire:target="saveComment"
                                 class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-200 disabled:opacity-50"
                             >
                                 <svg wire:loading wire:target="saveComment" class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -77,11 +77,11 @@
                                 </svg>
                                 <span wire:loading.remove wire:target="saveComment">Save Comment</span>
                                 <span wire:loading wire:target="saveComment">Saving...</span>
-                            </button>
+        </button>
                         </div>
-                    </form>
+        </form>
                 </div>
             </div>
-        </div>
+    </div>
     @endif
 </div>

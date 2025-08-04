@@ -73,5 +73,23 @@ class AppServiceProvider extends ServiceProvider
             }
         });
     }
+
+    // Suppress deprecation warnings from specific packages
+    if (app()->environment('production') || app()->environment('staging')) {
+        set_error_handler(function ($severity, $message, $file, $line) {
+            // Suppress deprecation warnings from unisharp/laravel-filemanager
+            if ($severity === E_DEPRECATED && strpos($file, 'unisharp/laravel-filemanager') !== false) {
+                return true; // Suppress the warning
+            }
+
+            // Suppress deprecation warnings from composer itself
+            if ($severity === E_DEPRECATED && strpos($file, 'phar://') !== false) {
+                return true; // Suppress the warning
+            }
+
+            // Let other errors through
+            return false;
+        }, E_DEPRECATED);
+    }
 }
 }

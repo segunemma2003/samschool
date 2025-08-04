@@ -47,12 +47,12 @@
                 <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Academic Results
-        </h2>
-    </div>
-                <div class="p-4">
-        {{ $this->table }}
+                    </h2>
                 </div>
-    </div>
+                                <div class="p-4">
+                    {{ $this->table }}
+                </div>
+            </div>
 
             {{-- SINGLE COMMENT FORM --}}
             <div class="bg-white rounded-lg shadow dark:bg-gray-800">

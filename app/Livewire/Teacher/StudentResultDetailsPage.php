@@ -47,8 +47,23 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     public ?string $errorMessage = null;
     public ?int $selectedTermId = null;
     public ?int $selectedAcademicId = null;
+    public bool $isTableLoading = false;
 
-    protected $listeners = ['refreshTable' => '$refresh'];
+    protected $listeners = [
+        'refreshTable' => '$refresh',
+        'table-loading-started' => 'startTableLoading',
+        'table-loading-finished' => 'finishTableLoading'
+    ];
+
+    public function startTableLoading(): void
+    {
+        $this->isTableLoading = true;
+    }
+
+    public function finishTableLoading(): void
+    {
+        $this->isTableLoading = false;
+    }
 
     public function getId()
     {
@@ -309,10 +324,20 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     ->options($this->terms->pluck('name', 'id')->toArray())
                     ->default($this->termId)
                     ->searchable()
-                    ->live(false)
-                    ->afterStateUpdated(function ($state) {
-                        // Store the selected value but don't apply immediately
-                        $this->selectedTermId = $state;
+                                        ->query(function ($query, array $data) {
+                        if (isset($data['value']) && $data['value']) {
+                            $this->termId = (int) $data['value'];
+                            $this->selectedTermId = (int) $data['value'];
+                            $query->where('term_id', $data['value']);
+                        }
+                        return $query;
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if (isset($data['value']) && $data['value']) {
+                            $term = $this->terms->find($data['value']);
+                            return $term ? $term->name : null;
+                        }
+                        return null;
                     }),
 
                 SelectFilter::make('academic_year_id')
@@ -320,10 +345,20 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     ->options($this->academicYears->pluck('title', 'id')->toArray())
                     ->default($this->academic)
                     ->searchable()
-                    ->live(false)
-                    ->afterStateUpdated(function ($state) {
-                        // Store the selected value but don't apply immediately
-                        $this->selectedAcademicId = $state;
+                                        ->query(function ($query, array $data) {
+                        if (isset($data['value']) && $data['value']) {
+                            $this->academic = (int) $data['value'];
+                            $this->selectedAcademicId = (int) $data['value'];
+                            $query->where('academic_year_id', $data['value']);
+                        }
+                        return $query;
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if (isset($data['value']) && $data['value']) {
+                            $year = $this->academicYears->find($data['value']);
+                            return $year ? $year->title : null;
+                        }
+                        return null;
                     }),
             ])
             ->actions([])
@@ -332,34 +367,21 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->filtersTriggerAction(
                 fn (Action $action) => $action
                     ->button()
-                    ->label('Apply Filters')
+                    ->label('Filters')
                     ->color('primary')
                     ->icon('heroicon-o-funnel')
-                    ->action('applyFilters')
             )
-            ->filtersFormActions([
-                Action::make('apply')
-                    ->label('Apply Filters')
-                    ->color('primary')
-                    ->icon('heroicon-o-funnel')
-                    ->action('applyFilters'),
-                Action::make('reset')
-                    ->label('Reset Filters')
-                    ->color('gray')
-                    ->icon('heroicon-o-arrow-path')
-                    ->action('resetFilters'),
-            ])
             ->striped()
             ->paginated(false)
             ->defaultSort('subject.subjectDepot.name')
             ->recordUrl(null) // Prevent duplicate navigation
             ->recordAction(null) // Remove any default record actions
-            ->deferFilters() // Defer filter loading to prevent multiple renders
+            ->deferFilters(false) // Apply filters immediately when selected
             ->persistFiltersInSession() // Persist filters to avoid reloading
             ->extremePaginationLinks(); // Simplify pagination
     }
 
-        public function applyFilters(): void
+            public function applyFilters(): void
     {
         // Apply the selected filter values
         if ($this->selectedTermId !== null) {
@@ -379,6 +401,12 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->title('Filters Applied')
             ->body('Results have been filtered successfully.')
             ->send();
+    }
+
+    public function applyFiltersImmediately(): void
+    {
+        // This method can be called to apply filters immediately when selected
+        $this->applyFilters();
     }
 
     public function resetFilters(): void
@@ -407,7 +435,13 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             $this->calculateTotals();
             $this->loadComment();
             $this->dispatch('refreshTable');
+
+            // Stop loading after data is updated
+            $this->isTableLoading = false;
+            $this->dispatch('table-loading-finished');
         } catch (\Exception $e) {
+            $this->isTableLoading = false;
+            $this->dispatch('table-loading-finished');
             // Handle error silently or show notification if needed
         }
     }

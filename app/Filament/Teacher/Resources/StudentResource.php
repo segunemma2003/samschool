@@ -233,29 +233,28 @@ class StudentResource extends Resource
                     ->label('Preview Result')
                     ->icon('heroicon-s-eye')
                     ->color('info')
-                    ->action(function ($record) {
+                    ->form([
+                        \Filament\Forms\Components\Select::make('academic_year_id')
+                            ->label('Academic Year')
+                            ->options(\App\Models\AcademicYear::all()->pluck('title', 'id'))
+                            ->required()
+                            ->searchable(),
+                        \Filament\Forms\Components\Select::make('term_id')
+                            ->label('Term')
+                            ->options(\App\Models\Term::all()->pluck('name', 'id'))
+                            ->required()
+                            ->searchable(),
+                    ])
+                    ->action(function ($record, array $data) {
                         try {
-                            // Get current active term and academic year
-                            $activeTerm = \App\Models\Term::where('status', 'true')->first();
-                            $activeAcademic = \App\Models\AcademicYear::where('status', 'true')->first();
-
-                            if (!$activeTerm || !$activeAcademic) {
-                                \Filament\Notifications\Notification::make()
-                                    ->danger()
-                                    ->title('No Active Term/Year')
-                                    ->body('Please set an active term and academic year.')
-                                    ->send();
-                                return;
-                            }
-
                             $calculationService = new \App\Services\StudentResultCalculationService();
 
                             // Check if result exists
-                            if (!$calculationService->hasCompleteResult($record->id, $activeTerm->id, $activeAcademic->id)) {
+                            if (!$calculationService->hasCompleteResult($record->id, $data['term_id'], $data['academic_year_id'])) {
                                 \Filament\Notifications\Notification::make()
                                     ->danger()
                                     ->title('No Result Available')
-                                    ->body('No completed result found for this student in the current term.')
+                                    ->body('No completed result found for this student in the selected term and academic year.')
                                     ->send();
                                 return;
                             }
@@ -263,8 +262,8 @@ class StudentResource extends Resource
                             // Generate preview URL
                             $previewUrl = route('student.result.preview', [
                                 'studentId' => $record->id,
-                                'termId' => $activeTerm->id,
-                                'academicYearId' => $activeAcademic->id
+                                'termId' => $data['term_id'],
+                                'academicYearId' => $data['academic_year_id']
                             ]);
 
                             // Open preview in new tab
@@ -283,8 +282,8 @@ class StudentResource extends Resource
                         }
                     })
                     ->requiresConfirmation()
-                    ->modalHeading('Preview Current Term Result')
-                    ->modalDescription('This will open the result preview in a new tab.')
+                    ->modalHeading('Preview Student Result')
+                    ->modalDescription('Select the academic year and term to preview the result.')
                     ->modalSubmitActionLabel('Preview Result')
                     ->modalCancelActionLabel('Cancel'),
 
@@ -292,58 +291,57 @@ class StudentResource extends Resource
                     ->label('Quick Download')
                     ->icon('heroicon-s-arrow-down-tray')
                     ->color('success')
-                    ->action(function ($record) {
+                    ->form([
+                        \Filament\Forms\Components\Select::make('academic_year_id')
+                            ->label('Academic Year')
+                            ->options(\App\Models\AcademicYear::all()->pluck('title', 'id'))
+                            ->required()
+                            ->searchable(),
+                        \Filament\Forms\Components\Select::make('term_id')
+                            ->label('Term')
+                            ->options(\App\Models\Term::all()->pluck('name', 'id'))
+                            ->required()
+                            ->searchable(),
+                    ])
+                    ->action(function ($record, array $data) {
                         try {
-                            // Get current active term and academic year
-                            $activeTerm = \App\Models\Term::where('status', 'true')->first();
-                            $activeAcademic = \App\Models\AcademicYear::where('status', 'true')->first();
-
-                            if (!$activeTerm || !$activeAcademic) {
-                                \Filament\Notifications\Notification::make()
-                                    ->danger()
-                                    ->title('No Active Term/Year')
-                                    ->body('Please set an active term and academic year.')
-                                    ->send();
-                                return;
-                            }
-
                             $calculationService = new \App\Services\StudentResultCalculationService();
 
                             // Check if result exists
-                            if (!$calculationService->hasCompleteResult($record->id, $activeTerm->id, $activeAcademic->id)) {
+                            if (!$calculationService->hasCompleteResult($record->id, $data['term_id'], $data['academic_year_id'])) {
                                 \Filament\Notifications\Notification::make()
                                     ->danger()
                                     ->title('No Result Available')
-                                    ->body('No completed result found for this student in the current term.')
+                                    ->body('No completed result found for this student in the selected term and academic year.')
                                     ->send();
                                 return;
                             }
 
-                            // Generate PDF
-                            $pdfUrl = $calculationService->generateStudentResultPdf(
-                                $record->id,
-                                $activeTerm->id,
-                                $activeAcademic->id
-                            );
+                            // Generate download URL
+                            $downloadUrl = route('student.result.download', [
+                                'studentId' => $record->id,
+                                'termId' => $data['term_id'],
+                                'academicYearId' => $data['academic_year_id']
+                            ]);
 
-                            // Open PDF in new tab
+                            // Open download in new tab
                             return response()->json([
                                 'success' => true,
-                                'url' => $pdfUrl,
+                                'url' => $downloadUrl,
                                 'openInNewTab' => true
                             ]);
 
                         } catch (\Exception $e) {
                             \Filament\Notifications\Notification::make()
                                 ->danger()
-                                ->title('Error Generating Result')
-                                ->body('Failed to generate result PDF: ' . $e->getMessage())
+                                ->title('Error Generating Download')
+                                ->body('Failed to generate result download: ' . $e->getMessage())
                                 ->send();
                         }
                     })
                     ->requiresConfirmation()
-                    ->modalHeading('Download Current Term Result')
-                    ->modalDescription('This will download the result for the current active term and academic year.')
+                    ->modalHeading('Download Student Result')
+                    ->modalDescription('Select the academic year and term to download the result.')
                     ->modalSubmitActionLabel('Download PDF')
                     ->modalCancelActionLabel('Cancel'),
 

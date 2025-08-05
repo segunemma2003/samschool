@@ -531,231 +531,243 @@ class StudentResultCalculationService
      */
     public function generateStudentResultPdf(int $studentId, int $termId, int $academicYearId): string
     {
-        // Get the stored result
-        $studentResult = $this->getStoredResult($studentId, $termId, $academicYearId);
+        try {
+            // Get the stored result
+            $studentResult = $this->getStoredResult($studentId, $termId, $academicYearId);
 
-        if (!$studentResult) {
-            throw new \Exception('No completed result found for this student');
-        }
-
-        // Get related data
-        $student = Student::with(['class'])->findOrFail($studentId);
-        $term = Term::findOrFail($termId);
-        $academicYear = AcademicYear::findOrFail($academicYearId);
-
-        // Get school information
-        $school = SchoolInformation::where([
-            ['term_id', $termId],
-            ['academic_id', $academicYearId]
-        ])->first();
-
-        // Get student comment
-        $studentComment = StudentComment::where([
-            ['student_id', $studentId],
-            ['term_id', $termId],
-            ['academic_id', $academicYearId]
-        ])->first();
-
-        // Get course forms with scores and teacher information
-        $courseForms = CourseForm::with([
-            'subject.subjectDepot',
-            'subject.teacher',
-            'scoreBoard.resultSectionType'
-        ])
-        ->where('student_id', $studentId)
-        ->where('term_id', $termId)
-        ->where('academic_year_id', $academicYearId)
-        ->get();
-
-        // Get result section types for this term and class
-        $classId = $student->class_id ?? $student->group_id;
-        $resultSectionTypes = ResultSectionType::where('term_id', $termId)
-            ->whereHas('resultSection', function ($query) use ($classId) {
-                $query->where('group_id', $classId);
-            })
-            ->orderBy('name')
-            ->get();
-
-        // Group by calc_pattern
-        $markObtained = $resultSectionTypes->where('calc_pattern', 'input');
-        $studentSummary = $resultSectionTypes->whereIn('calc_pattern', ['position', 'grade_level']);
-        $termSummary = $resultSectionTypes->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']);
-        $remarks = $resultSectionTypes->where('calc_pattern', 'remarks');
-
-        // Calculate total score from input scores
-        $totalScore = 0;
-        $totalSubject = $courseForms->count();
-
-        foreach ($courseForms as $courseForm) {
-            foreach ($courseForm->scoreBoard as $score) {
-                $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
-                if ($sectionType && $sectionType->calc_pattern === 'input') {
-                    $totalScore += (float) $score->score;
-                }
+            if (!$studentResult) {
+                throw new \Exception('No completed result found for this student');
             }
-        }
 
-        $percent = $totalSubject > 0 ? round($totalScore / $totalSubject, 1) : 0;
+            // Get related data
+            $student = Student::with(['class'])->findOrFail($studentId);
+            $term = Term::findOrFail($termId);
+            $academicYear = AcademicYear::findOrFail($academicYearId);
 
-        // Get principal comment
-        $principalComment = $this->getPrincipalComment($percent);
+            // Get school information
+            $school = SchoolInformation::where([
+                ['term_id', $termId],
+                ['academic_id', $academicYearId]
+            ])->first();
 
-        // Get attendance data
-        $studentAttendance = \App\Models\StudentAttendanceSummary::where([
-            ['term_id', $termId],
-            ['student_id', $studentId],
-            ['academic_id', $academicYearId]
-        ])->first();
+            // Get student comment
+            $studentComment = StudentComment::where([
+                ['student_id', $studentId],
+                ['term_id', $termId],
+                ['academic_id', $academicYearId]
+            ])->first();
 
-        // Get next term
-        $nextTerm = Term::where('starting_date', '>', $term->ending_date)
-            ->orderBy('starting_date')
-            ->first();
-
-        // Get psychomotor/behavioral data
-        $psychomotorData = \App\Models\PyschomotorStudent::with('psychomotor')
-            ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
-                $query->where('term_id', $termId)
-                      ->where('academic_id', $academicYearId);
-            })
+            // Get course forms with scores and teacher information
+            $courseForms = CourseForm::with([
+                'subject.subjectDepot',
+                'subject.teacher',
+                'scoreBoard.resultSectionType'
+            ])
             ->where('student_id', $studentId)
+            ->where('term_id', $termId)
+            ->where('academic_year_id', $academicYearId)
             ->get();
 
-        // Organize behavioral data by category and term
-        $behavioralData = [];
+            // Get result section types for this term and class
+            $classId = $student->class_id ?? $student->group_id;
+            $resultSectionTypes = ResultSectionType::where('term_id', $termId)
+                ->whereHas('resultSection', function ($query) use ($classId) {
+                    $query->where('group_id', $classId);
+                })
+                ->orderBy('name')
+                ->get();
 
-        // Get all terms in the academic year for comparison
-        $allTerms = Term::where('academic_year_id', $academicYearId)
-            ->orderBy('starting_date')
-            ->get();
+            // Group by calc_pattern
+            $markObtained = $resultSectionTypes->where('calc_pattern', 'input');
+            $studentSummary = $resultSectionTypes->whereIn('calc_pattern', ['position', 'grade_level']);
+            $termSummary = $resultSectionTypes->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']);
+            $remarks = $resultSectionTypes->where('calc_pattern', 'remarks');
 
-        $termNames = ['1st', '2nd', '3rd'];
+            // Calculate total score from input scores
+            $totalScore = 0;
+            $totalSubject = $courseForms->count();
 
-        foreach ($psychomotorData as $psychData) {
-            $skillName = strtolower(str_replace(' ', '_', $psychData->psychomotor->skill));
-            $termIndex = $allTerms->search(function ($term) use ($psychData) {
-                return $term->id === $psychData->psychomotor->term_id;
-            });
-
-            if ($termIndex !== false && isset($termNames[$termIndex])) {
-                $behavioralData[$skillName][$termNames[$termIndex]] = $psychData->rating;
-            }
-        }
-
-        // Fill missing data with defaults
-        $defaultSkills = [
-            'obedience', 'honesty', 'self_control', 'self_reliance', 'initiative',
-            'punctuality', 'neatness', 'perseverance', 'attendance', 'attentiveness',
-            'courtesy', 'consideration', 'sociability', 'promptness', 'responsibility',
-            'reading_writing', 'verbal_communication', 'sport_game', 'inquisitiveness', 'dexterity'
-        ];
-
-        foreach ($defaultSkills as $skill) {
-            if (!isset($behavioralData[$skill])) {
-                $behavioralData[$skill] = ['1st' => '-', '2nd' => '-', '3rd' => '-'];
-            } else {
-                foreach ($termNames as $termName) {
-                    if (!isset($behavioralData[$skill][$termName])) {
-                        $behavioralData[$skill][$termName] = '-';
+            foreach ($courseForms as $courseForm) {
+                foreach ($courseForm->scoreBoard as $score) {
+                    $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
+                    if ($sectionType && $sectionType->calc_pattern === 'input') {
+                        $totalScore += (float) $score->score;
                     }
                 }
             }
-        }
 
-        // Get annual summary data from previous terms
-        $annualSummaryData = [];
-        foreach ($courseForms as $courseForm) {
-            $subjectId = $courseForm->subject_id;
-            $annualSummaryData[$subjectId] = [
-                'first_term_avg' => 0,
-                'second_term_avg' => 0,
-                'year_avg' => 0
+            $percent = $totalSubject > 0 ? round($totalScore / $totalSubject, 1) : 0;
+
+            // Get principal comment
+            $principalComment = $this->getPrincipalComment($percent);
+
+            // Get attendance data
+            $studentAttendance = \App\Models\StudentAttendanceSummary::where([
+                ['term_id', $termId],
+                ['student_id', $studentId],
+                ['academic_id', $academicYearId]
+            ])->first();
+
+            // Get next term
+            $nextTerm = Term::where('starting_date', '>', $term->ending_date)
+                ->orderBy('starting_date')
+                ->first();
+
+            // Get psychomotor/behavioral data
+            $psychomotorData = \App\Models\PyschomotorStudent::with('psychomotor')
+                ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+                    $query->where('term_id', $termId)
+                          ->where('academic_id', $academicYearId);
+                })
+                ->where('student_id', $studentId)
+                ->get();
+
+            // Organize behavioral data by category and term
+            $behavioralData = [];
+
+            // Get all terms in the academic year for comparison
+            $allTerms = Term::where('academic_year_id', $academicYearId)
+                ->orderBy('starting_date')
+                ->get();
+
+            $termNames = ['1st', '2nd', '3rd'];
+
+            foreach ($psychomotorData as $psychData) {
+                $skillName = strtolower(str_replace(' ', '_', $psychData->psychomotor->skill));
+                $termIndex = $allTerms->search(function ($term) use ($psychData) {
+                    return $term->id === $psychData->psychomotor->term_id;
+                });
+
+                if ($termIndex !== false && isset($termNames[$termIndex])) {
+                    $behavioralData[$skillName][$termNames[$termIndex]] = $psychData->rating;
+                }
+            }
+
+            // Fill missing data with defaults
+            $defaultSkills = [
+                'obedience', 'honesty', 'self_control', 'self_reliance', 'initiative',
+                'punctuality', 'neatness', 'perseverance', 'attendance', 'attentiveness',
+                'courtesy', 'consideration', 'sociability', 'promptness', 'responsibility',
+                'reading_writing', 'verbal_communication', 'sport_game', 'inquisitiveness', 'dexterity'
             ];
 
-            // Get previous term data for this subject
-            $previousTerms = $allTerms->where('id', '!=', $termId)->take(2);
-            $termCount = 0;
-            $totalAvg = 0;
-
-            foreach ($previousTerms as $prevTerm) {
-                $prevCourseForm = CourseForm::with('scoreBoard.resultSectionType')
-                    ->where('student_id', $studentId)
-                    ->where('subject_id', $subjectId)
-                    ->where('term_id', $prevTerm->id)
-                    ->where('academic_year_id', $academicYearId)
-                    ->first();
-
-                if ($prevCourseForm) {
-                    $termScore = 0;
-                    $scoreCount = 0;
-
-                    foreach ($prevCourseForm->scoreBoard as $score) {
-                        $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
-                        if ($sectionType && $sectionType->calc_pattern === 'input') {
-                            $termScore += (float) $score->score;
-                            $scoreCount++;
+            foreach ($defaultSkills as $skill) {
+                if (!isset($behavioralData[$skill])) {
+                    $behavioralData[$skill] = ['1st' => '-', '2nd' => '-', '3rd' => '-'];
+                } else {
+                    foreach ($termNames as $termName) {
+                        if (!isset($behavioralData[$skill][$termName])) {
+                            $behavioralData[$skill][$termName] = '-';
                         }
-                    }
-
-                    $termAvg = $scoreCount > 0 ? $termScore / $scoreCount : 0;
-                    $totalAvg += $termAvg;
-                    $termCount++;
-
-                    if ($termCount === 1) {
-                        $annualSummaryData[$subjectId]['first_term_avg'] = $termAvg;
-                    } elseif ($termCount === 2) {
-                        $annualSummaryData[$subjectId]['second_term_avg'] = $termAvg;
                     }
                 }
             }
 
-            // Calculate year average
-            $currentTermAvg = $percent; // Current term average
-            $totalAvg += $currentTermAvg;
-            $termCount++;
+            // Get annual summary data from previous terms
+            $annualSummaryData = [];
+            foreach ($courseForms as $courseForm) {
+                $subjectId = $courseForm->subject_id;
+                $annualSummaryData[$subjectId] = [
+                    'first_term_avg' => 0,
+                    'second_term_avg' => 0,
+                    'year_avg' => 0
+                ];
 
-            $annualSummaryData[$subjectId]['year_avg'] = $termCount > 0 ? $totalAvg / $termCount : 0;
+                // Get previous term data for this subject
+                $previousTerms = $allTerms->where('id', '!=', $termId)->take(2);
+                $termCount = 0;
+                $totalAvg = 0;
+
+                foreach ($previousTerms as $prevTerm) {
+                    $prevCourseForm = CourseForm::with('scoreBoard.resultSectionType')
+                        ->where('student_id', $studentId)
+                        ->where('subject_id', $subjectId)
+                        ->where('term_id', $prevTerm->id)
+                        ->where('academic_year_id', $academicYearId)
+                        ->first();
+
+                    if ($prevCourseForm) {
+                        $termScore = 0;
+                        $scoreCount = 0;
+
+                        foreach ($prevCourseForm->scoreBoard as $score) {
+                            $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
+                            if ($sectionType && $sectionType->calc_pattern === 'input') {
+                                $termScore += (float) $score->score;
+                                $scoreCount++;
+                            }
+                        }
+
+                        $termAvg = $scoreCount > 0 ? $termScore / $scoreCount : 0;
+                        $totalAvg += $termAvg;
+                        $termCount++;
+
+                        if ($termCount === 1) {
+                            $annualSummaryData[$subjectId]['first_term_avg'] = $termAvg;
+                        } elseif ($termCount === 2) {
+                            $annualSummaryData[$subjectId]['second_term_avg'] = $termAvg;
+                        }
+                    }
+                }
+
+                // Calculate year average
+                $currentTermAvg = $percent; // Current term average
+                $totalAvg += $currentTermAvg;
+                $termCount++;
+
+                $annualSummaryData[$subjectId]['year_avg'] = $termCount > 0 ? $totalAvg / $termCount : 0;
+            }
+
+            // Prepare data for template - ensure all data is safe for PDF generation
+            $data = [
+                'student' => $student,
+                'term' => $term,
+                'academy' => $academicYear,
+                'class' => $student->class,
+                'school' => $school,
+                'studentComment' => $studentComment,
+                'courses' => $courseForms,
+                'markObtained' => $markObtained,
+                'studentSummary' => $studentSummary,
+                'termSummary' => $termSummary,
+                'remarks' => $remarks,
+                'totalScore' => $totalScore,
+                'totalSubject' => $totalSubject,
+                'percent' => $percent,
+                'principalComment' => $principalComment,
+                'resultData' => $studentResult->calculated_data,
+                'studentAttendance' => $studentAttendance,
+                'nextTerm' => $nextTerm,
+                'behavioralData' => $behavioralData,
+                'resultSectionTypes' => $resultSectionTypes,
+                'annualSummaryData' => $annualSummaryData,
+            ];
+
+            // Generate PDF with error handling
+            $pdf = Pdf::loadView('results.template', $data);
+            $pdf->setPaper('A4', 'portrait');
+
+            // Generate filename with tenant context
+            $tenantId = tenant('id') ?? 'default';
+            $filename = "results/{$tenantId}/result_{$student->name}_{$term->name}_{$academicYear->title}.pdf";
+            $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
+
+            // Save to S3 with tenant-aware path
+            Storage::disk('s3')->put($filename, $pdf->output());
+
+            // Return S3 URL
+            return Storage::disk('s3')->url($filename);
+
+        } catch (\Exception $e) {
+            Log::error('PDF Generation Error: ' . $e->getMessage(), [
+                'student_id' => $studentId,
+                'term_id' => $termId,
+                'academic_year_id' => $academicYearId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new \Exception('Failed to generate PDF: ' . $e->getMessage());
         }
-
-        // Prepare data for template
-        $data = [
-            'student' => $student,
-            'term' => $term,
-            'academy' => $academicYear,
-            'class' => $student->class,
-            'school' => $school,
-            'studentComment' => $studentComment,
-            'courses' => $courseForms,
-            'markObtained' => $markObtained,
-            'studentSummary' => $studentSummary,
-            'termSummary' => $termSummary,
-            'remarks' => $remarks,
-            'totalScore' => $totalScore,
-            'totalSubject' => $totalSubject,
-            'percent' => $percent,
-            'principalComment' => $principalComment,
-            'resultData' => $studentResult->calculated_data,
-            'studentAttendance' => $studentAttendance,
-            'nextTerm' => $nextTerm,
-            'behavioralData' => $behavioralData,
-            'resultSectionTypes' => $resultSectionTypes,
-            'annualSummaryData' => $annualSummaryData,
-        ];
-
-        // Generate PDF
-        $pdf = \PDF::loadView('results.template', $data);
-        $pdf->setPaper('A4', 'portrait');
-
-        // Generate filename with tenant context
-        $tenantId = tenant('id') ?? 'default';
-        $filename = "results/{$tenantId}/result_{$student->name}_{$term->name}_{$academicYear->title}.pdf";
-        $filename = preg_replace('/[^a-zA-Z0-9_-]/', '_', $filename);
-
-        // Save to S3 with tenant-aware path
-        Storage::disk('s3')->put($filename, $pdf->output());
-
-        // Return S3 URL
-        return Storage::disk('s3')->url($filename);
     }
 
     /**

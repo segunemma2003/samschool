@@ -95,6 +95,81 @@ class StudentResults extends Component
         return 'F9';
     }
 
+    public function calculateCumulativeScore($studentId, $sectionId)
+    {
+        try {
+            // Get the current term and academic year
+            $currentTerm = \App\Models\Term::find($this->termId);
+            $currentAcademic = \App\Models\AcademicYear::find($this->academic);
+
+            if (!$currentTerm || !$currentAcademic) {
+                return 0;
+            }
+
+            // Get all terms in the academic year, ordered by their sequence
+            $terms = \App\Models\Term::where('academic_year_id', $currentAcademic->id)
+                ->orderBy('starting_date', 'asc')
+                ->get();
+
+            // Find the current term's position
+            $currentTermIndex = $terms->search(function ($term) {
+                return $term->id === $this->termId;
+            });
+
+            if ($currentTermIndex === false || $currentTermIndex === 0) {
+                // If this is the first term or term not found, return 0
+                return 0;
+            }
+
+            // Get previous terms (all terms before the current one)
+            $previousTerms = $terms->take($currentTermIndex);
+
+            $totalScores = [];
+            $totalCount = 0;
+
+            foreach ($previousTerms as $term) {
+                // Get the course form for this student, subject, and term
+                $courseForm = \App\Models\CourseForm::where([
+                    'student_id' => $studentId,
+                    'subject_id' => $this->subject->id,
+                    'term_id' => $term->id,
+                    'academic_year_id' => $currentAcademic->id
+                ])->first();
+
+                if ($courseForm) {
+                    // Get all input scores for this course form
+                    $inputScores = \Illuminate\Support\Facades\DB::table('result_section_student_types')
+                        ->join('result_section_types', 'result_section_student_types.result_section_type_id', '=', 'result_section_types.id')
+                        ->where('result_section_student_types.course_form_id', $courseForm->id)
+                        ->where('result_section_types.calc_pattern', 'input')
+                        ->sum('result_section_student_types.score');
+
+                    if ($inputScores > 0) {
+                        $totalScores[] = (float) $inputScores;
+                        $totalCount++;
+                    }
+                }
+            }
+
+            // Calculate average of all previous term totals
+            if ($totalCount > 0) {
+                $cumulativeAverage = array_sum($totalScores) / $totalCount;
+                return round($cumulativeAverage, 2);
+            }
+
+            return 0;
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error calculating cumulative score', [
+                'student_id' => $studentId,
+                'section_id' => $sectionId,
+                'error' => $e->getMessage()
+            ]);
+
+            return 0;
+        }
+    }
+
 
     public function remarksStatement($total)
     {
@@ -184,6 +259,9 @@ class StudentResults extends Component
                 if ($section->calc_pattern == 'remarks') {
                     $this->studentValues[$student->id][$section->id] = $this->remarksStatement($studentTotals[$student->id]);
                 }
+                if ($section->calc_pattern == 'cumulative') {
+                    $this->studentValues[$student->id][$section->id] = $this->calculateCumulativeScore($student->id, $section->id);
+                }
             }
         }
 
@@ -258,6 +336,9 @@ class StudentResults extends Component
                         break;
                     case 'remarks':
                         $this->studentValues[$student->id][$section->id] = $this->remarksStatement($studentTotals[$student->id]);
+                        break;
+                    case 'cumulative':
+                        $this->studentValues[$student->id][$section->id] = $this->calculateCumulativeScore($student->id, $section->id);
                         break;
                 }
             }

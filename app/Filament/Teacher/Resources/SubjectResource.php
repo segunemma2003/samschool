@@ -65,6 +65,12 @@ class SubjectResource extends Resource
                     ->required(),
                     // ->maxLength(255),
 
+                Forms\Components\Toggle::make('compulsory')
+                    ->label('Compulsory Subject')
+                    ->helperText('Mark this subject as compulsory for the class')
+                    ->required()
+                    ->default(false),
+
                 // Forms\Components\TextInput::make('author')
                 //     // ->integer()
                 //     ->required()
@@ -100,9 +106,20 @@ class SubjectResource extends Resource
                 ->label('Pass Mark'),
                 Tables\Columns\TextColumn::make('final_mark')
                 ->label('Final Mark'),
+                Tables\Columns\IconColumn::make('compulsory')
+                    ->label('Compulsory')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('compulsory')
+                    ->label('Compulsory Subjects')
+                    ->placeholder('All Subjects')
+                    ->trueLabel('Compulsory Only')
+                    ->falseLabel('Optional Only'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

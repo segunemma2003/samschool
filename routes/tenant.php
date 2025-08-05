@@ -65,6 +65,243 @@ Route::middleware([
 
     Route::get('/result/{studentId}/student/{termId}/term/{academyId}', [ExamController::class, 'generatePdf'])->name('student.result.check');
 
+    // Student Result Routes for Multi-Tenant Context
+    Route::get('/student/result/preview/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
+        $calculationService = new \App\Services\StudentResultCalculationService();
+
+        try {
+            // Get the stored result
+            $studentResult = $calculationService->getStoredResult($studentId, $termId, $academicYearId);
+
+            if (!$studentResult) {
+                abort(404, 'No completed result found for this student');
+            }
+
+            // Get related data
+            $student = \App\Models\Student::with(['class'])->findOrFail($studentId);
+            $term = \App\Models\Term::findOrFail($termId);
+            $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
+
+            // Get school information
+            $school = \App\Models\SchoolInformation::where([
+                ['term_id', $termId],
+                ['academic_id', $academicYearId]
+            ])->first();
+
+            // Get student comment
+            $studentComment = \App\Models\StudentComment::where([
+                ['student_id', $studentId],
+                ['term_id', $termId],
+                ['academic_id', $academicYearId]
+            ])->first();
+
+            // Get course forms with scores and teacher information
+            $courseForms = \App\Models\CourseForm::with([
+                'subject.subjectDepot',
+                'subject.teacher',
+                'scoreBoard.resultSectionType'
+            ])
+            ->where('student_id', $studentId)
+            ->where('term_id', $termId)
+            ->where('academic_year_id', $academicYearId)
+            ->get();
+
+            // Get result section types for this term and class
+            $classId = $student->class_id ?? $student->group_id;
+            $resultSectionTypes = \App\Models\ResultSectionType::where('term_id', $termId)
+                ->whereHas('resultSection', function ($query) use ($classId) {
+                    $query->where('group_id', $classId);
+                })
+                ->orderBy('name')
+                ->get();
+
+            // Group by calc_pattern
+            $markObtained = $resultSectionTypes->where('calc_pattern', 'input');
+            $studentSummary = $resultSectionTypes->whereIn('calc_pattern', ['position', 'grade_level']);
+            $termSummary = $resultSectionTypes->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']);
+            $remarks = $resultSectionTypes->where('calc_pattern', 'remarks');
+
+            // Calculate total score from input scores
+            $totalScore = 0;
+            $totalSubject = $courseForms->count();
+
+            foreach ($courseForms as $courseForm) {
+                foreach ($courseForm->scoreBoard as $score) {
+                    $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
+                    if ($sectionType && $sectionType->calc_pattern === 'input') {
+                        $totalScore += (float) $score->score;
+                    }
+                }
+            }
+
+            $percent = $totalSubject > 0 ? round($totalScore / $totalSubject, 1) : 0;
+
+            // Get principal comment
+            $principalComment = $calculationService->getPrincipalComment($percent);
+
+            // Get attendance data
+            $studentAttendance = \App\Models\StudentAttendanceSummary::where([
+                ['term_id', $termId],
+                ['student_id', $studentId],
+                ['academic_id', $academicYearId]
+            ])->first();
+
+            // Get next term
+            $nextTerm = \App\Models\Term::where('starting_date', '>', $term->ending_date)
+                ->orderBy('starting_date')
+                ->first();
+
+            // Get psychomotor/behavioral data
+            $psychomotorData = \App\Models\PyschomotorStudent::with('psychomotor')
+                ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+                    $query->where('term_id', $termId)
+                          ->where('academic_id', $academicYearId);
+                })
+                ->where('student_id', $studentId)
+                ->get();
+
+            // Organize behavioral data by category and term
+            $behavioralData = [];
+
+            // Get all terms in the academic year for comparison
+            $allTerms = \App\Models\Term::where('academic_year_id', $academicYearId)
+                ->orderBy('starting_date')
+                ->get();
+
+            $termNames = ['1st', '2nd', '3rd'];
+
+            foreach ($psychomotorData as $psychData) {
+                $skillName = strtolower(str_replace(' ', '_', $psychData->psychomotor->skill));
+                $termIndex = $allTerms->search(function ($term) use ($psychData) {
+                    return $term->id === $psychData->psychomotor->term_id;
+                });
+
+                if ($termIndex !== false && isset($termNames[$termIndex])) {
+                    $behavioralData[$skillName][$termNames[$termIndex]] = $psychData->rating;
+                }
+            }
+
+            // Fill missing data with defaults
+            $defaultSkills = [
+                'obedience', 'honesty', 'self_control', 'self_reliance', 'initiative',
+                'punctuality', 'neatness', 'perseverance', 'attendance', 'attentiveness',
+                'courtesy', 'consideration', 'sociability', 'promptness', 'responsibility',
+                'reading_writing', 'verbal_communication', 'sport_game', 'inquisitiveness', 'dexterity'
+            ];
+
+            foreach ($defaultSkills as $skill) {
+                if (!isset($behavioralData[$skill])) {
+                    $behavioralData[$skill] = ['1st' => '-', '2nd' => '-', '3rd' => '-'];
+                } else {
+                    foreach ($termNames as $termName) {
+                        if (!isset($behavioralData[$skill][$termName])) {
+                            $behavioralData[$skill][$termName] = '-';
+                        }
+                    }
+                }
+            }
+
+            // Get annual summary data from previous terms
+            $annualSummaryData = [];
+            foreach ($courseForms as $courseForm) {
+                $subjectId = $courseForm->subject_id;
+                $annualSummaryData[$subjectId] = [
+                    'first_term_avg' => 0,
+                    'second_term_avg' => 0,
+                    'year_avg' => 0
+                ];
+
+                // Get previous term data for this subject
+                $previousTerms = $allTerms->where('id', '!=', $termId)->take(2);
+                $termCount = 0;
+                $totalAvg = 0;
+
+                foreach ($previousTerms as $prevTerm) {
+                    $prevCourseForm = \App\Models\CourseForm::with('scoreBoard.resultSectionType')
+                        ->where('student_id', $studentId)
+                        ->where('subject_id', $subjectId)
+                        ->where('term_id', $prevTerm->id)
+                        ->where('academic_year_id', $academicYearId)
+                        ->first();
+
+                    if ($prevCourseForm) {
+                        $termScore = 0;
+                        $scoreCount = 0;
+
+                        foreach ($prevCourseForm->scoreBoard as $score) {
+                            $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
+                            if ($sectionType && $sectionType->calc_pattern === 'input') {
+                                $termScore += (float) $score->score;
+                                $scoreCount++;
+                            }
+                        }
+
+                        $termAvg = $scoreCount > 0 ? $termScore / $scoreCount : 0;
+                        $totalAvg += $termAvg;
+                        $termCount++;
+
+                        if ($termCount === 1) {
+                            $annualSummaryData[$subjectId]['first_term_avg'] = $termAvg;
+                        } elseif ($termCount === 2) {
+                            $annualSummaryData[$subjectId]['second_term_avg'] = $termAvg;
+                        }
+                    }
+                }
+
+                // Calculate year average
+                $currentTermAvg = $percent; // Current term average
+                $totalAvg += $currentTermAvg;
+                $termCount++;
+
+                $annualSummaryData[$subjectId]['year_avg'] = $termCount > 0 ? $totalAvg / $termCount : 0;
+            }
+
+            // Prepare data for template
+            $data = [
+                'student' => $student,
+                'term' => $term,
+                'academy' => $academicYear,
+                'class' => $student->class,
+                'school' => $school,
+                'studentComment' => $studentComment,
+                'courses' => $courseForms,
+                'markObtained' => $markObtained,
+                'studentSummary' => $studentSummary,
+                'termSummary' => $termSummary,
+                'remarks' => $remarks,
+                'totalScore' => $totalScore,
+                'totalSubject' => $totalSubject,
+                'percent' => $percent,
+                'principalComment' => $principalComment,
+                'resultData' => $studentResult->calculated_data,
+                'studentAttendance' => $studentAttendance,
+                'nextTerm' => $nextTerm,
+                'behavioralData' => $behavioralData,
+                'resultSectionTypes' => $resultSectionTypes,
+                'annualSummaryData' => $annualSummaryData,
+            ];
+
+            return view('results.template', $data);
+
+        } catch (\Exception $e) {
+            abort(500, 'Error generating result preview: ' . $e->getMessage());
+        }
+    })->name('student.result.preview');
+
+    Route::get('/student/result/download/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
+        $calculationService = new \App\Services\StudentResultCalculationService();
+
+        try {
+            $pdfUrl = $calculationService->generateStudentResultPdf($studentId, $termId, $academicYearId);
+
+            // Redirect to the generated PDF URL
+            return redirect($pdfUrl);
+
+        } catch (\Exception $e) {
+            abort(500, 'Error generating result PDF: ' . $e->getMessage());
+        }
+    })->name('student.result.download');
+
 
     // Route::get('/teacher/assignment/{assignment}/student/{student}', ViewSubmittedAssignmentTeacher::class)->name('filament.pages.assignment-student-view');
 }

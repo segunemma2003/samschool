@@ -9,6 +9,7 @@ use App\Models\CourseForm;
 use App\Models\ResultSectionType;
 use App\Models\Student;
 use App\Models\StudentComment;
+use App\Services\StudentResultCalculationService;
 use App\Models\Term;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -266,16 +267,26 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ]
             );
 
+            // Calculate and store the complete student results
+            $calculationService = new StudentResultCalculationService();
+            $studentResult = $calculationService->calculateAndStoreResults(
+                $this->student->id,
+                $this->termId,
+                $this->academic,
+                $commentText,
+                \Filament\Facades\Filament::auth()->id()
+            );
+
             Notification::make()
-                ->title('Comment saved successfully!')
-                ->body("Comment saved for {$this->student->name}")
+                ->title('Comment and Results saved successfully!')
+                ->body("Comment and calculated results saved for {$this->student->name}")
                 ->success()
                 ->send();
 
         } catch (\Exception $e) {
             Notification::make()
                 ->danger()
-                ->title('Error saving comment')
+                ->title('Error saving comment and results')
                 ->body('Error: ' . $e->getMessage())
                 ->send();
         }
@@ -454,13 +465,14 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             return;
         }
 
+        // Calculate total from input scores only
         $results = DB::table('course_forms')
             ->join('result_section_student_types', 'course_forms.id', '=', 'result_section_student_types.course_form_id')
             ->join('result_section_types', 'result_section_student_types.result_section_type_id', '=', 'result_section_types.id')
             ->where('course_forms.student_id', $this->record)
             ->where('course_forms.term_id', $this->termId)
             ->where('course_forms.academic_year_id', $this->academic)
-            ->where('result_section_types.calc_pattern', 'total')
+            ->where('result_section_types.calc_pattern', 'input')
             ->select([
                 'course_forms.id as course_form_id',
                 DB::raw('CAST(result_section_student_types.score AS DECIMAL(10,2)) as score')
@@ -475,15 +487,12 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
     protected function remarksStatement(float $total): string
     {
         return match (true) {
-            $total >= 80 => 'EXCELLENT',
-            $total >= 70 => 'VERY GOOD',
+            $total >= 86 => 'EXCELLENT',
+            $total >= 75 => 'VERY GOOD',
             $total >= 65 => 'GOOD',
-            $total >= 61 => 'CREDIT',
-            $total >= 55 => 'CREDIT',
-            $total >= 50 => 'CREDIT',
-            $total >= 45 => 'PASS',
-            $total >= 39 => 'FAIL',
-            default => 'FAIL'
+            $total >= 51 => 'WORK HARDER',
+            $total >= 41 => 'PUT IN MORE EFFORT',
+            default => 'BE MORE SERIOUS'
         };
     }
 
@@ -527,6 +536,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     return match ($field->calc_pattern) {
                         'input' => 'primary',
                         'total' => 'success',
+                        'cumulative' => 'info',
                         'position' => 'warning',
                         'grade_level' => 'info',
                         'class_average' => 'secondary',

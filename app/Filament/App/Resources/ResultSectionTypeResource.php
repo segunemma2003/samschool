@@ -58,6 +58,7 @@ class ResultSectionTypeResource extends Resource
                 ->options([
                     "input"=> "Input",
                     "total"=>"Total",
+                    "cumulative"=> "Cumulative",
                     "class_average"=> "Class Average",
                     "class_highest_score"=> "Class Highest Score",
                     "class_lowest_score"=> "Class Lowest Score",

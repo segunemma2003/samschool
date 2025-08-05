@@ -97,7 +97,7 @@ class GenerateStudentResultPdf implements ShouldQueue
         $psychomotorCategory = PsychomotorCategory::all();
 
         // Group headings by patterns
-        $markObtained = $headings->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
+        $markObtained = $headings->whereIn('calc_pattern', ['input']) ?? collect([]);
         $studentSummary = $headings->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
         $termSummary = $headings->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
         $remarks = $headings->whereIn('calc_pattern', ['remarks']) ?? collect([]);
@@ -105,15 +105,15 @@ class GenerateStudentResultPdf implements ShouldQueue
         $class = SchoolClass::where('id', $student->class->id)->first() ?? collect([]);
         $totalSubject =count($courses);
 
-        $totalHeadings = $headings->where('calc_pattern', 'total');
+        $inputHeadings = $headings->where('calc_pattern', 'input');
 
         // Step 2: Initialize a variable to store the total sum
         $totalScore = 0;
         $englishScore = 0;
         $mathScore = 0;
 
-        $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings, &$englishScore, &$mathScore) {
-            foreach ($totalHeadings as $heading) {
+        $totalScore = $courses->reduce(function ($carry, $course) use ($inputHeadings, &$englishScore, &$mathScore) {
+            foreach ($inputHeadings as $heading) {
                 $score = $course->scoreBoard->firstWhere('result_section_type_id', $heading->id);
                 $scoreValue = $score->score ?? 0;
 

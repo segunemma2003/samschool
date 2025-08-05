@@ -13,11 +13,7 @@ Route::get('/payment/callback', [App\Http\Controllers\PaymentController::class, 
 
 Route::post('/pay', [App\Http\Controllers\PaymentController::class, 'redirectToGateway'])->name('pay');
 
-Route::post('/logout-everywhere', function(Request $request) {
-    Auth::logout();
-    Session::flush();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
+Route::post('/logout-everywhere', function () {
     return redirect('/')->with('status', 'You have been logged out from all panels.');
 })->name('logout.everywhere');
 

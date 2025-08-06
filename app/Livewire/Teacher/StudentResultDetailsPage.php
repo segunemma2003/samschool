@@ -191,7 +191,20 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
     public function updatedTableFilters(): void
     {
-        // Simplified approach - actual filter handling is done in updatedTermId() and updatedAcademic()
+        // Don't automatically apply filters - let user click apply button
+        // This keeps the filter button selectable
+    }
+
+    public function applyTableFilters(): void
+    {
+        // This method is called when filters are applied through the table
+        $this->applyFilters();
+    }
+
+    public function onTableFilterApplied(): void
+    {
+        // This method is called when table filters are applied
+        $this->applyFilters();
     }
 
     public function loadComment($termId = null): void
@@ -335,11 +348,15 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     ->options($this->terms->pluck('name', 'id')->toArray())
                     ->default($this->termId)
                     ->searchable()
-                                        ->query(function ($query, array $data) {
+                    ->query(function ($query, array $data) {
                         if (isset($data['value']) && $data['value']) {
                             $this->termId = (int) $data['value'];
-                            $this->selectedTermId = (int) $data['value'];
+                            $this->selectedTermId = $this->termId;
                             $query->where('term_id', $data['value']);
+
+                            // Recalculate totals immediately
+                            $this->calculateTotals();
+                            $this->loadComment();
                         }
                         return $query;
                     })
@@ -356,11 +373,15 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     ->options($this->academicYears->pluck('title', 'id')->toArray())
                     ->default($this->academic)
                     ->searchable()
-                                        ->query(function ($query, array $data) {
+                    ->query(function ($query, array $data) {
                         if (isset($data['value']) && $data['value']) {
                             $this->academic = (int) $data['value'];
-                            $this->selectedAcademicId = (int) $data['value'];
+                            $this->selectedAcademicId = $this->academic;
                             $query->where('academic_year_id', $data['value']);
+
+                            // Recalculate totals immediately
+                            $this->calculateTotals();
+                            $this->loadComment();
                         }
                         return $query;
                     })
@@ -392,19 +413,25 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ->extremePaginationLinks(); // Simplify pagination
     }
 
-            public function applyFilters(): void
+    public function applyFilters(): void
     {
-        // Apply the selected filter values
-        if ($this->selectedTermId !== null) {
-            $this->termId = $this->selectedTermId;
+        // Get the current filter values from the table
+        $tableFilters = $this->getTableFilters();
+
+        // Update the component properties based on filter values
+        if (isset($tableFilters['term_id']['value'])) {
+            $this->termId = (int) $tableFilters['term_id']['value'];
+            $this->selectedTermId = $this->termId;
         }
 
-        if ($this->selectedAcademicId !== null) {
-            $this->academic = $this->selectedAcademicId;
+        if (isset($tableFilters['academic_year_id']['value'])) {
+            $this->academic = (int) $tableFilters['academic_year_id']['value'];
+            $this->selectedAcademicId = $this->academic;
         }
 
-        // Update the table data
-        $this->updateTableData();
+        // Recalculate totals with new filter values
+        $this->calculateTotals();
+        $this->loadComment();
 
         // Show success notification
         Notification::make()
@@ -445,7 +472,6 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             $this->getDynamicScoreBoardColumns();
             $this->calculateTotals();
             $this->loadComment();
-            $this->dispatch('refreshTable');
 
             // Stop loading after data is updated
             $this->isTableLoading = false;
@@ -465,23 +491,47 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             return;
         }
 
-        // Calculate total from input scores only
-        $results = DB::table('course_forms')
-            ->join('result_section_student_types', 'course_forms.id', '=', 'result_section_student_types.course_form_id')
-            ->join('result_section_types', 'result_section_student_types.result_section_type_id', '=', 'result_section_types.id')
-            ->where('course_forms.student_id', $this->record)
-            ->where('course_forms.term_id', $this->termId)
-            ->where('course_forms.academic_year_id', $this->academic)
-            ->where('result_section_types.calc_pattern', 'input')
-            ->select([
-                'course_forms.id as course_form_id',
-                DB::raw('CAST(result_section_student_types.score AS DECIMAL(10,2)) as score')
-            ])
+        // Get course forms for this student, term, and academic year
+        $courseForms = CourseForm::where('student_id', $this->record)
+            ->where('term_id', $this->termId)
+            ->where('academic_year_id', $this->academic)
+            ->with(['scoreBoard.resultSectionType'])
             ->get();
 
-        $this->total = $results->sum('score');
-        $this->totalSubject = $results->count();
-        $this->average = $this->totalSubject > 0 ? round($this->total / $this->totalSubject, 2) : 0.0;
+        // Count unique subjects
+        $uniqueSubjects = $courseForms->unique('subject_id');
+        $this->totalSubject = $uniqueSubjects->count();
+
+        if ($this->totalSubject === 0) {
+            $this->total = $this->average = 0;
+            return;
+        }
+
+        // Calculate total and average per subject
+        $totalScore = 0;
+        $subjectsWithScores = 0;
+
+        foreach ($uniqueSubjects as $courseForm) {
+            $subjectTotal = 0;
+            $scoreCount = 0;
+
+            foreach ($courseForm->scoreBoard as $score) {
+                if ($score->resultSectionType && $score->resultSectionType->calc_pattern === 'total') {
+                    $subjectTotal += (float) $score->score;
+                    $scoreCount++;
+                }
+            }
+
+            // Use the total score for this subject (should be only one total per subject)
+            if ($scoreCount > 0) {
+                $totalScore += $subjectTotal; // Use total directly, not average
+                $subjectsWithScores++;
+            }
+        }
+
+        $this->total = round($totalScore, 2);
+        // Use subjects with scores for average calculation
+        $this->average = $subjectsWithScores > 0 ? round($totalScore / $subjectsWithScores, 2) : 0.0;
     }
 
     protected function remarksStatement(float $total): string
@@ -599,7 +649,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             'total' => $this->total,
             'average' => $this->average,
             'totalSubject' => $this->totalSubject,
-            'remarks' => $this->total ? $this->remarksStatement($this->total) : null,
+            'remarks' => $this->average ? $this->remarksStatement($this->average) : null,
             'scoreboardStructure' => $this->getScoreboardStructure(),
         ]);
     }

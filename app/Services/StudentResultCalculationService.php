@@ -586,20 +586,32 @@ class StudentResultCalculationService
             $termSummary = $resultSectionTypes->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']);
             $remarks = $resultSectionTypes->where('calc_pattern', 'remarks');
 
-            // Calculate total score from input scores
+            // Calculate total score from subject averages
             $totalScore = 0;
-            $totalSubject = $courseForms->count();
+            $uniqueSubjects = $courseForms->unique('subject_id');
+            $totalSubject = $uniqueSubjects->count();
+            $subjectsWithScores = 0;
 
-            foreach ($courseForms as $courseForm) {
+            foreach ($uniqueSubjects as $courseForm) {
+                $subjectTotal = 0;
+                $scoreCount = 0;
+
                 foreach ($courseForm->scoreBoard as $score) {
                     $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
-                    if ($sectionType && $sectionType->calc_pattern === 'input') {
-                        $totalScore += (float) $score->score;
+                    if ($sectionType && $sectionType->calc_pattern === 'total') {
+                        $subjectTotal += (float) $score->score;
+                        $scoreCount++;
                     }
+                }
+
+                // Use the total score for this subject (should be only one total per subject)
+                if ($scoreCount > 0) {
+                    $totalScore += $subjectTotal; // Use total directly, not average
+                    $subjectsWithScores++;
                 }
             }
 
-            $percent = $totalSubject > 0 ? round($totalScore / $totalSubject, 1) : 0;
+            $percent = $subjectsWithScores > 0 ? round($totalScore / $subjectsWithScores, 1) : 0;
 
             // Get principal comment
             $principalComment = $this->getPrincipalComment($percent);

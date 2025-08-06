@@ -65,16 +65,55 @@ Route::middleware([
 
     Route::get('/result/{studentId}/student/{termId}/term/{academyId}', [ExamController::class, 'generatePdf'])->name('student.result.check');
 
+    // Test route to verify preview functionality
+    Route::get('/test/preview/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
+        try {
+            // Check if student has course forms for this term and academic year
+            $courseForms = \App\Models\CourseForm::where('student_id', $studentId)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicYearId)
+                ->get();
+
+            if ($courseForms->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No course forms found for this student in the selected term and academic year',
+                    'student_id' => $studentId,
+                    'term_id' => $termId,
+                    'academic_year_id' => $academicYearId
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Course forms found',
+                'count' => $courseForms->count(),
+                'student_id' => $studentId,
+                'term_id' => $termId,
+                'academic_year_id' => $academicYearId
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    })->name('test.preview');
+
     // Student Result Routes for Multi-Tenant Context
     Route::get('/student/result/preview/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
         $calculationService = new \App\Services\StudentResultCalculationService();
 
         try {
-            // Get the stored result
-            $studentResult = $calculationService->getStoredResult($studentId, $termId, $academicYearId);
+            // Check if student has course forms for this term and academic year
+            $courseForms = \App\Models\CourseForm::where('student_id', $studentId)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicYearId)
+                ->get();
 
-            if (!$studentResult) {
-                abort(404, 'No completed result found for this student');
+            if ($courseForms->isEmpty()) {
+                abort(404, 'No course forms found for this student in the selected term and academic year');
             }
 
             // Get related data
@@ -256,6 +295,9 @@ Route::middleware([
                 $annualSummaryData[$subjectId]['year_avg'] = $termCount > 0 ? $totalAvg / $termCount : 0;
             }
 
+            // Calculate result data on-the-fly
+            $resultData = $calculationService->calculateResultDataWithPatterns($studentId, $termId, $academicYearId);
+
             // Prepare data for template
             $data = [
                 'student' => $student,
@@ -273,7 +315,7 @@ Route::middleware([
                 'totalSubject' => $totalSubject,
                 'percent' => $percent,
                 'principalComment' => $principalComment,
-                'resultData' => $studentResult->calculated_data,
+                'resultData' => $resultData,
                 'studentAttendance' => $studentAttendance,
                 'nextTerm' => $nextTerm,
                 'behavioralData' => $behavioralData,
@@ -292,6 +334,17 @@ Route::middleware([
         $calculationService = new \App\Services\StudentResultCalculationService();
 
         try {
+            // Check if student has course forms for this term and academic year
+            $courseForms = \App\Models\CourseForm::where('student_id', $studentId)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicYearId)
+                ->get();
+
+            if ($courseForms->isEmpty()) {
+                abort(404, 'No course forms found for this student in the selected term and academic year');
+            }
+
+            // Generate PDF on-the-fly
             $pdfUrl = $calculationService->generateStudentResultPdf($studentId, $termId, $academicYearId);
 
             // Redirect to the generated PDF URL

@@ -247,14 +247,17 @@ class StudentResource extends Resource
                     ])
                     ->action(function ($record, array $data) {
                         try {
-                            $calculationService = new \App\Services\StudentResultCalculationService();
+                            // Check if student has course forms for this term and academic year
+                            $courseForms = \App\Models\CourseForm::where('student_id', $record->id)
+                                ->where('term_id', $data['term_id'])
+                                ->where('academic_year_id', $data['academic_year_id'])
+                                ->get();
 
-                            // Check if result exists
-                            if (!$calculationService->hasCompleteResult($record->id, $data['term_id'], $data['academic_year_id'])) {
+                            if ($courseForms->isEmpty()) {
                                 \Filament\Notifications\Notification::make()
                                     ->danger()
-                                    ->title('No Result Available')
-                                    ->body('No completed result found for this student in the selected term and academic year.')
+                                    ->title('No Course Forms Available')
+                                    ->body('No course forms found for this student in the selected term and academic year.')
                                     ->send();
                                 return;
                             }
@@ -305,14 +308,17 @@ class StudentResource extends Resource
                     ])
                     ->action(function ($record, array $data) {
                         try {
-                            $calculationService = new \App\Services\StudentResultCalculationService();
+                            // Check if student has course forms for this term and academic year
+                            $courseForms = \App\Models\CourseForm::where('student_id', $record->id)
+                                ->where('term_id', $data['term_id'])
+                                ->where('academic_year_id', $data['academic_year_id'])
+                                ->get();
 
-                            // Check if result exists
-                            if (!$calculationService->hasCompleteResult($record->id, $data['term_id'], $data['academic_year_id'])) {
+                            if ($courseForms->isEmpty()) {
                                 \Filament\Notifications\Notification::make()
                                     ->danger()
-                                    ->title('No Result Available')
-                                    ->body('No completed result found for this student in the selected term and academic year.')
+                                    ->title('No Course Forms Available')
+                                    ->body('No course forms found for this student in the selected term and academic year.')
                                     ->send();
                                 return;
                             }

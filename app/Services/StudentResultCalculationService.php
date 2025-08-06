@@ -97,7 +97,7 @@ class StudentResultCalculationService
     /**
      * Calculate detailed result data for all subjects with proper calc_pattern logic
      */
-    private function calculateResultDataWithPatterns(int $studentId, int $termId, int $academicYearId): array
+    public function calculateResultDataWithPatterns(int $studentId, int $termId, int $academicYearId): array
     {
         // Get the student's class/group information
         $student = Student::with(['class'])->find($studentId);
@@ -532,11 +532,14 @@ class StudentResultCalculationService
     public function generateStudentResultPdf(int $studentId, int $termId, int $academicYearId): string
     {
         try {
-            // Get the stored result
-            $studentResult = $this->getStoredResult($studentId, $termId, $academicYearId);
+            // Check if student has course forms for this term and academic year
+            $courseForms = CourseForm::where('student_id', $studentId)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicYearId)
+                ->get();
 
-            if (!$studentResult) {
-                throw new \Exception('No completed result found for this student');
+            if ($courseForms->isEmpty()) {
+                throw new \Exception('No course forms found for this student in the selected term and academic year');
             }
 
             // Get related data
@@ -735,7 +738,7 @@ class StudentResultCalculationService
                 'totalSubject' => $totalSubject,
                 'percent' => $percent,
                 'principalComment' => $principalComment,
-                'resultData' => $studentResult->calculated_data,
+                'resultData' => $this->calculateResultDataWithPatterns($studentId, $termId, $academicYearId),
                 'studentAttendance' => $studentAttendance,
                 'nextTerm' => $nextTerm,
                 'behavioralData' => $behavioralData,

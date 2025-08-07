@@ -11,6 +11,7 @@ use App\Filament\Teacher\Pages\SubmittedStudentsList;
 use App\Filament\Teacher\Resources\AssignmentResource\Pages\ViewSubmittedAssignmentTeacher;
 use App\Filament\Teacher\Resources\ExamResource\Pages\ExamStudentDetails;
 use App\Http\Controllers\ExamController;
+use App\Http\Controllers\PaymentController;
 use App\Models\Payroll;
 use App\Models\SchoolInvoice;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,7 @@ Route::middleware([
     Route::get('/exam/{exam}/student', [ExamController::class, 'takeExam'])->name('student.exam.take');
 
     Route::get('/result/{studentId}/student/{termId}/term/{academyId}', [ExamController::class, 'generatePdf'])->name('student.result.check');
+    }
 
     // Test route to verify preview functionality
     Route::get('/test/preview/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
@@ -103,8 +105,6 @@ Route::middleware([
 
     // Student Result Routes for Multi-Tenant Context
     Route::get('/student/result/preview/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
-        $calculationService = new \App\Services\StudentResultCalculationService();
-
         try {
             // Check if student has course forms for this term and academic year
             $courseForms = \App\Models\CourseForm::where('student_id', $studentId)
@@ -116,7 +116,7 @@ Route::middleware([
                 abort(404, 'No course forms found for this student in the selected term and academic year');
             }
 
-            // Get related data
+            // Get basic data
             $student = \App\Models\Student::with(['class'])->findOrFail($studentId);
             $term = \App\Models\Term::findOrFail($termId);
             $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
@@ -134,7 +134,7 @@ Route::middleware([
                 ['academic_id', $academicYearId]
             ])->first();
 
-            // Get course forms with scores and teacher information
+            // Get course forms with scores
             $courseForms = \App\Models\CourseForm::with([
                 'subject.subjectDepot',
                 'subject.teacher',
@@ -145,7 +145,7 @@ Route::middleware([
             ->where('academic_year_id', $academicYearId)
             ->get();
 
-            // Get result section types for this term and class
+            // Get result section types
             $classId = $student->class_id ?? $student->group_id;
             $resultSectionTypes = \App\Models\ResultSectionType::where('term_id', $termId)
                 ->whereHas('resultSection', function ($query) use ($classId) {
@@ -160,7 +160,7 @@ Route::middleware([
             $termSummary = $resultSectionTypes->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']);
             $remarks = $resultSectionTypes->where('calc_pattern', 'remarks');
 
-            // Calculate total score from subject averages
+            // Calculate total score
             $totalScore = 0;
             $uniqueSubjects = $courseForms->unique('subject_id');
             $totalSubject = $uniqueSubjects->count();
@@ -178,9 +178,8 @@ Route::middleware([
                     }
                 }
 
-                // Use the total score for this subject (should be only one total per subject)
                 if ($scoreCount > 0) {
-                    $totalScore += $subjectTotal; // Use total directly, not average
+                    $totalScore += $subjectTotal;
                     $subjectsWithScores++;
                 }
             }
@@ -188,6 +187,7 @@ Route::middleware([
             $percent = $subjectsWithScores > 0 ? round($totalScore / $subjectsWithScores, 1) : 0;
 
             // Get principal comment
+            $calculationService = new \App\Services\StudentResultCalculationService();
             $principalComment = $calculationService->getPrincipalComment($percent);
 
             // Get attendance data
@@ -211,10 +211,10 @@ Route::middleware([
                 ->where('student_id', $studentId)
                 ->get();
 
-            // Organize behavioral data by category and term
+            // Organize behavioral data
             $behavioralData = [];
 
-            // Get all terms in the academic year for comparison
+            // Get all terms in the academic year
             $allTerms = \App\Models\Term::where('academic_year_id', $academicYearId)
                 ->orderBy('starting_date')
                 ->get();
@@ -252,7 +252,7 @@ Route::middleware([
                 }
             }
 
-            // Get annual summary data from previous terms
+            // Get annual summary data
             $annualSummaryData = [];
             foreach ($courseForms as $courseForm) {
                 $subjectId = $courseForm->subject_id;
@@ -300,17 +300,14 @@ Route::middleware([
                 }
 
                 // Calculate year average
-                $currentTermAvg = $percent; // Current term average
+                $currentTermAvg = $percent;
                 $totalAvg += $currentTermAvg;
                 $termCount++;
 
                 $annualSummaryData[$subjectId]['year_avg'] = $termCount > 0 ? $totalAvg / $termCount : 0;
             }
 
-            // Calculate result data on-the-fly
-            $resultData = $calculationService->calculateResultDataWithPatterns($studentId, $termId, $academicYearId);
-
-            // Prepare data for template
+            // Prepare data for template - using the same structure as the working test route
             $data = [
                 'student' => $student,
                 'term' => $term,
@@ -327,7 +324,6 @@ Route::middleware([
                 'totalSubject' => $totalSubject,
                 'percent' => $percent,
                 'principalComment' => $principalComment,
-                'resultData' => $resultData,
                 'studentAttendance' => $studentAttendance,
                 'nextTerm' => $nextTerm,
                 'behavioralData' => $behavioralData,
@@ -367,10 +363,230 @@ Route::middleware([
         }
     })->name('student.result.download');
 
+    // Debug route to test preview functionality
+    Route::get('/debug/preview/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
+        try {
+            // Check if student has course forms for this term and academic year
+            $courseForms = \App\Models\CourseForm::where('student_id', $studentId)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicYearId)
+                ->get();
+
+            if ($courseForms->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No course forms found for this student in the selected term and academic year',
+                    'student_id' => $studentId,
+                    'term_id' => $termId,
+                    'academic_year_id' => $academicYearId
+                ], 404);
+            }
+
+            // Get basic student info
+            $student = \App\Models\Student::with(['class'])->findOrFail($studentId);
+            $term = \App\Models\Term::findOrFail($termId);
+            $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data found successfully',
+                'student' => [
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'class' => $student->class ? $student->class->name : null
+                ],
+                'term' => [
+                    'id' => $term->id,
+                    'name' => $term->name
+                ],
+                'academic_year' => [
+                    'id' => $academicYear->id,
+                    'title' => $academicYear->title
+                ],
+                'course_forms_count' => $courseForms->count(),
+                'course_forms' => $courseForms->map(function($cf) {
+                    return [
+                        'id' => $cf->id,
+                        'subject_id' => $cf->subject_id,
+                        'subject_name' => $cf->subject ? $cf->subject->name : 'Unknown',
+                        'scores_count' => $cf->scoreBoard ? $cf->scoreBoard->count() : 0
+                    ];
+                })
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    })->name('debug.preview');
+
+    // Simple test route to check if template rendering works
+    Route::get('/test/template', function () {
+        return view('results.template', [
+            'student' => \App\Models\Student::find(1),
+            'term' => \App\Models\Term::find(1),
+            'academy' => \App\Models\AcademicYear::find(1),
+            'class' => null,
+            'school' => null,
+            'studentComment' => null,
+            'courses' => collect(),
+            'markObtained' => collect(),
+            'studentSummary' => collect(),
+            'termSummary' => collect(),
+            'remarks' => collect(),
+            'totalScore' => 0,
+            'totalSubject' => 0,
+            'percent' => 0,
+            'principalComment' => 'Test Comment',
+            'studentAttendance' => null,
+            'nextTerm' => null,
+            'behavioralData' => [],
+            'resultSectionTypes' => collect(),
+            'annualSummaryData' => [],
+        ]);
+    })->name('test.template');
+
+    // Detailed debug route to test preview data processing
+    Route::get('/debug/preview-detailed/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
+        try {
+            $debug = [];
+
+            // Step 1: Check course forms
+            $courseForms = \App\Models\CourseForm::where('student_id', $studentId)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicYearId)
+                ->get();
+
+            $debug['step1_course_forms'] = [
+                'count' => $courseForms->count(),
+                'found' => !$courseForms->isEmpty()
+            ];
+
+            if ($courseForms->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No course forms found',
+                    'debug' => $debug
+                ], 404);
+            }
+
+            // Step 2: Get student
+            $student = \App\Models\Student::with(['class'])->findOrFail($studentId);
+            $debug['step2_student'] = [
+                'id' => $student->id,
+                'name' => $student->name,
+                'class_id' => $student->class_id,
+                'class_name' => $student->class ? $student->class->name : null
+            ];
+
+            // Step 3: Get term and academic year
+            $term = \App\Models\Term::findOrFail($termId);
+            $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
+            $debug['step3_basic_data'] = [
+                'term' => ['id' => $term->id, 'name' => $term->name],
+                'academic_year' => ['id' => $academicYear->id, 'title' => $academicYear->title]
+            ];
+
+            // Step 4: Get school information
+            $school = \App\Models\SchoolInformation::where([
+                ['term_id', $termId],
+                ['academic_id', $academicYearId]
+            ])->first();
+            $debug['step4_school'] = [
+                'found' => $school !== null,
+                'data' => $school ? $school->toArray() : null
+            ];
+
+            // Step 5: Get result section types
+            $classId = $student->class_id ?? $student->group_id;
+            $resultSectionTypes = \App\Models\ResultSectionType::where('term_id', $termId)
+                ->whereHas('resultSection', function ($query) use ($classId) {
+                    $query->where('group_id', $classId);
+                })
+                ->orderBy('name')
+                ->get();
+
+            $debug['step5_result_section_types'] = [
+                'class_id' => $classId,
+                'count' => $resultSectionTypes->count(),
+                'types' => $resultSectionTypes->map(function($rst) {
+                    return [
+                        'id' => $rst->id,
+                        'name' => $rst->name,
+                        'calc_pattern' => $rst->calc_pattern
+                    ];
+                })
+            ];
+
+            // Step 6: Test calculation service
+            try {
+                $calculationService = new \App\Services\StudentResultCalculationService();
+                $principalComment = $calculationService->getPrincipalComment(75);
+                $debug['step6_calculation_service'] = [
+                    'success' => true,
+                    'principal_comment' => $principalComment
+                ];
+            } catch (\Exception $e) {
+                $debug['step6_calculation_service'] = [
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Debug data collected successfully',
+                'debug' => $debug
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'debug' => $debug ?? []
+            ], 500);
+        }
+    })->name('debug.preview.detailed');
+
+    // Test route to show exact template error
+    Route::get('/test/template-error', function () {
+        try {
+            return view('results.template', [
+                'student' => \App\Models\Student::find(1),
+                'term' => \App\Models\Term::find(1),
+                'academy' => \App\Models\AcademicYear::find(1),
+                'class' => null,
+                'school' => null,
+                'studentComment' => null,
+                'courses' => collect(),
+                'markObtained' => collect(),
+                'studentSummary' => collect(),
+                'termSummary' => collect(),
+                'remarks' => collect(),
+                'totalScore' => 0,
+                'totalSubject' => 0,
+                'percent' => 0,
+                'principalComment' => 'Test Comment',
+                'studentAttendance' => null,
+                'nextTerm' => null,
+                'behavioralData' => [],
+                'resultSectionTypes' => collect(),
+                'annualSummaryData' => [],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    })->name('test.template.error');
+
 
     // Route::get('/teacher/assignment/{assignment}/student/{student}', ViewSubmittedAssignmentTeacher::class)->name('filament.pages.assignment-student-view');
-}
-    // Your Tenant routes here
-
-
 });

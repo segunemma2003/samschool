@@ -269,12 +269,8 @@ class StudentResource extends Resource
                                 'academicYearId' => $data['academic_year_id']
                             ]);
 
-                            // Open preview in new tab
-                            return response()->json([
-                                'success' => true,
-                                'url' => $previewUrl,
-                                'openInNewTab' => true
-                            ]);
+                            // Redirect to preview URL
+                            return redirect()->away($previewUrl);
 
                         } catch (\Exception $e) {
                             \Filament\Notifications\Notification::make()
@@ -330,12 +326,8 @@ class StudentResource extends Resource
                                 'academicYearId' => $data['academic_year_id']
                             ]);
 
-                            // Open download in new tab
-                            return response()->json([
-                                'success' => true,
-                                'url' => $downloadUrl,
-                                'openInNewTab' => true
-                            ]);
+                            // Redirect to download URL
+                            return redirect()->away($downloadUrl);
 
                         } catch (\Exception $e) {
                             \Filament\Notifications\Notification::make()
@@ -765,17 +757,6 @@ class StudentResource extends Resource
                 //                         ->setOption('margin-bottom', 10)
                 //                         ->setOption('margin-left', 10)
                 //                         ->setOption('page-size', 'A4')
-                //                         ->setOption('enable-local-file-access', true)
-                //                         ->setOption('enable-smart-shrinking', true)
-                //                         ->setOption('print-media-type', true)
-                //                         ->setOption('dpi', 150)
-                //                         ->setOption('image-quality', 100)
-                //                         ->setOption('enable-javascript', true)
-                //                         ->setOption('javascript-delay', 1000)
-                //                         ->setOption('no-stop-slow-scripts', true)
-                //                         ->setOption('no-sandbox', true)
-                //                         ->setOption('disable-web-security', true)
-                //                         ->setOption('allow-running-insecure-content', true)
                 //                         ->setOption('enable-local-file-access', true)
                 //                         ->setOption('enable-smart-shrinking', true)
                 //                         ->setOption('print-media-type', true)

@@ -361,10 +361,8 @@ class StudentResultCalculationService
     private function calculateCumulativeScore(int $studentId, int $subjectId, int $academicYearId, int $currentTermId): float
     {
         try {
-            // Get all terms in the academic year, ordered by their sequence
-            $terms = \App\Models\Term::where('academic_year_id', $academicYearId)
-                ->orderBy('starting_date', 'asc')
-                ->get();
+            // Get all terms, ordered by their sequence
+            $terms = \App\Models\Term::orderBy('id', 'asc')->get();
 
             // Find the current term's position
             $currentTermIndex = $terms->search(function ($term) use ($currentTermId) {
@@ -624,9 +622,12 @@ class StudentResultCalculationService
             ])->first();
 
             // Get next term
-            $nextTerm = Term::where('starting_date', '>', $term->ending_date)
-                ->orderBy('starting_date')
-                ->first();
+            $nextTerm = null;
+            if ($term->ending_date) {
+                $nextTerm = Term::where('starting_date', '>', $term->ending_date)
+                    ->orderBy('starting_date')
+                    ->first();
+            }
 
             // Get psychomotor/behavioral data
             $psychomotorData = \App\Models\PyschomotorStudent::with('psychomotor')
@@ -641,9 +642,7 @@ class StudentResultCalculationService
             $behavioralData = [];
 
             // Get all terms in the academic year for comparison
-            $allTerms = Term::where('academic_year_id', $academicYearId)
-                ->orderBy('starting_date')
-                ->get();
+            $allTerms = Term::all(); // Get all terms since terms don't have academic_year_id
 
             $termNames = ['1st', '2nd', '3rd'];
 

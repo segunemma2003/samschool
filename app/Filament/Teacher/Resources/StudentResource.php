@@ -326,10 +326,25 @@ class StudentResource extends Resource
                                 'academicYearId' => $data['academic_year_id']
                             ]);
 
+                            // Log the URL for debugging
+                            \Log::info('Download URL generated', [
+                                'url' => $downloadUrl,
+                                'student_id' => $record->id,
+                                'term_id' => $data['term_id'],
+                                'academic_year_id' => $data['academic_year_id']
+                            ]);
+
                             // Redirect to download URL
                             return redirect()->away($downloadUrl);
 
                         } catch (\Exception $e) {
+                            \Log::error('Download action error', [
+                                'error' => $e->getMessage(),
+                                'file' => $e->getFile(),
+                                'line' => $e->getLine(),
+                                'trace' => $e->getTraceAsString()
+                            ]);
+
                             \Filament\Notifications\Notification::make()
                                 ->danger()
                                 ->title('Error Generating Download')

@@ -107,9 +107,7 @@ class StudentResults extends Component
             }
 
             // Get all terms in the academic year, ordered by their sequence
-            $terms = \App\Models\Term::where('academic_year_id', $currentAcademic->id)
-                ->orderBy('starting_date', 'asc')
-                ->get();
+            $terms = \App\Models\Term::all(); // Get all terms since terms don't have academic_year_id
 
             // Find the current term's position
             $currentTermIndex = $terms->search(function ($term) {

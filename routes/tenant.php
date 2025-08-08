@@ -757,10 +757,8 @@ Route::middleware([
             // Organize behavioral data
             $behavioralData = [];
 
-            // Get all terms in the academic year
-            $allTerms = \App\Models\Term::where('academic_year_id', $academicYearId)
-                ->orderBy('starting_date')
-                ->get();
+            // Get all terms in the academic year for comparison
+            $allTerms = \App\Models\Term::all(); // Get all terms since terms don't have academic_year_id
 
             $termNames = ['1st', '2nd', '3rd'];
 

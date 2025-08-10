@@ -860,10 +860,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
-        <div class="footer">
-            Powered By Edu-Pack® Solutions<span class="powered-by">EP</span>
-        </div>
     </div>
 </body>
 </html>

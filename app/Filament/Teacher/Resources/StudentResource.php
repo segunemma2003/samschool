@@ -15,6 +15,7 @@ use App\Models\CourseForm;
 use App\Models\DownloadStatus;
 use App\Models\Guardians;
 use App\Models\PsychomotorCategory;
+use App\Models\StudentResult;
 use App\Models\ResultSectionType;
 use App\Models\SchoolClass;
 use App\Models\SchoolInformation;
@@ -327,7 +328,7 @@ class StudentResource extends Resource
                             ]);
 
                             // Log the URL for debugging
-                            \Log::info('Download URL generated', [
+                            Log::info('Download URL generated', [
                                 'url' => $downloadUrl,
                                 'student_id' => $record->id,
                                 'term_id' => $data['term_id'],
@@ -338,7 +339,7 @@ class StudentResource extends Resource
                             return redirect()->away($downloadUrl);
 
                         } catch (\Exception $e) {
-                            \Log::error('Download action error', [
+                            Log::error('Download action error', [
                                 'error' => $e->getMessage(),
                                 'file' => $e->getFile(),
                                 'line' => $e->getLine(),
@@ -493,366 +494,180 @@ class StudentResource extends Resource
                 //     //     "result-{$record->name}.pdf"
                 //     // );
                 // }),
+                Tables\Actions\Action::make('downloadSingleResult')
+    ->label('Download Result')
+    ->icon('heroicon-s-arrow-down-on-square')
+    ->color('success')
+    ->form([
+        Forms\Components\Select::make('term_id')
+            ->options(Term::whereNotNull('name')->pluck('name', 'id'))
+            ->preload()
+            ->label('Term')
+            ->searchable()
+            ->required(),
+        Forms\Components\Select::make('academic_id')
+            ->label('Academic Year')
+            ->options(AcademicYear::whereNotNull('title')->pluck('title', 'id'))
+            ->preload()
+            ->required()
+            ->searchable(),
+    ])
+    ->action(function (array $data, $record) {
+        try {
+            // Check if results exist for this student
+            $resultsExist = StudentResult::where([
+                ['student_id', $record->id],
+                ['term_id', $data['term_id']],
+                ['academic_year_id', $data['academic_id']]
+            ])->exists();
 
-                \Filament\Tables\Actions\Action::make('downloadSingleResult')
-                    ->label('Download Result')
-                    ->icon('heroicon-s-arrow-down-on-square')
-                    ->form([
-                        Forms\Components\Select::make('term_id')
-                            ->options(Term::all()->pluck('name', 'id'))
-                            ->preload()
-                            ->label('Term')
-                            ->searchable()
-                            ->required(),
-                        Forms\Components\Select::make('academic_id')
-                            ->label('Academy Year')
-                            ->options(AcademicYear::all()->pluck('title', 'id'))
-                            ->preload()
-                            ->searchable()
-                            ->required(),
-                    ])
-                    ->action(function (array $data, $record) {
-                        try {
-                            $calculationService = new \App\Services\StudentResultCalculationService();
+            if (!$resultsExist) {
+                Notification::make()
+                    ->title('No Results Found')
+                    ->body('No saved results found for this student in the selected term and academic year. Please ensure results have been entered and saved first.')
+                    ->warning()
+                    ->duration(8000)
+                    ->send();
+                return;
+            }
 
-                            // Check if result exists
-                            if (!$calculationService->hasCompleteResult($record->id, $data['term_id'], $data['academic_id'])) {
-                                \Filament\Notifications\Notification::make()
-                                    ->danger()
-                                    ->title('No Result Available')
-                                    ->body('No completed result found for this student in the selected term and academic year.')
-                                    ->send();
-                                return;
-                            }
+            // Use the updated service that works with saved results
+            $resultService = new \App\Services\ResultPdfService();
+            $result = $resultService->generateStudentResult(
+                $record->id,
+                $data['term_id'],
+                $data['academic_id']
+            );
 
-                            // Generate PDF
-                            $pdfUrl = $calculationService->generateStudentResultPdf(
-                                $record->id,
-                                $data['term_id'],
-                                $data['academic_id']
-                            );
+            Notification::make()
+                ->title('PDF Generated Successfully')
+                ->body('Student result has been generated and will download automatically.')
+                ->success()
+                ->send();
 
-                            \Filament\Notifications\Notification::make()
-                                ->success()
-                                ->title('Result Generated Successfully')
-                                ->body('Your result PDF has been generated and is ready for download.')
-                                ->send();
+            return response()->streamDownload(
+                fn () => print($result['pdf']->output()),
+                $result['filename'],
+                [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="' . $result['filename'] . '"'
+                ]
+            );
 
-                            // Return download response
-                            return response()->json([
-                                'success' => true,
-                                'url' => $pdfUrl,
-                                'filename' => "result-{$record->name}-{$data['term_id']}-{$data['academic_id']}.pdf"
-                            ]);
+        } catch (\Exception $e) {
+            Log::error('PDF Download Error', [
+                'student_id' => $record->id,
+                'term_id' => $data['term_id'] ?? null,
+                'academic_id' => $data['academic_id'] ?? null,
+                'error' => $e->getMessage()
+            ]);
 
-                        } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()
-                                ->danger()
-                                ->title('Error Generating Result')
-                                ->body('Failed to generate result PDF: ' . $e->getMessage())
-                                ->send();
-                        }
-                    })
-                    ->modalSubmitActionLabel('Generate PDF')
-                    ->modalCancelActionLabel('Cancel'),
-                // \Filament\Tables\Actions\Action::make('downloadSingleResult')
-                //     ->label('Download Result')
-                //     ->icon('heroicon-s-arrow-down-on-square')
-                //     ->form([
-                //         Forms\Components\Select::make('term_id')
-                //             ->options(Term::whereNotNull('name')->pluck('name', 'id'))
-                //             ->preload()
-                //             ->label('Term')
-                //             ->searchable()
-                //             ->required(),
-                //         Forms\Components\Select::make('academic_id')
-                //             ->label('Academy Year')
-                //             ->options(AcademicYear::whereNotNull('title')->pluck('title', 'id'))
-                //             ->preload()
-                //             ->required()
-                //             ->searchable(),
-                //         Forms\Components\Select::make('mid')
-                //             ->label('Mid Term Result?')
-                //             ->options([
-                //                 "Yes"=>"Yes",
-                //                 "No"=> "No"
-                //             ])
-                //             ->required()
-                //             ->preload()
-                //             ->searchable(),
-                //     ])
-                //     ->action(function (array $data, $record) {
-                //         try {
-                //             // Load all required data in a single query with eager loading
-                //             $student = $record->load([
-                //                 'class.group',
-                //                 'class' => function ($query) {
-                //                     $query->select('id', 'name', 'group_id');
-                //                 }
-                //             ]);
+            Notification::make()
+                ->title('Error Generating PDF')
+                ->body('Failed to generate PDF: ' . $e->getMessage())
+                ->danger()
+                ->duration(10000)
+                ->send();
 
-                //             if (!$student) {
-                //                 throw new \Exception('Student record not found.');
-                //             }
-
-                //             if (!$student->class || !$student->class->group) {
-                //                 throw new \Exception('Student class or group information is missing.');
-                //             }
-
-                //             // Combine queries into a single operation using whereIn
-                //             $termAndAcademy = collect([
-                //                 'term' => Term::find($data['term_id']),
-                //                 'academy' => AcademicYear::find($data['academic_id'])
-                //             ]);
-
-                //             // Check if term or academy is null
-                //             if (!$termAndAcademy['term'] || !$termAndAcademy['academy']) {
-                //                 throw new \Exception('Term or Academic Year information is missing.');
-                //             }
-
-                //             // Use a single query to fetch all related data
-                //             $relatedData = collect([
-                //                 'school' => SchoolInformation::where([
-                //                     ['term_id', $data['term_id']],
-                //                     ['academic_id', $data['academic_id']]
-                //                 ]),
-                //                 'studentAttendance' => StudentAttendanceSummary::where([
-                //                     ['term_id', $data['term_id']],
-                //                     ['student_id', $student->id],
-                //                     ['academic_id', $data['academic_id']]
-                //                 ]),
-                //                 'studentComment' => StudentComment::where([
-                //                     ['student_id', $student->id],
-                //                     ['term_id', $data['term_id']],
-                //                     ['academic_id', $data['academic_id']]
-                //                 ])
-                //             ])->map(fn ($query) => $query->first());
-
-                //             // Check for missing related data
-                //             $missingData = [];
-                //             if (!$relatedData['school']) $missingData[] = 'School Information';
-                //             if (!$relatedData['studentAttendance']) $missingData[] = 'Student Attendance';
-                //             if (!$relatedData['studentComment']) $missingData[] = 'Student Comment';
-
-                //             if (count($missingData) > 0) {
-                //                 throw new \Exception('The following information is missing and must be filled before generating the PDF: ' . implode(', ', $missingData));
-                //             }
-
-                //             // Optimize course loading with single query and eager loading
-                //             $courses = CourseForm::with([
-                //                 'subject.subjectDepot',
-                //                 'scoreBoard'
-                //             ])
-                //             ->where([
-                //                 ['student_id', $student->id],
-                //                 ['academic_year_id', $data['academic_id']],
-                //                 ['term_id', $data['term_id']]
-                //             ])
-                //             ->get();
-
-                //             if(count($courses) < 1){
-                //                 throw new \Exception('No courses found for this student in the selected term and academic year.');
-                //             }
-
-                //             // Validate course data completeness
-                //             $invalidCourses = [];
-                //             foreach ($courses as $course) {
-                //                 if (!$course->subject || !$course->subject->subjectDepot) {
-                //                     $invalidCourses[] = $course->id;
-                //                 }
-                //             }
-
-                //             if (count($invalidCourses) > 0) {
-                //                 throw new \Exception('Some courses have missing subject information. Please complete the data for course IDs: ' . implode(', ', $invalidCourses));
-                //             }
-
-                //             // Cache psychomotor categories
-                //             $psychomotorCategory = cache()->remember('psychomotor_categories', 3600, function() {
-                //                 return PsychomotorCategory::all();
-                //             });
-
-                //             // Optimize headings query with caching
-                //             $headings = cache()->remember(
-                //                 "result_section_types_{$student->class->group->id}",
-                //                 3600,
-                //                 function() use ($student, $data) {
-                //                     return ResultSectionType::with('resultSection')
-                //                         ->where('term_id', $data['term_id'])
-                //                         ->whereHas('resultSection', function ($query) use ($student) {
-                //                             $query->where('group_id', $student->class->group->id);
-                //                         })
-                //                         ->get();
-                //                 }
-                //             );
-
-                //             // Check if headings are available
-                //             if ($headings->isEmpty()) {
-                //                 throw new \Exception('Result section types are not configured for this student\'s group.');
-                //             }
-
-                //             // Group headings efficiently
-                //             $groupedHeadings = $headings->groupBy('calc_pattern');
-
-                //             // Calculate scores efficiently using collection methods
-                //             $totalHeadings = $headings->where('calc_pattern', 'total');
-
-                //             $scoreData = $courses->reduce(function ($carry, $course) use ($totalHeadings) {
-                //                 $subject = strtolower($course->subject->subjectDepot->name);
-                //                 $score = $course->scoreBoard
-                //                     ->whereIn('result_section_type_id', $totalHeadings->pluck('id'))
-                //                     ->sum('score');
-
-                //                 $carry['totalScore'] += $score;
-
-                //                 if (str_starts_with($subject, 'english') || str_starts_with($subject, 'literacy')) {
-                //                     $carry['englishScore'] = $score;
-                //                 } elseif (str_starts_with($subject, 'math') || str_starts_with($subject, 'numeracy')) {
-                //                     $carry['mathScore'] = $score;
-                //                 }
-
-                //                 return $carry;
-                //             }, ['totalScore' => 0, 'englishScore' => 0, 'mathScore' => 0]);
-
-                //             $percent = round($scoreData['totalScore'] / $courses->count());
-
-                //             // Prepare view data with proper encoding
-                //             $viewData = [
-                //                 'class' => $student->class,
-                //                 'totalSubject' => $courses->count(),
-                //                 'totalScore' => $scoreData['totalScore'],
-                //                 'percent' => $percent,
-                //                 'markObtained' => $groupedHeadings->get('input', collect())->merge($groupedHeadings->get('total', collect())),
-                //                 'remarks' => $groupedHeadings->get('remarks', collect()),
-                //                 'studentSummary' => $groupedHeadings->get('position', collect())->merge($groupedHeadings->get('grade_level', collect())),
-                //                 'termSummary' => $groupedHeadings->get('class_average', collect())
-                //                     ->merge($groupedHeadings->get('class_highest_score', collect()))
-                //                     ->merge($groupedHeadings->get('class_lowest_score', collect())),
-                //                 'courses' => $courses,
-                //                 'student' => $student,
-                //                 'school' => $relatedData['school'],
-                //                 'academy' => $termAndAcademy['academy'],
-                //                 'studentAttendance' => $relatedData['studentAttendance'],
-                //                 'term' => $termAndAcademy['term'],
-                //                 'studentComment' => $relatedData['studentComment'],
-                //                 'principalComment' => self::getPerformanceComment($percent, $scoreData['englishScore'], $scoreData['mathScore']),
-                //                 'psychomotorCategory' => $psychomotorCategory
-                //             ];
-
-                //             try {
-                //                 // Sanitize and encode all string values
-                //                 $viewData = array_map(function($value) {
-                //                     if (is_string($value)) {
-                //                         // Remove any invalid UTF-8 characters
-                //                         $value = preg_replace('/[\x00-\x08\x10\x0B\x0C\x0E-\x19\x7F]|[\x00-\x7F][\x80-\xBF]+|([\xC0\xC1]|[\xE0-\xFF])[\x80-\xBF]*|[\xC2-\xDF]((?![\x80-\xBF])|[\x80-\xBF]{2,})|[\xE0-\xEF](([\x80-\xBF](?![\x80-\xBF]))|(?![\x80-\xBF]{2})|[\x80-\xBF]{3,})/S', '', $value);
-                //                         // Convert to UTF-8
-                //                         $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
-                //                     }
-                //                     return $value;
-                //                 }, $viewData);
-
-                //                 // Generate HTML with proper encoding
-                //                 $html = view('results.template', $viewData)->render();
-
-                //                 // Remove any invalid UTF-8 characters from the HTML
-                //                 $html = preg_replace('/[\x00-\x08\x10\x0B\x0C\x0E-\x19\x7F]|[\x00-\x7F][\x80-\xBF]+|([\xC0\xC1]|[\xE0-\xFF])[\x80-\xBF]*|[\xC2-\xDF]((?![\x80-\xBF])|[\x80-\xBF]{2,})|[\xE0-\xEF](([\x80-\xBF](?![\x80-\xBF]))|(?![\x80-\xBF]{2})|[\x80-\xBF]{3,})/S', '', $html);
-
-                //                 // Convert to UTF-8
-                //                 $html = mb_convert_encoding($html, 'UTF-8', 'UTF-8');
-
-                //                 if (stripos($html, 'null') !== false) {
-                //                     throw new \Exception('Some data is missing in the template. Please check all required fields.');
-                //                 }
-
-                //                 try {
-                //                     // Generate PDF using KnpSnappy
-                //                     $pdf = SnappyPdf::loadHTML($html)
-                //                         ->setOption('encoding', 'UTF-8')
-                //                         ->setOption('margin-top', 10)
-                //                         ->setOption('margin-right', 10)
-                //                         ->setOption('margin-bottom', 10)
-                //                         ->setOption('margin-left', 10)
-                //                         ->setOption('page-size', 'A4')
-                //                         ->setOption('enable-local-file-access', true)
-                //                         ->setOption('enable-smart-shrinking', true)
-                //                         ->setOption('print-media-type', true)
-                //                         ->setOption('dpi', 150)
-                //                         ->setOption('image-quality', 100)
-                //                         ->setOption('enable-javascript', true)
-                //                         ->setOption('javascript-delay', 1000)
-                //                         ->setOption('no-stop-slow-scripts', true)
-                //                         ->setOption('no-sandbox', true)
-                //                         ->setOption('disable-web-security', true)
-                //                         ->setOption('allow-running-insecure-content', true)
-                //                         ->setOption('enable-local-file-access', true)
-                //                         ->setOption('enable-smart-shrinking', true)
-                //                         ->setOption('print-media-type', true)
-                //                         ->setOption('dpi', 150)
-                //                         ->setOption('image-quality', 100)
-                //                         ->setOption('enable-javascript', true)
-                //                         ->setOption('javascript-delay', 1000)
-                //                         ->setOption('no-stop-slow-scripts', true)
-                //                         ->setOption('no-sandbox', true)
-                //                         ->setOption('disable-web-security', true)
-                //                         ->setOption('allow-running-insecure-content', true);
-
-                //                     // Return response with proper headers
-                //                     return response($pdf->output())
-                //                         ->header('Content-Type', 'application/pdf')
-                //                         ->header('Content-Disposition', 'inline; filename="result-' . urlencode($record->name) . '.pdf"')
-                //                         ->header('Content-Transfer-Encoding', 'binary')
-                //                         ->header('Accept-Ranges', 'bytes');
-
-                //                 } catch (\Exception $e) {
-                //                     Log::error('PDF generation error: ' . $e->getMessage(), [
-                //                         'student_id' => $student->id,
-                //                         'term_id' => $data['term_id'],
-                //                         'academic_id' => $data['academic_id']
-                //                     ]);
-
-                //                     Notification::make()
-                //                         ->title('PDF Generation Error')
-                //                         ->body('Error: ' . $e->getMessage())
-                //                         ->danger()
-                //                         ->send();
-
-                //                     return;
-                //                 }
-                //             } catch (\Exception $e) {
-                //                 Log::error('Result generation error: ' . $e->getMessage(), [
-                //                     'student_id' => $record->id,
-                //                     'term_id' => $data['term_id'] ?? null,
-                //                     'academic_id' => $data['academic_id'] ?? null
-                //                 ]);
-
-                //                 Notification::make()
-                //                     ->title('Error')
-                //                     ->body($e->getMessage())
-                //                     ->danger()
-                //                     ->send();
-
-                //                 return;
-                //             }
-                //         } catch (\Exception $e) {
-                //             Log::error('Result generation error: ' . $e->getMessage(), [
-                //                 'student_id' => $record->id,
-                //                 'term_id' => $data['term_id'] ?? null,
-                //                 'academic_id' => $data['academic_id'] ?? null
-                //             ]);
-
-                //             Notification::make()
-                //                 ->title('Error')
-                //                 ->body($e->getMessage())
-                //                 ->danger()
-                //                 ->send();
-
-                //             return;
-                //         }
-                //     })
+            return;
+        }
+    })
+    ->requiresConfirmation()
+    ->modalHeading('Download Student Result')
+    ->modalDescription('This will generate a PDF report card using the saved results data. Make sure results have been entered and commented on before downloading.')
+    ->modalSubmitActionLabel('Generate & Download PDF')
+    ->modalCancelActionLabel('Cancel'),
 
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     // Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('bulkDownloadResults')
+                        ->label('Download Results (Saved)')
+                        ->icon('heroicon-s-arrow-down-on-square')
+                        ->color('success')
+                        ->form([
+                            Forms\Components\Select::make('term_id')
+                                ->options(Term::all()->pluck('name', 'id'))
+                                ->preload()
+                                ->label('Term')
+                                ->searchable()
+                                ->required(),
+                            Forms\Components\Select::make('academic_id')
+                                ->label('Academic Year')
+                                ->options(AcademicYear::all()->pluck('title', 'id'))
+                                ->preload()
+                                ->searchable()
+                                ->required(),
+                        ])
+                        ->action(function (array $data, $records) {
+                            try {
+                                $studentsWithResults = [];
+                                $studentsWithoutResults = [];
+
+                                // Check which students have results
+                                foreach ($records as $student) {
+                                    $hasResults = StudentResult::where([
+                                        ['student_id', $student->id],
+                                        ['term_id', $data['term_id']],
+                                        ['academic_year_id', $data['academic_id']]
+                                    ])->exists();
+
+                                    if ($hasResults) {
+                                        $studentsWithResults[] = $student;
+                                    } else {
+                                        $studentsWithoutResults[] = $student->name;
+                                    }
+                                }
+
+                                if (empty($studentsWithResults)) {
+                                    Notification::make()
+                                        ->title('No Results Available')
+                                        ->body('None of the selected students have saved results for the selected term and academic year.')
+                                        ->warning()
+                                        ->send();
+                                    return;
+                                }
+
+                                // Queue the bulk generation job
+                                $status = DownloadStatus::create([
+                                    'status' => 'processing',
+                                    'time' => time(),
+                                    'data' => json_encode([
+                                        'term_id' => $data['term_id'],
+                                        'academic_id' => $data['academic_id'],
+                                        'student_count' => count($studentsWithResults),
+                                        'students_without_results' => $studentsWithoutResults
+                                    ])
+                                ]);
+
+                                // Dispatch your existing job but modify it to use saved results
+                                GenerateStudentResultPdf::dispatch($data, collect($studentsWithResults), $status->id);
+
+                                $message = 'Bulk download is processing in the background for ' . count($studentsWithResults) . ' students.';
+                                if (!empty($studentsWithoutResults)) {
+                                    $message .= ' Note: ' . count($studentsWithoutResults) . ' students were skipped due to missing results.';
+                                }
+
+                                Notification::make()
+                                    ->title('Bulk Download Started')
+                                    ->body($message)
+                                    ->success()
+                                    ->duration(8000)
+                                    ->send();
+
+                            } catch (\Exception $e) {
+                                Notification::make()
+                                    ->title('Error Starting Bulk Download')
+                                    ->body('Failed to start bulk download: ' . $e->getMessage())
+                                    ->danger()
+                                    ->send();
+                            }
+                        })
+                        ->requiresConfirmation()
+                        ->modalHeading('Bulk Download Student Results')
+                        ->modalDescription('This will generate PDF report cards for all selected students using their saved results data.')
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\BulkAction::make('DownloadResult')
                     ->label('Download Results')
                     ->icon('heroicon-s-arrow-down-on-square')

@@ -124,7 +124,7 @@ Route::middleware([
                 ->first();
 
             if (!$studentResult) {
-                abort(404, 'No completed results found for this student in the selected term and academic year. Please ensure results have been calculated and saved first.');
+                abort(404, 'Result not ready yet. Please ensure the teacher has viewed and commented on the student result first.');
             }
 
             // Get calculated data from StudentResult
@@ -216,67 +216,23 @@ Route::middleware([
             $term = \App\Models\Term::findOrFail($termId);
             $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
 
-            // Check if student has course forms for this term and academic year
-            $courseForms = \App\Models\CourseForm::where('student_id', $studentId)
+            // Get student result from StudentResult model
+            $studentResult = \App\Models\StudentResult::where('student_id', $studentId)
                 ->where('term_id', $termId)
                 ->where('academic_year_id', $academicYearId)
-                ->with([
-                    'subject.subjectDepot',
-                    'subject.teacher',
-                    'scoreBoard.resultSectionType'
-                ])
-                ->get();
+                ->where('calculation_status', 'completed')
+                ->first();
 
-            if ($courseForms->isEmpty()) {
-                abort(404, 'No course forms found for this student in the selected term and academic year');
+            if (!$studentResult) {
+                abort(404, 'Result not ready yet. Please ensure the teacher has viewed and commented on the student result first.');
             }
 
-            // Get result section types
-            $classId = $student->class_id ?? $student->group_id;
-            $resultSectionTypes = \App\Models\ResultSectionType::where('term_id', $termId)
-                ->whereHas('resultSection', function ($query) use ($classId) {
-                    $query->where('group_id', $classId);
-                })
-                ->orderBy('name')
-                ->get();
+            // Get calculated data from StudentResult
+            $calculatedData = $studentResult->calculated_data;
+            $summary = $calculatedData['summary'] ?? [];
+            $subjects = $calculatedData['subjects'] ?? [];
 
-            // Group by calc_pattern
-            $markObtained = $resultSectionTypes->where('calc_pattern', 'input');
-            $studentSummary = $resultSectionTypes->whereIn('calc_pattern', ['position', 'grade_level']);
-            $termSummary = $resultSectionTypes->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']);
-            $remarks = $resultSectionTypes->where('calc_pattern', 'remarks');
-
-            // Calculate total score
-            $totalScore = 0;
-            $uniqueSubjects = $courseForms->unique('subject_id');
-            $totalSubject = $uniqueSubjects->count();
-            $subjectsWithScores = 0;
-
-            foreach ($uniqueSubjects as $courseForm) {
-                $subjectTotal = 0;
-                $scoreCount = 0;
-
-                foreach ($courseForm->scoreBoard as $score) {
-                    $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
-                    if ($sectionType && $sectionType->calc_pattern === 'total') {
-                        $subjectTotal += (float) $score->score;
-                        $scoreCount++;
-                    }
-                }
-
-                if ($scoreCount > 0) {
-                    $totalScore += $subjectTotal;
-                    $subjectsWithScores++;
-                }
-            }
-
-            $percent = $subjectsWithScores > 0 ? round($totalScore / $subjectsWithScores, 1) : 0;
-
-            // Get principal comment
-            $calculationService = new \App\Services\StudentResultCalculationService();
-            $principalComment = $calculationService->getPrincipalComment($percent);
-
-            // Get other data (simplified)
+            // Get other data
             $school = \App\Models\SchoolInformation::where([
                 ['term_id', $termId],
                 ['academic_id', $academicYearId]
@@ -294,7 +250,32 @@ Route::middleware([
                 ['academic_id', $academicYearId]
             ])->first();
 
-            // Prepare data for template
+            // Get psychomotor/behavioral data
+            $psychomotorData = \App\Models\PyschomotorStudent::with('psychomotor')
+                ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+                    $query->where('term_id', $termId)
+                          ->where('academic_id', $academicYearId);
+                })
+                ->where('student_id', $studentId)
+                ->get();
+
+            // Organize behavioral data by category and term
+            $behavioralData = [];
+            $allTerms = \App\Models\Term::all();
+            $termNames = ['1st', '2nd', '3rd'];
+
+            foreach ($psychomotorData as $psychData) {
+                $skillName = strtolower(str_replace(' ', '_', $psychData->psychomotor->skill));
+                $termIndex = $allTerms->search(function ($term) use ($psychData) {
+                    return $term->id === $psychData->psychomotor->term_id;
+                });
+
+                if ($termIndex !== false && isset($termNames[$termIndex])) {
+                    $behavioralData[$skillName][$termNames[$termIndex]] = $psychData->rating;
+                }
+            }
+
+            // Prepare data for template using StudentResult data
             $data = [
                 'student' => $student,
                 'term' => $term,
@@ -302,20 +283,18 @@ Route::middleware([
                 'class' => $student->class,
                 'school' => $school,
                 'studentComment' => $studentComment,
-                'courses' => $courseForms,
-                'markObtained' => $markObtained,
-                'studentSummary' => $studentSummary,
-                'termSummary' => $termSummary,
-                'remarks' => $remarks,
-                'totalScore' => $totalScore,
-                'totalSubject' => $totalSubject,
-                'percent' => $percent,
-                'principalComment' => $principalComment,
                 'studentAttendance' => $studentAttendance,
                 'nextTerm' => null,
-                'behavioralData' => [],
-                'resultSectionTypes' => $resultSectionTypes,
+                'behavioralData' => $behavioralData,
                 'annualSummaryData' => [],
+                // Use data from StudentResult
+                'totalScore' => $summary['total_score'] ?? 0,
+                'totalSubject' => $summary['total_subjects'] ?? 0,
+                'percent' => $summary['average'] ?? 0,
+                'principalComment' => $studentResult->teacher_comment ?? 'No comment available',
+                'subjects' => $subjects,
+                'summary' => $summary,
+                'studentResult' => $studentResult,
             ];
 
             // Generate PDF

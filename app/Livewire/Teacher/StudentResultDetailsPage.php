@@ -253,6 +253,26 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             ]);
     }
 
+    protected function calculateSubjectGrade(float $score): string
+    {
+        return match (true) {
+            $score >= 75 => 'A1',
+            $score >= 70 => 'B2',
+            $score >= 65 => 'B3',
+            $score >= 60 => 'C4',
+            $score >= 55 => 'C5',
+            $score >= 50 => 'C6',
+            $score >= 45 => 'D7',
+            $score >= 40 => 'E8',
+            default => 'F9'
+        };
+    }
+
+    protected function calculateOverallGrade(float $average): string
+    {
+        return $this->calculateSubjectGrade($average);
+    }
+
     public function saveComment(): void
     {
         if (!$this->student || !$this->termId || !$this->academic) {
@@ -280,14 +300,114 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ]
             );
 
-            // Calculate and store the complete student results
-            $calculationService = new StudentResultCalculationService();
-            $studentResult = $calculationService->calculateAndStoreResults(
-                $this->student->id,
-                $this->termId,
-                $this->academic,
-                $commentText,
-                \Filament\Facades\Filament::auth()->id()
+            // Get the exact same data that's displayed in the view result page
+            $this->calculateTotals(); // Ensure totals are calculated
+
+            // Get course forms with scores (same as view result page)
+            $courseForms = CourseForm::where('student_id', $this->record)
+                ->where('term_id', $this->termId)
+                ->where('academic_year_id', $this->academic)
+                ->with(['scoreBoard.resultSectionType', 'subject.subjectDepot'])
+                ->get();
+
+            // Get result section types (same as view result page)
+            $resultSectionTypes = ResultSectionType::select(['id', 'name', 'code', 'calc_pattern', 'type', 'score_weight'])
+                ->where('term_id', $this->termId)
+                ->whereHas('resultSection', function ($query) {
+                    $query->where('group_id', $this->classId);
+                })
+                ->orderBy('name')
+                ->get();
+
+            // Build subjects data exactly as shown in view result page
+            $subjects = [];
+            $uniqueSubjects = $courseForms->unique('subject_id');
+
+            foreach ($uniqueSubjects as $courseForm) {
+                $subjectScores = [];
+                $subjectTotal = 0;
+                $scoreCount = 0;
+
+                // Get all scores for this subject
+                foreach ($courseForm->scoreBoard as $score) {
+                    $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
+                    if ($sectionType) {
+                        $scoreValue = is_numeric($score->score) ? (float)$score->score : 0;
+                        $subjectScores[] = [
+                            'type' => $sectionType->name,
+                            'code' => $sectionType->code,
+                            'calc_pattern' => $sectionType->calc_pattern,
+                            'score' => $scoreValue
+                        ];
+
+                        // Calculate total using same logic as view result page
+                        if ($sectionType->calc_pattern === 'total') {
+                            $subjectTotal += $scoreValue;
+                            $scoreCount++;
+                        }
+                    }
+                }
+
+                $subjects[] = [
+                    'subject_id' => $courseForm->subject_id,
+                    'subject_name' => $courseForm->subject->subjectDepot->name ?? 'Unknown Subject',
+                    'subject_code' => $courseForm->subject->code ?? '',
+                    'scores' => $subjectScores,
+                    'total' => $subjectTotal,
+                    'grade' => $this->calculateSubjectGrade($subjectTotal),
+                    'position' => 'N/A', // Will be calculated if needed
+                    'class_average' => 'N/A', // Will be calculated if needed
+                    'highest_score' => 'N/A', // Will be calculated if needed
+                    'lowest_score' => 'N/A', // Will be calculated if needed
+                    'teacher_name' => 'TEACHER' // Default value
+                ];
+            }
+
+            // Calculate summary using same logic as view result page
+            $summary = [
+                'total_score' => $this->total ?? 0,
+                'total_subjects' => $this->totalSubject ?? 0,
+                'average' => $this->average ?? 0,
+                'grade' => $this->calculateOverallGrade($this->average ?? 0),
+                'remarks' => $this->remarksStatement($this->average ?? 0),
+                'position' => 'N/A', // Will be calculated if needed
+                'total_students' => 0 // Will be calculated if needed
+            ];
+
+            // Prepare the complete JSON data
+            $jsonData = [
+                'subjects' => $subjects,
+                'summary' => $summary,
+                'metadata' => [
+                    'calculated_at' => now()->toISOString(),
+                    'calculated_by' => 'teacher_comment',
+                    'student_id' => $this->student->id,
+                    'term_id' => $this->termId,
+                    'academic_year_id' => $this->academic,
+                    'view_result_data' => true // Flag to indicate this is from view result page
+                ]
+            ];
+
+            // Create or update the student result with exact view result data
+            $studentResult = \App\Models\StudentResult::updateOrCreate(
+                [
+                    'student_id' => $this->student->id,
+                    'term_id' => $this->termId,
+                    'academic_year_id' => $this->academic,
+                ],
+                [
+                    'class_id' => $this->student->class_id,
+                    'total_score' => $summary['total_score'],
+                    'average_score' => $summary['average'],
+                    'grade' => $summary['grade'],
+                    'remarks' => $summary['remarks'],
+                    'total_subjects' => $summary['total_subjects'],
+                    'teacher_comment' => $commentText,
+                    'commented_by' => \Filament\Facades\Filament::auth()->id(),
+                    'calculated_data' => $jsonData,
+                    'calculated_at' => now(),
+                    'calculation_status' => 'completed',
+                ]
             );
 
             Notification::make()

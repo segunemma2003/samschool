@@ -11,7 +11,7 @@ use App\Models\StudentAttendanceSummary;
 use App\Models\StudentComment;
 use App\Models\StudentResult;
 use App\Models\Term;
-use Barryvdh\Snappy\Facades\SnappyPdf;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 
 class ResultPdfService
@@ -40,10 +40,10 @@ class ResultPdfService
                 throw new \Exception('No saved results found for this student in the selected term and academic year. Please ensure results have been entered and saved first.');
             }
 
-            // Parse calculated data
-            $calculatedData = json_decode($studentResult->calculated_data, true);
+            // Get calculated data (already an array due to model cast)
+            $calculatedData = $studentResult->calculated_data;
 
-            if (!$calculatedData) {
+            if (!$calculatedData || !is_array($calculatedData)) {
                 throw new \Exception('Invalid calculated data format. Please recalculate results.');
             }
 
@@ -135,12 +135,14 @@ class ResultPdfService
     private function getPsychomotorData(int $studentId, int $termId, int $academicId)
     {
         // Get psychomotor/behavioral assessment data if available
-        return PyschomotorStudent::with('psychomotorCategory')
+        return PyschomotorStudent::with('psychomotor')
             ->where('student_id', $studentId)
-            ->where('term_id', $termId)
-            ->where('academic_id', $academicId)
+            ->whereHas('psychomotor', function ($query) use ($termId, $academicId) {
+                $query->where('term_id', $termId)
+                      ->where('academic_id', $academicId);
+            })
             ->get()
-            ->groupBy('psychomotor_category_id');
+            ->groupBy('psychomotor.psychomotor_category_id');
     }
 
     private function getSubjectScore(array $subjects, array $subjectKeywords): float
@@ -178,7 +180,7 @@ class ResultPdfService
                 })
                 ->get()
                 ->map(function($result) {
-                    $calculatedData = json_decode($result->calculated_data, true);
+                    $calculatedData = $result->calculated_data; // Already an array due to model cast
                     return [
                         'student_id' => $result->student_id,
                         'total_score' => $calculatedData['summary']['total_score'] ?? 0,
@@ -232,14 +234,14 @@ class ResultPdfService
     {
         // Nigerian grading system
         return match (true) {
-            $percentage >= 80 => 'A1',
-            $percentage >= 75 => 'A2',
-            $percentage >= 70 => 'B3',
-            $percentage >= 65 => 'B4',
-            $percentage >= 60 => 'C5',
-            $percentage >= 55 => 'C6',
-            $percentage >= 50 => 'D7',
-            $percentage >= 45 => 'E8',
+            $percentage >= 75 => 'A1',
+            $percentage >= 70 => 'B2',
+            $percentage >= 65 => 'B3',
+            $percentage >= 60 => 'C4',
+            $percentage >= 55 => 'C5',
+            $percentage >= 50 => 'C6',
+            $percentage >= 45 => 'D7',
+            $percentage >= 40 => 'E8',
             default => 'F9'
         };
     }
@@ -270,23 +272,16 @@ class ResultPdfService
 
     private function generatePdf(array $viewData, Student $student, Term $term, AcademicYear $academy)
     {
-        $pdf = SnappyPdf::loadView('results.template', $viewData)
-            ->setOption('page-size', 'A4')
-            ->setOption('orientation', 'portrait')
-            ->setOption('margin-top', '8mm')
-            ->setOption('margin-right', '8mm')
-            ->setOption('margin-bottom', '8mm')
-            ->setOption('margin-left', '8mm')
-            ->setOption('encoding', 'UTF-8')
-            ->setOption('enable-local-file-access', true)
-            ->setOption('enable-smart-shrinking', true)
-            ->setOption('print-media-type', true)
-            ->setOption('dpi', 150)
-            ->setOption('image-quality', 100)
-            ->setOption('javascript-delay', 1000)
-            ->setOption('no-stop-slow-scripts', true)
-            ->setOption('disable-smart-shrinking', false)
-            ->setOption('lowquality', false);
+        $pdf = Pdf::loadView('results.template', $viewData)
+            ->setPaper('A4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'Arial',
+                'dpi' => 150,
+                'defaultMediaType' => 'screen',
+                'isFontSubsettingEnabled' => true,
+            ]);
 
         $fileName = sprintf(
             "result-%s-%s-%s.pdf",

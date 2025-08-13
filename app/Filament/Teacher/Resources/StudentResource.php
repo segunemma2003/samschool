@@ -525,8 +525,8 @@ class StudentResource extends Resource
 
             if (!$resultsExist) {
                 Notification::make()
-                    ->title('No Results Found')
-                    ->body('No saved results found for this student in the selected term and academic year. Please ensure results have been entered and saved first.')
+                    ->title('Result Not Ready Yet')
+                    ->body('No saved results found for this student in the selected term and academic year. Please ensure the teacher has viewed and commented on the student result first.')
                     ->warning()
                     ->duration(8000)
                     ->send();
@@ -624,8 +624,8 @@ class StudentResource extends Resource
 
                                 if (empty($studentsWithResults)) {
                                     Notification::make()
-                                        ->title('No Results Available')
-                                        ->body('None of the selected students have saved results for the selected term and academic year.')
+                                        ->title('Results Not Ready Yet')
+                                        ->body('None of the selected students have saved results for the selected term and academic year. Please ensure teachers have viewed and commented on the student results first.')
                                         ->warning()
                                         ->send();
                                     return;

@@ -153,7 +153,7 @@
             background-position: center;
         }
 
-        .attendance-section {
+        .attendance-terminal-section {
             display: table-cell;
             width: 35%; /* Adjusted */
             vertical-align: top;
@@ -191,15 +191,12 @@
             background: repeating-linear-gradient(90deg, #000 0px, #000 1px, transparent 1px, transparent 2px);
         }
 
-        /* Terminal Duration */
-        .terminal-duration {
-            margin: 5px 0; /* Reduced */
-        }
-
+        /* Duration Table - Same width as attendance */
         .duration-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 8px; /* Reduced */
+            margin-top: 5px; /* Space between attendance and terminal duration */
         }
 
         .duration-table th,
@@ -542,7 +539,8 @@
                 <div class="student-photo"></div>
             </div>
 
-            <div class="attendance-section">
+            <div class="attendance-terminal-section">
+                <!-- Attendance Section -->
                 <div class="section-header">ATTENDANCE</div>
                 <table class="duration-table">
                     <tr>
@@ -556,24 +554,22 @@
                         <td class="text-red">{{ $studentAttendance->total_absent ?? 22 }}</td>
                     </tr>
                 </table>
-            </div>
-        </div>
 
-        <!-- Terminal Duration -->
-        <div class="terminal-duration">
-            <div class="section-header">TERMINAL DURATION ({{ $school->term_duration ?? '........' }}) WEEKS</div>
-            <table class="duration-table">
-                <tr>
-                    <th>Term Begins</th>
-                    <th>Term Ends</th>
-                    <th>Next Term Begins</th>
-                </tr>
-                <tr>
-                    <td>{{ $school->term_begins ?? '25 Apr 2016' }}</td>
-                    <td>{{ $school->term_ends ?? '22 Jul 2016' }}</td>
-                    <td>{{ $school->next_term_begins ?? '12 Sep 2016' }}</td>
-                </tr>
-            </table>
+                <!-- Terminal Duration Section - Now under attendance -->
+                <div class="section-header" style="margin-top: 5px;">TERMINAL DURATION ({{ $school->term_duration ?? '12' }}) WEEKS</div>
+                <table class="duration-table">
+                    <tr>
+                        <th>Term Begins</th>
+                        <th>Term Ends</th>
+                        <th>Next Term Begins</th>
+                    </tr>
+                    <tr>
+                        <td>{{ $school->term_begins ?? '25 Apr 2016' }}</td>
+                        <td>{{ $school->term_ends ?? '22 Jul 2016' }}</td>
+                        <td>{{ $school->next_term_begins ?? '12 Sep 2016' }}</td>
+                    </tr>
+                </table>
+            </div>
         </div>
 
         <!-- Academic Performance - Optimized Table -->
@@ -626,58 +622,102 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($results as $result)
+                @php
+                    // Get student results from StudentResult model
+                    $studentResult = \App\Models\StudentResult::where('student_id', $student->id)
+                        ->where('term_id', $term->id)
+                        ->where('academic_year_id', $academy->id)
+                        ->first();
+
+                    // Get calculated_data (already an array due to model cast)
+                    $calculatedData = $studentResult ? $studentResult->calculated_data : null;
+                    $summary = $calculatedData['summary'] ?? [];
+                    $subjects = $calculatedData['subjects'] ?? [];
+
+                    // Extract summary data
+                    $totalScore = $summary['total_score'] ?? 0;
+                    $totalSubjects = $summary['total_subjects'] ?? 0;
+                    $overallGrade = $summary['grade'] ?? 'F9';
+                    $averageScore = $summary['average'] ?? 0;
+                    $remarks = $summary['remarks'] ?? 'NO COMMENT';
+
+                    // Calculate percentage
+                    $percentage = $totalSubjects > 0 ? round($averageScore, 1) : 0;
+
+                    // Get position (you may need to implement this logic based on your needs)
+                    $position = $studentResult->position ?? 'N/A';
+
+                    // Helper function to get grade colors
+                    function getGradeClass($grade) {
+                        $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+                        return match (true) {
+                            $gradeNumber <= 2 => 'text-green', // A1, A2
+                            $gradeNumber <= 4 => 'text-blue',  // B3, B4
+                            $gradeNumber <= 6 => 'pass-mark',  // C5, C6
+                            default => 'fail-mark'            // D7, E8, F9
+                        };
+                    }
+
+                    // Helper function to get grade remarks
+                    function getGradeRemark($grade) {
+                        $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+                        return match (true) {
+                            $gradeNumber <= 2 => 'EXCELLENT',
+                            $gradeNumber <= 4 => 'CREDIT',
+                            $gradeNumber <= 6 => 'PASS',
+                            default => 'FAIL'
+                        };
+                    }
+                @endphp
+
+                @foreach($subjects as $subject)
                     @php
-                        $percentage = $result->mark_obtainable > 0 ?
-                            ($result->mark_obtained / $result->mark_obtainable) * 100 : 0;
+                        $subjectTotal = $subject['total'] ?? 0;
+                        $subjectGrade = $subject['grade'] ?? 'F9';
+                        $subjectScores = $subject['scores'] ?? [];
 
-                        $grade = match (true) {
-                            $percentage >= 70 => 'A',
-                            $percentage >= 60 => 'B',
-                            $percentage >= 50 => 'C',
-                            $percentage >= 40 => 'P',
-                            default => 'F'
-                        };
+                        // Calculate CA and Exam scores from individual scores
+                        $caScore = 0;
+                        $examScore = 0;
 
-                        $gradeClass = match($grade) {
-                            'A', 'B' => 'text-green',
-                            'C' => 'text-blue',
-                            'P' => 'pass-mark',
-                            'F' => 'fail-mark',
-                            default => ''
-                        };
+                        foreach($subjectScores as $score) {
+                            if (stripos($score['type'] ?? '', 'ca') !== false ||
+                                stripos($score['type'] ?? '', 'test') !== false ||
+                                stripos($score['type'] ?? '', 'assignment') !== false) {
+                                $caScore += $score['score'] ?? 0;
+                            } elseif (stripos($score['type'] ?? '', 'exam') !== false) {
+                                $examScore += $score['score'] ?? 0;
+                            }
+                        }
 
-                        $gradeRemark = match($grade) {
-                            'A' => 'EXCELLENT',
-                            'B', 'C' => 'CREDIT',
-                            'P' => 'PASS',
-                            'F' => 'FAIL',
-                            default => 'N/A'
-                        };
+                        // If no specific breakdown, assume 40/60 split
+                        if ($caScore == 0 && $examScore == 0 && $subjectTotal > 0) {
+                            $caScore = round($subjectTotal * 0.4);
+                            $examScore = round($subjectTotal * 0.6);
+                        }
 
-                        // Calculate CA and Exam portions (assuming 40% CA, 60% Exam)
-                        $caScore = round($result->mark_obtained * 0.4);
-                        $examScore = round($result->mark_obtained * 0.6);
+                        $gradeClass = getGradeClass($subjectGrade);
+                        $gradeRemark = getGradeRemark($subjectGrade);
                     @endphp
                     <tr>
-                        <td class="subject-name">{{ Str::limit($result->subject->subjectDepot->name ?? $result->subject->name ?? 'Subject', 15) }}</td>
+                        <td class="subject-name">{{ Str::limit($subject['subject_name'] ?? 'Subject', 15) }}</td>
                         <td class="{{ $caScore < 20 ? 'text-red' : '' }}">{{ $caScore }}</td>
                         <td class="{{ $examScore < 30 ? 'text-red' : '' }}">{{ $examScore }}</td>
-                        <td class="{{ $result->mark_obtained < 40 ? 'text-red' : '' }}">{{ $result->mark_obtained }}</td>
-                        <td class="{{ $gradeClass }}">{{ $grade }}</td>
-                        <td>{{ $result->position ?? '-' }}</td>
-                        <td>{{ $result->class_average ?? '-' }}</td>
-                        <td>{{ $result->highest_score ?? '-' }}</td>
-                        <td>{{ $result->lowest_score ?? '-' }}</td>
+                        <td class="{{ $subjectTotal < 40 ? 'text-red' : '' }}">{{ $subjectTotal }}</td>
+                        <td class="{{ $gradeClass }}">{{ $subjectGrade }}</td>
+                        <td>{{ $subject['position'] ?? '-' }}</td>
+                        <td>{{ $subject['class_average'] ?? '-' }}</td>
+                        <td>{{ $subject['highest_score'] ?? '-' }}</td>
+                        <td>{{ $subject['lowest_score'] ?? '-' }}</td>
                         <td>{{ $gradeRemark }}</td>
-                        <td>{{ Str::limit($result->subject->teacher->name ?? 'TEACHER', 8) }}</td>
+                        <td>{{ Str::limit($subject['teacher_name'] ?? 'TEACHER', 8) }}</td>
                     </tr>
                 @endforeach
 
                 <tr class="summary-row">
-                    <td class="subject-name">NO. IN CLASS: {{ $totalStudents ?? 19 }}</td>
-                    <td colspan="3">TOTAL: {{ $totalScore ?? 0 }}</td>
-                    <td colspan="5">POS: {{ $position ?? 'N/A' }} - {{ $percent ?? 0 }}%</td>
+                    <td class="subject-name">NO. IN CLASS: {{ $totalStudents ?? 'N/A' }}</td>
+                    <td colspan="3">TOTAL: {{ $totalScore }}</td>
+                    <td colspan="5">POS: {{ $position }} - {{ $percentage }}%</td>
                     <td></td>
                     <td></td>
                 </tr>
@@ -768,12 +808,24 @@
                 <div class="comments-left">
                     <div class="comment-label">Class Teacher's Comments:</div>
                     <div class="comment-box">
-                        {{ $studentComment->teacher_comment ?? 'Student demonstrates good academic potential. Keep up the good work and continue to strive for excellence.' }}
+                        {{ $studentComment->teacher_comment ?? $remarks ?? 'Student demonstrates good academic potential. Keep up the good work and continue to strive for excellence.' }}
                     </div>
 
                     <div class="comment-label">Principal's Comments:</div>
                     <div class="comment-box">
-                        <strong>{{ $studentComment->promotion_status ?? 'PROMOTED' }}</strong> {{ $principalComment ?? 'Fair academic performance.' }}
+                        <strong>{{ $studentComment->promotion_status ?? 'PROMOTED' }}</strong>
+                        @php
+                            // Generate principal comment based on performance
+                            $principalComment = match (true) {
+                                $percentage >= 80 => 'Excellent performance. Keep up the outstanding work!',
+                                $percentage >= 70 => 'Very good performance. Continue to strive for excellence.',
+                                $percentage >= 60 => 'Good performance. There is room for improvement.',
+                                $percentage >= 50 => 'Fair performance. More effort is needed.',
+                                $percentage >= 40 => 'Below average performance. Significant improvement required.',
+                                default => $remarks ?? 'Poor performance. Serious attention needed.'
+                            };
+                        @endphp
+                        {{ $principalComment }}
                     </div>
 
                     <div class="comment-label">Parent's Name:</div>

@@ -3,13 +3,13 @@
 namespace App\Services;
 
 use App\Models\AcademicYear;
-use App\Models\Result;
 use App\Models\PsychomotorCategory;
 use App\Models\PyschomotorStudent;
 use App\Models\SchoolInformation;
 use App\Models\Student;
 use App\Models\StudentAttendanceSummary;
 use App\Models\StudentComment;
+use App\Models\StudentResult;
 use App\Models\Term;
 use Barryvdh\Snappy\Facades\SnappyPdf;
 use Illuminate\Support\Facades\Log;
@@ -34,22 +34,30 @@ class ResultPdfService
             $relatedData = $this->getRelatedData($student, $termId, $academicId);
 
             // Get saved results for this student
-            $results = $this->getStudentResults($studentId, $termId, $academicId);
+            $studentResult = $this->getStudentResult($studentId, $termId, $academicId);
 
-            if ($results->isEmpty()) {
+            if (!$studentResult || !$studentResult->calculated_data) {
                 throw new \Exception('No saved results found for this student in the selected term and academic year. Please ensure results have been entered and saved first.');
+            }
+
+            // Parse calculated data
+            $calculatedData = json_decode($studentResult->calculated_data, true);
+
+            if (!$calculatedData) {
+                throw new \Exception('Invalid calculated data format. Please recalculate results.');
             }
 
             // Get psychomotor/behavioral data
             $psychomotorData = $this->getPsychomotorData($studentId, $termId, $academicId);
 
-            // Calculate summary statistics from saved results
-            $summaryStats = $this->calculateSummaryFromResults($results);
+            // Extract summary and subjects from calculated data
+            $summary = $calculatedData['summary'] ?? [];
+            $subjects = $calculatedData['subjects'] ?? [];
 
             // Get student's class ranking/position if available
             $studentRanking = $this->getStudentRanking($studentId, $termId, $academicId);
 
-            // Prepare view data using saved results
+            // Prepare view data using calculated results
             $viewData = [
                 'student' => $student,
                 'school' => $relatedData['school'],
@@ -57,20 +65,25 @@ class ResultPdfService
                 'term' => $term,
                 'studentAttendance' => $relatedData['studentAttendance'],
                 'studentComment' => $relatedData['studentComment'],
-                'results' => $results, // Use saved results instead of courses
+                'studentResult' => $studentResult, // Pass the StudentResult model
+                'calculatedData' => $calculatedData, // Pass parsed calculated data
+                'summary' => $summary, // Pass summary for easy access
+                'subjects' => $subjects, // Pass subjects for easy access
                 'class' => $student->class,
-                'totalSubject' => $results->count(),
-                'totalScore' => $summaryStats['totalScore'],
-                'percent' => $summaryStats['percentage'],
-                'averageScore' => $summaryStats['averageScore'],
+                'totalSubject' => $summary['total_subjects'] ?? 0,
+                'totalScore' => $summary['total_score'] ?? 0,
+                'percent' => $summary['average'] ?? 0,
+                'averageScore' => $summary['average'] ?? 0,
+                'overallGrade' => $summary['grade'] ?? 'F9',
+                'remarks' => $summary['remarks'] ?? 'NO COMMENT',
                 'position' => $studentRanking['position'] ?? 'N/A',
                 'totalStudents' => $studentRanking['totalStudents'] ?? 0,
                 'psychomotorData' => $psychomotorData,
                 'psychomotorCategory' => PsychomotorCategory::all(),
                 'principalComment' => $this->getPerformanceComment(
-                    $summaryStats['percentage'],
-                    $summaryStats['englishScore'],
-                    $summaryStats['mathScore']
+                    $summary['average'] ?? 0,
+                    $this->getSubjectScore($subjects, ['english', 'literacy']),
+                    $this->getSubjectScore($subjects, ['mathematics', 'math', 'numeracy'])
                 ),
             ];
 
@@ -110,15 +123,13 @@ class ResultPdfService
         ];
     }
 
-    private function getStudentResults(int $studentId, int $termId, int $academicId)
+    private function getStudentResult(int $studentId, int $termId, int $academicId)
     {
-        // Get all saved results for this student in the specified term and academic year
-        return Result::with(['subject.subjectDepot', 'student', 'term', 'academy'])
-            ->where('student_id', $studentId)
+        // Get the StudentResult record with calculated_data
+        return StudentResult::where('student_id', $studentId)
             ->where('term_id', $termId)
-            ->where('academic_id', $academicId)
-            ->orderBy('subject_id')
-            ->get();
+            ->where('academic_year_id', $academicId) // Note: academic_year_id not academic_id
+            ->first();
     }
 
     private function getPsychomotorData(int $studentId, int $termId, int $academicId)
@@ -132,79 +143,73 @@ class ResultPdfService
             ->groupBy('psychomotor_category_id');
     }
 
-    private function calculateSummaryFromResults($results): array
+    private function getSubjectScore(array $subjects, array $subjectKeywords): float
     {
-        $totalScore = $results->sum('mark_obtained');
-        $totalPossible = $results->sum('mark_obtainable');
-        $subjectCount = $results->count();
+        foreach ($subjects as $subject) {
+            $subjectName = strtolower($subject['subject_name'] ?? '');
 
-        $percentage = $totalPossible > 0 ? round(($totalScore / $totalPossible) * 100, 1) : 0;
-        $averageScore = $subjectCount > 0 ? round($totalScore / $subjectCount, 1) : 0;
-
-        // Find English and Math scores for specific commenting
-        $englishScore = 0;
-        $mathScore = 0;
-
-        foreach ($results as $result) {
-            $subjectName = strtolower($result->subject->subjectDepot->name ?? '');
-            $scorePercentage = $result->mark_obtainable > 0 ?
-                ($result->mark_obtained / $result->mark_obtainable) * 100 : 0;
-
-            if (str_contains($subjectName, 'english') || str_contains($subjectName, 'literacy')) {
-                $englishScore = $scorePercentage;
-            } elseif (str_contains($subjectName, 'math') || str_contains($subjectName, 'numeracy')) {
-                $mathScore = $scorePercentage;
+            foreach ($subjectKeywords as $keyword) {
+                if (str_contains($subjectName, $keyword)) {
+                    return $subject['total'] ?? 0;
+                }
             }
         }
 
-        return [
-            'totalScore' => $totalScore,
-            'totalPossible' => $totalPossible,
-            'percentage' => $percentage,
-            'averageScore' => $averageScore,
-            'englishScore' => $englishScore,
-            'mathScore' => $mathScore,
-        ];
+        return 0;
     }
 
     private function getStudentRanking(int $studentId, int $termId, int $academicId): array
     {
-        // Calculate student's position in class based on total scores
-        $studentResult = Result::where([
-            ['student_id', $studentId],
-            ['term_id', $termId],
-            ['academic_id', $academicId]
-        ])->get();
+        try {
+            // Get the student's class
+            $student = Student::find($studentId);
+            if (!$student) {
+                return ['position' => 'N/A', 'totalStudents' => 0];
+            }
 
-        if ($studentResult->isEmpty()) {
+            $studentClassId = $student->class_id;
+
+            // Get all students in the same class with their calculated results
+            $classResults = StudentResult::select('student_id', 'calculated_data')
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicId)
+                ->whereHas('student', function($query) use ($studentClassId) {
+                    $query->where('class_id', $studentClassId);
+                })
+                ->get()
+                ->map(function($result) {
+                    $calculatedData = json_decode($result->calculated_data, true);
+                    return [
+                        'student_id' => $result->student_id,
+                        'total_score' => $calculatedData['summary']['total_score'] ?? 0,
+                        'average' => $calculatedData['summary']['average'] ?? 0
+                    ];
+                })
+                ->sortByDesc('total_score') // Sort by total score descending
+                ->values(); // Reset keys
+
+            // Find the student's position
+            $position = $classResults->search(function ($item) use ($studentId) {
+                return $item['student_id'] == $studentId;
+            });
+
+            $position = $position !== false ? $position + 1 : 'N/A';
+
+            return [
+                'position' => $this->formatPosition($position),
+                'totalStudents' => $classResults->count()
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating student ranking', [
+                'student_id' => $studentId,
+                'term_id' => $termId,
+                'academic_id' => $academicId,
+                'error' => $e->getMessage()
+            ]);
+
             return ['position' => 'N/A', 'totalStudents' => 0];
         }
-
-        $studentTotalScore = $studentResult->sum('mark_obtained');
-        $studentClassId = Student::find($studentId)->class_id;
-
-        // Get all students in the same class with their total scores
-        $classResults = Result::select('student_id')
-            ->selectRaw('SUM(mark_obtained) as total_score')
-            ->where('term_id', $termId)
-            ->where('academic_id', $academicId)
-            ->whereHas('student', function($query) use ($studentClassId) {
-                $query->where('class_id', $studentClassId);
-            })
-            ->groupBy('student_id')
-            ->orderByDesc('total_score')
-            ->get();
-
-        $position = $classResults->search(function ($item) use ($studentId) {
-            return $item->student_id == $studentId;
-        });
-
-        $position = $position !== false ? $position + 1 : 'N/A';
-
-        return [
-            'position' => $this->formatPosition($position),
-            'totalStudents' => $classResults->count()
-        ];
     }
 
     private function formatPosition($position): string
@@ -225,34 +230,41 @@ class ResultPdfService
 
     private function getGradeFromScore(float $percentage): string
     {
+        // Nigerian grading system
         return match (true) {
-            $percentage >= 70 => 'A',
-            $percentage >= 60 => 'B',
-            $percentage >= 50 => 'C',
-            $percentage >= 40 => 'P',
-            default => 'F'
+            $percentage >= 80 => 'A1',
+            $percentage >= 75 => 'A2',
+            $percentage >= 70 => 'B3',
+            $percentage >= 65 => 'B4',
+            $percentage >= 60 => 'C5',
+            $percentage >= 55 => 'C6',
+            $percentage >= 50 => 'D7',
+            $percentage >= 45 => 'E8',
+            default => 'F9'
         };
     }
 
     private function getGradeColor(string $grade): string
     {
-        return match ($grade) {
-            'A', 'B' => 'text-green',
-            'C' => 'text-blue',
-            'P' => 'pass-score',
-            'F' => 'fail-score',
-            default => ''
+        $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+
+        return match (true) {
+            $gradeNumber <= 2 => 'text-green',  // A1, A2
+            $gradeNumber <= 4 => 'text-blue',   // B3, B4
+            $gradeNumber <= 6 => 'pass-score',  // C5, C6
+            default => 'fail-score'            // D7, E8, F9
         };
     }
 
     private function getGradeRemark(string $grade): string
     {
-        return match ($grade) {
-            'A' => 'EXCELLENT',
-            'B', 'C' => 'CREDIT',
-            'P' => 'PASS',
-            'F' => 'FAIL',
-            default => 'N/A'
+        $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+
+        return match (true) {
+            $gradeNumber <= 2 => 'EXCELLENT',   // A1, A2
+            $gradeNumber <= 4 => 'CREDIT',      // B3, B4
+            $gradeNumber <= 6 => 'PASS',        // C5, C6
+            default => 'FAIL'                  // D7, E8, F9
         };
     }
 
@@ -364,5 +376,34 @@ class ResultPdfService
         } else {
             return $comments['be_serious'][array_rand($comments['be_serious'])];
         }
+    }
+
+    /**
+     * Generate multiple student results in bulk
+     */
+    public function generateBulkResults(array $studentIds, int $termId, int $academicId): array
+    {
+        $results = [];
+        $errors = [];
+
+        foreach ($studentIds as $studentId) {
+            try {
+                $result = $this->generateStudentResult($studentId, $termId, $academicId);
+                $results[] = $result;
+            } catch (\Exception $e) {
+                $errors[] = [
+                    'student_id' => $studentId,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        return [
+            'successful' => $results,
+            'errors' => $errors,
+            'total_processed' => count($studentIds),
+            'successful_count' => count($results),
+            'error_count' => count($errors)
+        ];
     }
 }

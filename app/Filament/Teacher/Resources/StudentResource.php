@@ -514,6 +514,8 @@ class StudentResource extends Resource
     ])
     ->action(function (array $data, $record) {
         try {
+
+
             // Check if results exist for this student
             $resultsExist = StudentResult::where([
                 ['student_id', $record->id],

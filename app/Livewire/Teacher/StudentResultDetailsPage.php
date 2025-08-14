@@ -9,6 +9,7 @@ use App\Models\CourseForm;
 use App\Models\ResultSectionType;
 use App\Models\Student;
 use App\Models\StudentComment;
+use App\Models\StudentResult;
 use App\Services\StudentResultCalculationService;
 use App\Models\Term;
 use Filament\Forms\Components\MarkdownEditor;
@@ -25,6 +26,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class StudentResultDetailsPage extends Component implements HasForms, HasTable
@@ -275,6 +277,13 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
     public function saveComment(): void
     {
+        // Simple test to verify method is called
+        Notification::make()
+            ->title('Debug: Method Called')
+            ->body("Student: {$this->student?->name}, Term: {$this->termId}, Academic: {$this->academic}, ClassId: {$this->classId}")
+            ->info()
+            ->send();
+
         if (!$this->student || !$this->termId || !$this->academic) {
             Notification::make()
                 ->danger()
@@ -288,6 +297,14 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             // Use the comment property directly
             $commentText = $this->comment ?? '';
 
+            // Debug logging
+            Log::info('Starting saveComment process', [
+                'student_id' => $this->student->id,
+                'term_id' => $this->termId,
+                'academic_id' => $this->academic,
+                'comment' => $commentText
+            ]);
+
             // Create or update the comment
             $studentComment = StudentComment::updateOrCreate(
                 [
@@ -300,8 +317,16 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ]
             );
 
+            Log::info('StudentComment saved', ['comment_id' => $studentComment->id]);
+
             // Get the exact same data that's displayed in the view result page
             $this->calculateTotals(); // Ensure totals are calculated
+
+            Log::info('Totals calculated', [
+                'total' => $this->total,
+                'average' => $this->average,
+                'totalSubject' => $this->totalSubject
+            ]);
 
             // Get course forms with scores (same as view result page)
             $courseForms = CourseForm::where('student_id', $this->record)
@@ -309,6 +334,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ->where('academic_year_id', $this->academic)
                 ->with(['scoreBoard.resultSectionType', 'subject.subjectDepot'])
                 ->get();
+
+            Log::info('Course forms retrieved', ['count' => $courseForms->count()]);
 
             // Get result section types (same as view result page)
             $resultSectionTypes = ResultSectionType::select(['id', 'name', 'code', 'calc_pattern', 'type', 'score_weight'])
@@ -318,6 +345,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 })
                 ->orderBy('name')
                 ->get();
+
+            Log::info('Result section types retrieved', ['count' => $resultSectionTypes->count()]);
 
             // Build subjects data exactly as shown in view result page
             $subjects = [];
@@ -363,6 +392,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ];
             }
 
+            Log::info('Subjects data built', ['subjects_count' => count($subjects)]);
+
             // Calculate summary using same logic as view result page
             $summary = [
                 'total_score' => $this->total ?? 0,
@@ -373,6 +404,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 'position' => 'N/A', // Will be calculated if needed
                 'total_students' => 0 // Will be calculated if needed
             ];
+
+            Log::info('Summary calculated', $summary);
 
             // Prepare the complete JSON data
             $jsonData = [
@@ -388,8 +421,10 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ]
             ];
 
+            Log::info('JSON data prepared', ['data_size' => strlen(json_encode($jsonData))]);
+
             // Create or update the student result with exact view result data
-            $studentResult = \App\Models\StudentResult::updateOrCreate(
+            $studentResult = StudentResult::updateOrCreate(
                 [
                     'student_id' => $this->student->id,
                     'term_id' => $this->termId,
@@ -410,6 +445,11 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ]
             );
 
+            Log::info('StudentResult saved', [
+                'result_id' => $studentResult->id,
+                'wasRecentlyCreated' => $studentResult->wasRecentlyCreated
+            ]);
+
             Notification::make()
                 ->title('Comment and Results saved successfully!')
                 ->body("Comment and calculated results saved for {$this->student->name}")
@@ -417,6 +457,13 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ->send();
 
         } catch (\Exception $e) {
+            Log::error('Error in saveComment', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             Notification::make()
                 ->danger()
                 ->title('Error saving comment and results')

@@ -101,6 +101,15 @@
             text-align: center;
         }
 
+        .student-photo-header {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
         .term-box {
             border: 2px solid #000;
             padding: 5px; /* Reduced */
@@ -130,27 +139,9 @@
 
         .student-data {
             display: table-cell;
-            width: 55%; /* Adjusted */
+            width: 65%; /* Adjusted - increased since we removed photo cell */
             vertical-align: top;
             padding-right: 5px;
-        }
-
-        .student-photo-cell {
-            display: table-cell;
-            width: 70px; /* Reduced */
-            vertical-align: top;
-            text-align: center;
-            padding: 0 3px;
-        }
-
-        .student-photo {
-            width: 65px; /* Reduced */
-            height: 80px; /* Reduced */
-            border: 1px solid #000;
-            background: #f5f5f5;
-            background-image: url('{{ $student->avatar ? Storage::disk("s3")->url($student->avatar) : "" }}');
-            background-size: cover;
-            background-position: center;
         }
 
         .attendance-terminal-section {
@@ -480,7 +471,7 @@
             <div class="header-cell header-left">
                 <div class="school-logo">
                     @if($school->logo ?? false)
-                        <img src="{{ Storage::disk('s3')->url($school->logo) }}" alt="School Logo" style="width: 100%; height: 100%; border-radius: 50%;">
+                        <img src="{{ Storage::disk('s3')->url($school->logo) }}" alt="School Logo" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                     @else
                         {{ strtoupper(substr($school->school_name ?? 'SCHOOL', 0, 2)) }}
                     @endif
@@ -496,9 +487,14 @@
                 <div class="report-title">Continuous Assessment Report {{ $academy->title ?? '2015/2016' }}</div>
             </div>
             <div class="header-cell header-right">
-                <div class="term-box">
-                    <div class="term-label">{{ $student->class->name ?? 'JSS 1' }}</div>
-                    <div class="term-name">{{ strtoupper($term->name ?? 'THIRD TERM') }}</div>
+                <div class="student-photo-header">
+                    @if($student->avatar)
+                        <img src="{{ Storage::disk('s3')->url($student->avatar) }}" alt="Student Photo" style="width: 100%; height: 100%; border-radius: 8px; object-fit: cover;">
+                    @else
+                        <div style="width: 100%; height: 100%; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #666;">
+                            NO PHOTO
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -529,14 +525,14 @@
                         <td>{{ $student->class->name ?? '' }}{{ $student->arm->name ? ' ' . $student->arm->name : '' }}</td>
                     </tr>
                     <tr>
+                        <td class="info-label">TERM:</td>
+                        <td>{{ strtoupper($term->name ?? 'THIRD TERM') }}</td>
+                    </tr>
+                    <tr>
                         <td class="info-label">BARCODE:</td>
                         <td><div class="barcode"></div></td>
                     </tr>
                 </table>
-            </div>
-
-            <div class="student-photo-cell">
-                <div class="student-photo"></div>
             </div>
 
             <div class="attendance-terminal-section">

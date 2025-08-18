@@ -686,6 +686,54 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
         }
     }
 
+    /**
+     * Format AWS S3 URL for images
+     */
+    private function formatImageUrl(?string $imagePath): string
+    {
+        if (!$imagePath) {
+            return '';
+        }
+
+        // If it's already a full URL, return as is
+        if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
+            return $imagePath;
+        }
+
+        // If it's an S3 path, format it properly
+        if (str_contains($imagePath, 's3.us-east-1.amazonaws.com')) {
+            return $imagePath;
+        }
+
+        // Format as S3 URL
+        return config('filesystems.disks.s3.url') . '/' . $imagePath;
+    }
+
+    /**
+     * Get student photo URL
+     */
+    private function getStudentPhotoUrl(): string
+    {
+        return $this->formatImageUrl($this->student->avatar);
+    }
+
+    /**
+     * Get school logo URL
+     */
+    private function getSchoolLogoUrl(): string
+    {
+        try {
+            $schoolInfo = \App\Models\SchoolInformation::where([
+                ['term_id', $this->termId],
+                ['academic_id', $this->academic]
+            ])->first();
+
+            return $this->formatImageUrl($schoolInfo->school_logo ?? '');
+        } catch (\Exception $e) {
+            return '';
+        }
+    }
+
     public function table(Table $table): Table
     {
         return $table

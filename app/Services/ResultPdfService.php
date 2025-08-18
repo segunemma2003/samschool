@@ -13,6 +13,7 @@ use App\Models\StudentResult;
 use App\Models\Term;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ResultPdfService
 {
@@ -100,6 +101,8 @@ class ResultPdfService
                     $this->getSubjectScore($subjects, ['mathematics', 'math', 'numeracy'])
                 ),
                 'showPosition' => $school->activate_position === 'yes',
+                'studentPhotoUrl' => $this->getStudentPhotoUrl($student),
+                'schoolLogoUrl' => $this->getSchoolLogoUrl($school),
             ];
 
             return $this->generatePdf($viewData, $student, $term, $academy);
@@ -159,6 +162,45 @@ class ResultPdfService
     {
         // Get all psychomotor categories from database
         return PsychomotorCategory::orderBy('name')->get();
+    }
+
+    /**
+     * Format AWS S3 URL for images
+     */
+    private function formatImageUrl(?string $imagePath): string
+    {
+        if (!$imagePath) {
+            return '';
+        }
+
+        // If it's already a full URL, return as is
+        if (filter_var($imagePath, FILTER_VALIDATE_URL)) {
+            return $imagePath;
+        }
+
+        // If it's an S3 path, format it properly
+        if (str_contains($imagePath, 's3.us-east-1.amazonaws.com')) {
+            return $imagePath;
+        }
+
+        // Format as S3 URL
+        return config('filesystems.disks.s3.url') . '/' . $imagePath;
+    }
+
+    /**
+     * Get student photo URL
+     */
+    private function getStudentPhotoUrl(Student $student): string
+    {
+        return $this->formatImageUrl($student->avatar);
+    }
+
+    /**
+     * Get school logo URL
+     */
+    private function getSchoolLogoUrl(SchoolInformation $school): string
+    {
+        return $this->formatImageUrl($school->school_logo);
     }
 
     private function getSubjectScore(array $subjects, array $subjectKeywords): float

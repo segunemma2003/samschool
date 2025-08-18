@@ -470,8 +470,8 @@
         <div class="header">
             <div class="header-cell header-left">
                 <div class="school-logo">
-                    @if($school->school_logo)
-                        <img src="{{ Storage::disk('s3')->url($school->school_logo) }}" alt="School Logo" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    @if($schoolLogoUrl)
+                        <img src="{{ $schoolLogoUrl }}" alt="School Logo" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                     @else
                         {{ strtoupper(substr($school->school_name ?? 'SCHOOL', 0, 2)) }}
                     @endif
@@ -488,8 +488,8 @@
             </div>
             <div class="header-cell header-right">
                 <div class="student-photo-header">
-                    @if($student->avatar)
-                        <img src="{{ Storage::disk('s3')->url($student->avatar) }}" alt="Student Photo" style="width: 100%; height: 100%; border-radius: 8px; object-fit: cover;">
+                    @if($studentPhotoUrl)
+                        <img src="{{ $studentPhotoUrl }}" alt="Student Photo" style="width: 100%; height: 100%; border-radius: 8px; object-fit: cover;">
                     @else
                         <div style="width: 100%; height: 100%; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #666;">
                             NO PHOTO

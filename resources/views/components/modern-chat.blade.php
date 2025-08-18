@@ -1,21 +1,26 @@
-<!-- Modern Telegram-like Chat Interface -->
-<x-filament::page>
-    <div x-data="{
-        scrollToBottom() {
-            const c = document.getElementById('messages-container');
-            if (c) {
-                c.scrollTop = c.scrollHeight;
-            }
-        },
-        showEmojiPicker: false,
-        showAttachmentMenu: false
-    }"
-         x-init="window.addEventListener('scrollToBottom', () => scrollToBottom());"
-         class="flex h-[calc(100vh-200px)] bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+<!-- Modern Telegram-like Chat Component -->
+<div x-data="modernChat()" class="h-full">
+    <!-- Mobile Menu Toggle (hidden on desktop) -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+        <button @click="toggleSidebar" class="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+    </div>
 
-        <!-- Sidebar - Modern Design -->
-        <div class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shadow-lg">
-            <!-- Header -->
+    <div class="flex h-full bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <!-- Sidebar -->
+        <div x-show="sidebarOpen"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="-translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transition ease-in duration-300"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="-translate-x-full"
+             class="fixed lg:relative inset-y-0 left-0 z-40 w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-xl lg:shadow-lg">
+
+            <!-- Sidebar Header -->
             <div class="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
@@ -29,11 +34,41 @@
                             <p class="text-blue-100 text-sm">Stay connected</p>
                         </div>
                     </div>
-                    <button class="p-2 hover:bg-white/20 rounded-full transition-colors">
+                    <div class="flex items-center space-x-2">
+                        <button @click="showNewChat = !showNewChat" class="p-2 hover:bg-white/20 rounded-full transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </button>
+                        <button @click="toggleSidebar" class="lg:hidden p-2 hover:bg-white/20 rounded-full transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Chat Modal -->
+            <div x-show="showNewChat"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute top-20 left-4 right-4 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 p-4 z-50">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-900 dark:text-gray-100">New Conversation</h3>
+                    <button @click="showNewChat = false" class="text-gray-500 hover:text-gray-700">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
+                </div>
+                <input type="text" placeholder="Search users..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="mt-3 max-h-48 overflow-y-auto">
+                    <!-- User list would go here -->
                 </div>
             </div>
 
@@ -66,14 +101,16 @@
                         @endphp
                         <div
                             wire:click="selectConversation({{ $conversation->id }})"
+                            @click="sidebarOpen = false"
                             class="relative p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 {{ $isActive ? 'bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500' : '' }}"
                         >
                             <div class="flex items-center space-x-3">
-                                <!-- Avatar -->
+                                <!-- Avatar with Online Status -->
                                 <div class="relative">
                                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-lg shadow-lg">
                                         {{ substr($otherUser->name, 0, 1) }}
                                     </div>
+                                    <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
                                     @if($unreadCount > 0)
                                         <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse">
                                             {{ $unreadCount > 9 ? '9+' : $unreadCount }}
@@ -95,7 +132,13 @@
                                     </div>
                                     @if($latestMessage)
                                         <p class="text-sm text-gray-600 dark:text-gray-300 truncate mt-1">
-                                            {{ $latestMessage->body ? Str::limit($latestMessage->body, 30) : '📎 Attachment' }}
+                                            @if($latestMessage->body)
+                                                {{ Str::limit($latestMessage->body, 30) }}
+                                            @elseif($latestMessage->attachment)
+                                                📎 Attachment
+                                            @else
+                                                Message
+                                            @endif
                                         </p>
                                     @endif
                                 </div>
@@ -103,12 +146,15 @@
                         </div>
                     @endforeach
                 @else
-                    <div class="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                    <div class="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400 p-8">
                         <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                         </svg>
-                        <p class="text-center">No conversations yet</p>
+                        <p class="text-center font-medium">No conversations yet</p>
                         <p class="text-sm text-center mt-1">Start a new conversation to begin chatting</p>
+                        <button @click="showNewChat = true" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            Start Chat
+                        </button>
                     </div>
                 @endif
             </div>
@@ -125,8 +171,16 @@
                 <div class="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
-                                {{ substr($otherUser->name, 0, 1) }}
+                            <button @click="toggleSidebar" class="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                </svg>
+                            </button>
+                            <div class="relative">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
+                                    {{ substr($otherUser->name, 0, 1) }}
+                                </div>
+                                <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ $otherUser->name }}</h3>
@@ -267,9 +321,16 @@
                     @endforeach
                 </div>
 
-                <!-- Message Input - Modern Design -->
+                <!-- Message Input - Enhanced -->
                 <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg">
                     <div class="flex items-end space-x-3">
+                        <!-- Voice Message Button -->
+                        <button class="p-3 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-600 dark:text-gray-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                            </svg>
+                        </button>
+
                         <!-- Attachment Button -->
                         <div class="relative" x-data="{ showMenu: false }">
                             <input
@@ -325,6 +386,13 @@
                                 style="min-height: 48px; max-height: 120px;"
                             ></textarea>
 
+                            <!-- Emoji Button -->
+                            <button @click="showEmojiPicker = !showEmojiPicker" class="absolute right-12 bottom-2 p-2 text-gray-500 hover:text-gray-700 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </button>
+
                             <!-- Send Button -->
                             <button
                                 wire:click="sendMessage"
@@ -335,6 +403,25 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                 </svg>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Emoji Picker -->
+                    <div x-show="showEmojiPicker"
+                         @click.away="showEmojiPicker = false"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         class="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 p-3 z-50">
+                        <div class="grid grid-cols-8 gap-2">
+                            @foreach(['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '❤️', '🔥', '💯', '🎉', '✨', '🌟', '💪', '👏', '🙏'] as $emoji)
+                                <button @click="$wire.message += '{{ $emoji }}'; showEmojiPicker = false" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors text-lg">
+                                    {{ $emoji }}
+                                </button>
+                            @endforeach
                         </div>
                     </div>
 
@@ -388,6 +475,39 @@
         </div>
     </div>
 
+    <script>
+        function modernChat() {
+            return {
+                sidebarOpen: window.innerWidth >= 1024,
+                showNewChat: false,
+                showEmojiPicker: false,
+
+                toggleSidebar() {
+                    this.sidebarOpen = !this.sidebarOpen;
+                },
+
+                init() {
+                    // Handle window resize
+                    window.addEventListener('resize', () => {
+                        if (window.innerWidth >= 1024) {
+                            this.sidebarOpen = true;
+                        }
+                    });
+
+                    // Auto-scroll to bottom
+                    this.$watch('$wire.activeConversation', () => {
+                        this.$nextTick(() => {
+                            const container = document.getElementById('messages-container');
+                            if (container) {
+                                container.scrollTop = container.scrollHeight;
+                            }
+                        });
+                    });
+                }
+            }
+        }
+    </script>
+
     <style>
         .animate-fade-in {
             animation: fadeIn 0.3s ease-in-out;
@@ -425,5 +545,13 @@
                 transform: translate3d(0, -4px, 0);
             }
         }
+
+        /* Mobile optimizations */
+        @media (max-width: 1023px) {
+            .sidebar {
+                position: fixed;
+                z-index: 40;
+            }
+        }
     </style>
-</x-filament::page>
+</div>

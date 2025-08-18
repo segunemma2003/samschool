@@ -332,7 +332,7 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             $courseForms = CourseForm::where('student_id', $this->record)
                 ->where('term_id', $this->termId)
                 ->where('academic_year_id', $this->academic)
-                ->with(['scoreBoard.resultSectionType', 'subject.subjectDepot'])
+                ->with(['scoreBoard.resultSectionType', 'subject.subjectDepot', 'subject.teacher'])
                 ->get();
 
             Log::info('Course forms retrieved', ['count' => $courseForms->count()]);
@@ -348,6 +348,9 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
 
             Log::info('Result section types retrieved', ['count' => $resultSectionTypes->count()]);
 
+            // Calculate class metrics for position and class averages
+            $classMetrics = $this->calculateClassMetrics($this->student->class_id, $this->termId, $this->academic);
+
             // Build subjects data exactly as shown in view result page
             $subjects = [];
             $uniqueSubjects = $courseForms->unique('subject_id');
@@ -355,7 +358,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
             foreach ($uniqueSubjects as $courseForm) {
                 $subjectScores = [];
                 $subjectTotal = 0;
-                $scoreCount = 0;
+                $caScore = 0;
+                $examScore = 0;
 
                 // Get all scores for this subject
                 foreach ($courseForm->scoreBoard as $score) {
@@ -369,26 +373,45 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                             'score' => $scoreValue
                         ];
 
+                        // Calculate CA and Exam scores from individual scores (same as PDF template)
+                        if (stripos($sectionType->name ?? '', 'ca') !== false ||
+                            stripos($sectionType->name ?? '', 'test') !== false ||
+                            stripos($sectionType->name ?? '', 'assignment') !== false) {
+                            $caScore += $scoreValue;
+                        } elseif (stripos($sectionType->name ?? '', 'exam') !== false) {
+                            $examScore += $scoreValue;
+                        }
+
                         // Calculate total using same logic as view result page
                         if ($sectionType->calc_pattern === 'total') {
                             $subjectTotal += $scoreValue;
-                            $scoreCount++;
                         }
                     }
                 }
+
+                // If no specific breakdown, assume 40/60 split (same as PDF template)
+                if ($caScore == 0 && $examScore == 0 && $subjectTotal > 0) {
+                    $caScore = round($subjectTotal * 0.4);
+                    $examScore = round($subjectTotal * 0.6);
+                }
+
+                // Get class metrics for this subject
+                $subjectClassMetrics = $classMetrics['subjects'][$courseForm->subject_id] ?? [];
 
                 $subjects[] = [
                     'subject_id' => $courseForm->subject_id,
                     'subject_name' => $courseForm->subject->subjectDepot->name ?? 'Unknown Subject',
                     'subject_code' => $courseForm->subject->code ?? '',
                     'scores' => $subjectScores,
+                    'ca_score' => $caScore,
+                    'exam_score' => $examScore,
                     'total' => $subjectTotal,
                     'grade' => $this->calculateSubjectGrade($subjectTotal),
-                    'position' => 'N/A', // Will be calculated if needed
-                    'class_average' => 'N/A', // Will be calculated if needed
-                    'highest_score' => 'N/A', // Will be calculated if needed
-                    'lowest_score' => 'N/A', // Will be calculated if needed
-                    'teacher_name' => 'TEACHER' // Default value
+                    'position' => $subjectClassMetrics['position'] ?? 'N/A',
+                    'class_average' => $subjectClassMetrics['class_average'] ?? 'N/A',
+                    'highest_score' => $subjectClassMetrics['highest_score'] ?? 'N/A',
+                    'lowest_score' => $subjectClassMetrics['lowest_score'] ?? 'N/A',
+                    'teacher_name' => $courseForm->subject->teacher->name ?? 'TEACHER'
                 ];
             }
 
@@ -401,8 +424,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 'average' => $this->average ?? 0,
                 'grade' => $this->calculateOverallGrade($this->average ?? 0),
                 'remarks' => $this->remarksStatement($this->average ?? 0),
-                'position' => 'N/A', // Will be calculated if needed
-                'total_students' => 0 // Will be calculated if needed
+                'position' => $classMetrics['student_position'] ?? 'N/A',
+                'total_students' => $classMetrics['total_students'] ?? 0
             ];
 
             Log::info('Summary calculated', $summary);
@@ -417,7 +440,8 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                     'student_id' => $this->student->id,
                     'term_id' => $this->termId,
                     'academic_year_id' => $this->academic,
-                    'view_result_data' => true // Flag to indicate this is from view result page
+                    'view_result_data' => true, // Flag to indicate this is from view result page
+                    'show_position' => $this->getSchoolPositionSetting() // Include position setting
                 ]
             ];
 
@@ -469,6 +493,196 @@ class StudentResultDetailsPage extends Component implements HasForms, HasTable
                 ->title('Error saving comment and results')
                 ->body('Error: ' . $e->getMessage())
                 ->send();
+        }
+    }
+
+    /**
+     * Calculate class metrics for position and class averages
+     */
+    private function calculateClassMetrics(int $classId, int $termId, int $academicId): array
+    {
+        try {
+            // Get all students in the same class
+            $classStudents = Student::where('class_id', $classId)->pluck('id')->toArray();
+
+            if (empty($classStudents)) {
+                return [
+                    'student_position' => 'N/A',
+                    'total_students' => 0,
+                    'subjects' => []
+                ];
+            }
+
+            // Get result section types for this term and class
+            $resultSectionTypes = ResultSectionType::select(['id', 'name', 'code', 'calc_pattern'])
+                ->where('term_id', $termId)
+                ->whereHas('resultSection', function ($query) use ($classId) {
+                    $query->where('group_id', $classId);
+                })
+                ->orderBy('name')
+                ->get();
+
+            // Get all course forms for the class
+            $classCourseForms = CourseForm::whereIn('student_id', $classStudents)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicId)
+                ->with(['scoreBoard.resultSectionType', 'subject'])
+                ->get();
+
+            // Calculate student totals for overall position
+            $studentTotals = [];
+            foreach ($classStudents as $studentId) {
+                $studentCourseForms = $classCourseForms->where('student_id', $studentId);
+                $studentTotal = 0;
+                $subjectCount = 0;
+
+                foreach ($studentCourseForms->unique('subject_id') as $courseForm) {
+                    $subjectTotal = 0;
+                    foreach ($courseForm->scoreBoard as $score) {
+                        $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
+                        if ($sectionType && $sectionType->calc_pattern === 'total') {
+                            $subjectTotal += (float)$score->score;
+                        }
+                    }
+                    if ($subjectTotal > 0) {
+                        $studentTotal += $subjectTotal;
+                        $subjectCount++;
+                    }
+                }
+
+                if ($subjectCount > 0) {
+                    $studentTotals[$studentId] = $studentTotal;
+                }
+            }
+
+            // Calculate overall position
+            arsort($studentTotals);
+            $positions = [];
+            $rank = 1;
+            $previousScore = null;
+            $tieCount = 0;
+
+            foreach ($studentTotals as $studentId => $score) {
+                if ($score !== $previousScore) {
+                    $rank += $tieCount;
+                    $tieCount = 0;
+                } else {
+                    $tieCount++;
+                }
+                $positions[$studentId] = $rank;
+                $previousScore = $score;
+            }
+
+            // Calculate subject-specific metrics
+            $subjectMetrics = [];
+            $uniqueSubjects = $classCourseForms->unique('subject_id');
+
+            foreach ($uniqueSubjects as $courseForm) {
+                $subjectId = $courseForm->subject_id;
+                $subjectScores = [];
+
+                // Get all scores for this subject across all students
+                foreach ($classCourseForms->where('subject_id', $subjectId) as $cf) {
+                    $subjectTotal = 0;
+                    foreach ($cf->scoreBoard as $score) {
+                        $sectionType = $resultSectionTypes->where('id', $score->result_section_type_id)->first();
+                        if ($sectionType && $sectionType->calc_pattern === 'total') {
+                            $subjectTotal += (float)$score->score;
+                        }
+                    }
+                    if ($subjectTotal > 0) {
+                        $subjectScores[$cf->student_id] = $subjectTotal;
+                    }
+                }
+
+                if (!empty($subjectScores)) {
+                    // Calculate subject position for current student
+                    arsort($subjectScores);
+                    $subjectPositions = [];
+                    $rank = 1;
+                    $previousScore = null;
+                    $tieCount = 0;
+
+                    foreach ($subjectScores as $studentId => $score) {
+                        if ($score !== $previousScore) {
+                            $rank += $tieCount;
+                            $tieCount = 0;
+                        } else {
+                            $tieCount++;
+                        }
+                        $subjectPositions[$studentId] = $rank;
+                        $previousScore = $score;
+                    }
+
+                    $subjectMetrics[$subjectId] = [
+                        'position' => $subjectPositions[$this->student->id] ?? 'N/A',
+                        'class_average' => round(array_sum($subjectScores) / count($subjectScores), 1),
+                        'highest_score' => max($subjectScores),
+                        'lowest_score' => min($subjectScores)
+                    ];
+                }
+            }
+
+            return [
+                'student_position' => $this->formatPosition($positions[$this->student->id] ?? 'N/A'),
+                'total_students' => count($classStudents),
+                'subjects' => $subjectMetrics
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating class metrics', [
+                'error' => $e->getMessage(),
+                'class_id' => $classId,
+                'term_id' => $termId,
+                'academic_id' => $academicId
+            ]);
+
+            return [
+                'student_position' => 'N/A',
+                'total_students' => 0,
+                'subjects' => []
+            ];
+        }
+    }
+
+    /**
+     * Format position with proper suffix
+     */
+    private function formatPosition($position): string
+    {
+        if (!is_numeric($position)) {
+            return 'N/A';
+        }
+
+        $suffix = match ($position % 10) {
+            1 => $position % 100 === 11 ? 'TH' : 'ST',
+            2 => $position % 100 === 12 ? 'TH' : 'ND',
+            3 => $position % 100 === 13 ? 'TH' : 'RD',
+            default => 'TH'
+        };
+
+        return $position . $suffix;
+    }
+
+    /**
+     * Get school position setting
+     */
+    private function getSchoolPositionSetting(): bool
+    {
+        try {
+            $schoolInfo = \App\Models\SchoolInformation::where([
+                ['term_id', $this->termId],
+                ['academic_id', $this->academic]
+            ])->first();
+
+            return $schoolInfo && $schoolInfo->activate_position === 'yes';
+        } catch (\Exception $e) {
+            Log::error('Error getting school position setting', [
+                'error' => $e->getMessage(),
+                'term_id' => $this->termId,
+                'academic_id' => $this->academic
+            ]);
+            return false;
         }
     }
 

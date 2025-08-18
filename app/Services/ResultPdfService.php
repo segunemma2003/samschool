@@ -19,16 +19,27 @@ class ResultPdfService
     public function generateStudentResult(int $studentId, int $termId, int $academicId)
     {
         try {
-            // Load student with basic relationships
+            // Load student with all necessary relationships
             $student = Student::with([
                 'class',
                 'arm',
-                'guardian'
+                'guardian',
+                'group'
             ])->findOrFail($studentId);
 
             // Get term and academic year
             $term = Term::findOrFail($termId);
             $academy = AcademicYear::findOrFail($academicId);
+
+            // Get school information based on academic year and term
+            $school = SchoolInformation::where([
+                ['term_id', $termId],
+                ['academic_id', $academicId]
+            ])->first();
+
+            if (!$school) {
+                throw new \Exception('School information not found for the selected term and academic year.');
+            }
 
             // Get all related data
             $relatedData = $this->getRelatedData($student, $termId, $academicId);
@@ -47,20 +58,23 @@ class ResultPdfService
                 throw new \Exception('Invalid calculated data format. Please recalculate results.');
             }
 
-            // Get psychomotor/behavioral data
+            // Get psychomotor/behavioral data from database
             $psychomotorData = $this->getPsychomotorData($studentId, $termId, $academicId);
 
             // Extract summary and subjects from calculated data
             $summary = $calculatedData['summary'] ?? [];
             $subjects = $calculatedData['subjects'] ?? [];
 
-            // Get student's class ranking/position if available
-            $studentRanking = $this->getStudentRanking($studentId, $termId, $academicId);
+            // Get student's class ranking/position if available and if school allows positions
+            $studentRanking = [];
+            if ($school->activate_position === 'yes') {
+                $studentRanking = $this->getStudentRanking($studentId, $termId, $academicId);
+            }
 
             // Prepare view data using calculated results
             $viewData = [
                 'student' => $student,
-                'school' => $relatedData['school'],
+                'school' => $school,
                 'academy' => $academy,
                 'term' => $term,
                 'studentAttendance' => $relatedData['studentAttendance'],
@@ -76,15 +90,16 @@ class ResultPdfService
                 'averageScore' => $summary['average'] ?? 0,
                 'overallGrade' => $summary['grade'] ?? 'F9',
                 'remarks' => $summary['remarks'] ?? 'NO COMMENT',
-                'position' => $studentRanking['position'] ?? 'N/A',
-                'totalStudents' => $studentRanking['totalStudents'] ?? 0,
+                'position' => $school->activate_position === 'yes' ? ($studentRanking['position'] ?? 'N/A') : 'N/A',
+                'totalStudents' => $summary['total_students'] ?? $studentRanking['totalStudents'] ?? 0,
                 'psychomotorData' => $psychomotorData,
-                'psychomotorCategory' => PsychomotorCategory::all(),
+                'psychomotorCategory' => $this->getPsychomotorCategories(),
                 'principalComment' => $this->getPerformanceComment(
                     $summary['average'] ?? 0,
                     $this->getSubjectScore($subjects, ['english', 'literacy']),
                     $this->getSubjectScore($subjects, ['mathematics', 'math', 'numeracy'])
                 ),
+                'showPosition' => $school->activate_position === 'yes',
             ];
 
             return $this->generatePdf($viewData, $student, $term, $academy);
@@ -104,11 +119,6 @@ class ResultPdfService
     private function getRelatedData(Student $student, int $termId, int $academicId): array
     {
         return [
-            'school' => SchoolInformation::where([
-                ['term_id', $termId],
-                ['academic_id', $academicId]
-            ])->first(),
-
             'studentAttendance' => StudentAttendanceSummary::where([
                 ['term_id', $termId],
                 ['student_id', $student->id],
@@ -134,8 +144,8 @@ class ResultPdfService
 
     private function getPsychomotorData(int $studentId, int $termId, int $academicId)
     {
-        // Get psychomotor/behavioral assessment data if available
-        return PyschomotorStudent::with('psychomotor')
+        // Get psychomotor/behavioral assessment data from database
+        return PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
             ->where('student_id', $studentId)
             ->whereHas('psychomotor', function ($query) use ($termId, $academicId) {
                 $query->where('term_id', $termId)
@@ -143,6 +153,12 @@ class ResultPdfService
             })
             ->get()
             ->groupBy('psychomotor.psychomotor_category_id');
+    }
+
+    private function getPsychomotorCategories()
+    {
+        // Get all psychomotor categories from database
+        return PsychomotorCategory::orderBy('name')->get();
     }
 
     private function getSubjectScore(array $subjects, array $subjectKeywords): float

@@ -127,6 +127,7 @@ class StudentResultCalculationService
         // Get course forms for the specific student
         $courseForms = CourseForm::with([
             'subject.subjectDepot',
+            'subject.teacher',
             'scoreBoard.resultSectionType'
         ])
         ->where('student_id', $studentId)
@@ -142,8 +143,15 @@ class StudentResultCalculationService
                 'subject_name' => $courseForm->subject->subjectDepot->name ?? 'Unknown Subject',
                 'subject_code' => $courseForm->subject->code ?? '',
                 'scores' => [],
+                'ca_score' => 0,
+                'exam_score' => 0,
                 'total' => 0,
                 'grade' => '',
+                'position' => 'N/A',
+                'class_average' => 'N/A',
+                'highest_score' => 'N/A',
+                'lowest_score' => 'N/A',
+                'teacher_name' => $courseForm->subject->teacher->name ?? 'TEACHER'
             ];
 
             // Calculate scores based on calc_pattern
@@ -158,17 +166,49 @@ class StudentResultCalculationService
 
             $subjectData['scores'] = $calculatedScores;
 
-            // Calculate total from input scores only
-            $inputTotal = 0;
+            // Calculate CA and Exam scores from individual scores (same as PDF template)
+            $caScore = 0;
+            $examScore = 0;
+            $subjectTotal = 0;
+
             foreach ($calculatedScores as $typeName => $score) {
                 $sectionType = $resultSectionTypes->where('name', $typeName)->first();
-                if ($sectionType && $sectionType->calc_pattern === 'input') {
-                    $inputTotal += (float) $score;
+                if ($sectionType) {
+                    $scoreValue = (float) $score;
+
+                    // Calculate CA and Exam scores
+                    if (stripos($sectionType->name ?? '', 'ca') !== false ||
+                        stripos($sectionType->name ?? '', 'test') !== false ||
+                        stripos($sectionType->name ?? '', 'assignment') !== false) {
+                        $caScore += $scoreValue;
+                    } elseif (stripos($sectionType->name ?? '', 'exam') !== false) {
+                        $examScore += $scoreValue;
+                    }
+
+                    // Calculate total from input scores only
+                    if ($sectionType->calc_pattern === 'input') {
+                        $subjectTotal += $scoreValue;
+                    }
                 }
             }
 
-            $subjectData['total'] = $inputTotal;
+            // If no specific breakdown, assume 40/60 split (same as PDF template)
+            if ($caScore == 0 && $examScore == 0 && $subjectTotal > 0) {
+                $caScore = round($subjectTotal * 0.4);
+                $examScore = round($subjectTotal * 0.6);
+            }
+
+            $subjectData['ca_score'] = $caScore;
+            $subjectData['exam_score'] = $examScore;
+            $subjectData['total'] = $subjectTotal;
             $subjectData['grade'] = $this->calculateSubjectGrade($subjectData['total']);
+
+            // Get class metrics for this subject
+            $subjectClassMetrics = $classMetrics['subjects'][$courseForm->subject_id] ?? [];
+            $subjectData['position'] = $subjectClassMetrics['position'] ?? 'N/A';
+            $subjectData['class_average'] = $subjectClassMetrics['class_average'] ?? 'N/A';
+            $subjectData['highest_score'] = $subjectClassMetrics['highest_score'] ?? 'N/A';
+            $subjectData['lowest_score'] = $subjectClassMetrics['lowest_score'] ?? 'N/A';
 
             $subjects[] = $subjectData;
         }
@@ -426,7 +466,7 @@ class StudentResultCalculationService
     }
 
     /**
-     * Calculate summary statistics
+     * Calculate summary statistics from calculated data
      */
     private function calculateSummary(array $calculatedData): array
     {
@@ -440,12 +480,27 @@ class StudentResultCalculationService
 
         $average = $totalSubjects > 0 ? round($totalScore / $totalSubjects, 2) : 0;
 
+        // Get position and total students from the first subject's class metrics
+        $position = 'N/A';
+        $totalStudents = 0;
+        if (!empty($subjects)) {
+            // Try to get position from class metrics if available
+            $firstSubject = $subjects[0];
+            if (isset($firstSubject['position']) && $firstSubject['position'] !== 'N/A') {
+                $position = $firstSubject['position'];
+            }
+            // For total students, we'll need to calculate this separately
+            // This will be updated when we have access to class metrics
+        }
+
         return [
             'total_subjects' => $totalSubjects,
             'total_score' => $totalScore,
             'average' => $average,
             'grade' => $this->calculateGrade($average),
             'remarks' => $this->calculateRemarks($average),
+            'position' => $position,
+            'total_students' => $totalStudents,
         ];
     }
 
@@ -770,7 +825,7 @@ class StudentResultCalculationService
             Storage::disk('s3')->put($filename, $pdf->output());
 
             // Return S3 URL
-            return Storage::disk('s3')->url($filename);
+            return config('filesystems.disks.s3.url') . '/' . $filename;
 
         } catch (\Exception $e) {
             Log::error('PDF Generation Error: ' . $e->getMessage(), [

@@ -470,21 +470,21 @@
         <div class="header">
             <div class="header-cell header-left">
                 <div class="school-logo">
-                    @if($school->logo ?? false)
-                        <img src="{{ Storage::disk('s3')->url($school->logo) }}" alt="School Logo" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    @if($school->school_logo)
+                        <img src="{{ Storage::disk('s3')->url($school->school_logo) }}" alt="School Logo" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                     @else
                         {{ strtoupper(substr($school->school_name ?? 'SCHOOL', 0, 2)) }}
                     @endif
                 </div>
             </div>
             <div class="header-cell header-center">
-                <div class="school-name">{{ strtoupper($school->school_name ?? 'ROLEX COMPREHENSIVE COLLEGE') }}</div>
+                <div class="school-name">{{ strtoupper($school->school_name ?? 'SCHOOL NAME') }}</div>
                 <div class="school-address">
-                    {{ $school->address ?? '8 AFEJUKU STREET, BEHIND CIVIC CENTRE, EGBOKODO ITSEKIRI, WARRI DELTA STATE' }}<br>
-                    TEL: {{ $school->phone ?? '08061365630, 08037170161' }}<br>
-                    EMAIL: {{ $school->email ?? 'rolexschoolswarri@gmail.com' }} WEBSITE: {{ $school->website ?? 'www.rolexschools.com' }}
+                    {{ $school->school_address ?? 'SCHOOL ADDRESS' }}<br>
+                    TEL: {{ $school->school_phone ?? 'PHONE NUMBER' }}<br>
+                    EMAIL: {{ $school->email ?? 'EMAIL' }} WEBSITE: {{ $school->school_website ?? 'WEBSITE' }}
                 </div>
-                <div class="report-title">Continuous Assessment Report {{ $academy->title ?? '2015/2016' }}</div>
+                <div class="report-title">Continuous Assessment Report {{ $academy->title ?? 'ACADEMIC YEAR' }}</div>
             </div>
             <div class="header-cell header-right">
                 <div class="student-photo-header">
@@ -505,38 +505,40 @@
                 <div class="section-header">STUDENT'S PERSONAL DATA</div>
                 <table class="info-table">
                     <tr>
-                        <td class="info-label">NAME:</td>
-                        <td>{{ strtoupper($student->name) }}</td>
+                        <td class="info-label">Name:</td>
+                        <td>{{ $student->name ?? 'N/A' }}</td>
+                        <td class="info-label">Admission No:</td>
+                        <td>{{ $student->registration_number ?? 'N/A' }}</td>
                     </tr>
                     <tr>
-                        <td class="info-label">SPIN:</td>
-                        <td>{{ $student->spin ?? '' }}</td>
+                        <td class="info-label">Class:</td>
+                        <td>{{ $student->class->name ?? 'N/A' }}</td>
+                        <td class="info-label">Arm:</td>
+                        <td>{{ $student->arm->name ?? 'N/A' }}</td>
                     </tr>
                     <tr>
-                        <td class="info-label">ADMISSION NO:</td>
-                        <td>{{ $student->registration_number }}</td>
+                        <td class="info-label">Gender:</td>
+                        <td>{{ ucfirst($student->gender ?? 'N/A') }}</td>
+                        <td class="info-label">Date of Birth:</td>
+                        <td>{{ $student->date_of_birth ? $student->date_of_birth->format('d/m/Y') : 'N/A' }}</td>
                     </tr>
                     <tr>
-                        <td class="info-label">SEX:</td>
-                        <td>{{ ucfirst($student->gender) }}</td>
+                        <td class="info-label">Guardian Name:</td>
+                        <td>{{ $student->guardian->name ?? 'N/A' }}</td>
+                        <td class="info-label">Guardian Phone:</td>
+                        <td>{{ $student->guardian->phone ?? 'N/A' }}</td>
                     </tr>
                     <tr>
-                        <td class="info-label">CLASS:</td>
-                        <td>{{ $student->class->name ?? '' }}{{ $student->arm->name ? ' ' . $student->arm->name : '' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="info-label">TERM:</td>
-                        <td>{{ strtoupper($term->name ?? 'THIRD TERM') }}</td>
-                    </tr>
-                    <tr>
-                        <td class="info-label">BARCODE:</td>
-                        <td><div class="barcode"></div></td>
+                        <td class="info-label">Address:</td>
+                        <td colspan="3">{{ $student->address ?? 'N/A' }}</td>
                     </tr>
                 </table>
             </div>
+        </div>
 
-            <div class="attendance-terminal-section">
-                <!-- Attendance Section -->
+        <!-- Attendance and Terminal Duration -->
+        <div class="attendance-section">
+            <div class="attendance-data">
                 <div class="section-header">ATTENDANCE</div>
                 <table class="duration-table">
                     <tr>
@@ -551,8 +553,8 @@
                     </tr>
                 </table>
 
-                <!-- Terminal Duration Section - Now under attendance -->
-                <div class="section-header" style="margin-top: 5px;">TERMINAL DURATION ({{ $school->term_duration ?? '12' }}) WEEKS</div>
+                <!-- Terminal Duration Section -->
+                <div class="section-header" style="margin-top: 5px;">TERMINAL DURATION</div>
                 <table class="duration-table">
                     <tr>
                         <th>Term Begins</th>
@@ -560,9 +562,9 @@
                         <th>Next Term Begins</th>
                     </tr>
                     <tr>
-                        <td>{{ $school->term_begins ?? '25 Apr 2016' }}</td>
-                        <td>{{ $school->term_ends ?? '22 Jul 2016' }}</td>
-                        <td>{{ $school->next_term_begins ?? '12 Sep 2016' }}</td>
+                        <td>{{ $school->term_begin ? \Carbon\Carbon::parse($school->term_begin)->format('d M Y') : 'N/A' }}</td>
+                        <td>{{ $school->term_ends ? \Carbon\Carbon::parse($school->term_ends)->format('d M Y') : 'N/A' }}</td>
+                        <td>{{ $school->next_term_begins ? \Carbon\Carbon::parse($school->next_term_begins)->format('d M Y') : 'N/A' }}</td>
                     </tr>
                 </table>
             </div>
@@ -578,7 +580,9 @@
                 <col class="score-col">
                 <col class="score-col">
                 <col class="grade-col">
+                @if($showPosition)
                 <col class="position-col">
+                @endif
                 <col class="average-col">
                 <col class="average-col">
                 <col class="average-col">
@@ -589,7 +593,7 @@
                 <tr>
                     <th rowspan="2"></th>
                     <th colspan="3">MARKS OBTAINED</th>
-                    <th colspan="5">ANNUAL SUMMARY</th>
+                    <th colspan="{{ $showPosition ? '5' : '4' }}">ANNUAL SUMMARY</th>
                     <th rowspan="2">Teacher's<br>Comment</th>
                     <th rowspan="2">Sign.</th>
                 </tr>
@@ -598,7 +602,9 @@
                     <th>Exam</th>
                     <th>Total</th>
                     <th>Grade</th>
+                    @if($showPosition)
                     <th>Pos.</th>
+                    @endif
                     <th>Class<br>Avg</th>
                     <th>High</th>
                     <th>Low</th>
@@ -609,7 +615,9 @@
                     <td>60%</td>
                     <td>100%</td>
                     <td></td>
+                    @if($showPosition)
                     <td></td>
+                    @endif
                     <td>100%</td>
                     <td>100%</td>
                     <td>100%</td>
@@ -640,8 +648,8 @@
                     // Calculate percentage
                     $percentage = $totalSubjects > 0 ? round($averageScore, 1) : 0;
 
-                    // Get position (you may need to implement this logic based on your needs)
-                    $position = $studentResult->position ?? 'N/A';
+                    // Get position from summary data
+                    $position = $summary['position'] ?? 'N/A';
 
                     // Helper function to get grade colors
                     function getGradeClass($grade) {
@@ -672,24 +680,27 @@
                         $subjectGrade = $subject['grade'] ?? 'F9';
                         $subjectScores = $subject['scores'] ?? [];
 
-                        // Calculate CA and Exam scores from individual scores
-                        $caScore = 0;
-                        $examScore = 0;
+                        // Use the exact CA and Exam scores that were calculated and saved
+                        $caScore = $subject['ca_score'] ?? 0;
+                        $examScore = $subject['exam_score'] ?? 0;
 
-                        foreach($subjectScores as $score) {
-                            if (stripos($score['type'] ?? '', 'ca') !== false ||
-                                stripos($score['type'] ?? '', 'test') !== false ||
-                                stripos($score['type'] ?? '', 'assignment') !== false) {
-                                $caScore += $score['score'] ?? 0;
-                            } elseif (stripos($score['type'] ?? '', 'exam') !== false) {
-                                $examScore += $score['score'] ?? 0;
+                        // Fallback calculation if ca_score and exam_score are not available
+                        if ($caScore == 0 && $examScore == 0) {
+                            foreach($subjectScores as $score) {
+                                if (stripos($score['type'] ?? '', 'ca') !== false ||
+                                    stripos($score['type'] ?? '', 'test') !== false ||
+                                    stripos($score['type'] ?? '', 'assignment') !== false) {
+                                    $caScore += $score['score'] ?? 0;
+                                } elseif (stripos($score['type'] ?? '', 'exam') !== false) {
+                                    $examScore += $score['score'] ?? 0;
+                                }
                             }
-                        }
 
-                        // If no specific breakdown, assume 40/60 split
-                        if ($caScore == 0 && $examScore == 0 && $subjectTotal > 0) {
-                            $caScore = round($subjectTotal * 0.4);
-                            $examScore = round($subjectTotal * 0.6);
+                            // If still no specific breakdown, assume 40/60 split
+                            if ($caScore == 0 && $examScore == 0 && $subjectTotal > 0) {
+                                $caScore = round($subjectTotal * 0.4);
+                                $examScore = round($subjectTotal * 0.6);
+                            }
                         }
 
                         $gradeClass = getGradeClass($subjectGrade);
@@ -701,7 +712,9 @@
                         <td class="{{ $examScore < 30 ? 'text-red' : '' }}">{{ $examScore }}</td>
                         <td class="{{ $subjectTotal < 40 ? 'text-red' : '' }}">{{ $subjectTotal }}</td>
                         <td class="{{ $gradeClass }}">{{ $subjectGrade }}</td>
+                        @if($showPosition)
                         <td>{{ $subject['position'] ?? '-' }}</td>
+                        @endif
                         <td>{{ $subject['class_average'] ?? '-' }}</td>
                         <td>{{ $subject['highest_score'] ?? '-' }}</td>
                         <td>{{ $subject['lowest_score'] ?? '-' }}</td>
@@ -711,9 +724,9 @@
                 @endforeach
 
                 <tr class="summary-row">
-                    <td class="subject-name">NO. IN CLASS: {{ $totalStudents ?? 'N/A' }}</td>
+                    <td class="subject-name">NO. IN CLASS: {{ $summary['total_students'] ?? $totalStudents ?? 'N/A' }}</td>
                     <td colspan="3">TOTAL: {{ $totalScore }}</td>
-                    <td colspan="5">POS: {{ $position }} - {{ $percentage }}%</td>
+                    <td colspan="{{ $showPosition ? '5' : '4' }}">POS: {{ $position }} - {{ $percentage }}%</td>
                     <td></td>
                     <td></td>
                 </tr>
@@ -733,7 +746,7 @@
         </div>
 
         <!-- Skills Development - Only if data exists -->
-        @if(($psychomotorCategory && $psychomotorCategory->count() > 0) || true)
+        @if($psychomotorCategory && $psychomotorCategory->count() > 0)
             <div class="section-header">SKILLS DEVELOPMENT AND BEHAVIORAL ATTRIBUTES</div>
 
             <table class="skills-table">
@@ -770,9 +783,23 @@
                         <tr>
                             @foreach(['PERSONAL DEV.', 'SENSE OF RESP.', 'SOCIAL DEV.', 'PSYCHOMOTOR DEV.'] as $category)
                                 <td class="skills-category">{{ $skillCategories[$category][$i] ?? '' }}:</td>
-                                <td>{{ rand(3, 5) }}</td>
-                                <td>{{ rand(3, 5) }}</td>
-                                <td>{{ rand(3, 5) }}</td>
+                                @php
+                                    // Get real psychomotor data for this category and skill
+                                    $categoryData = $psychomotorCategory->where('name', $category)->first();
+                                    $skillName = $skillCategories[$category][$i] ?? '';
+                                    $rating = 'N/A';
+
+                                    if ($categoryData && $skillName) {
+                                        $psychomotorSkill = $categoryData->psychomotors->where('name', $skillName)->first();
+                                        if ($psychomotorSkill) {
+                                            $studentRating = $psychomotorData->get($categoryData->id)?->where('psychomotor_id', $psychomotorSkill->id)->first();
+                                            $rating = $studentRating ? $studentRating->rating : 'N/A';
+                                        }
+                                    }
+                                @endphp
+                                <td>{{ $rating }}</td>
+                                <td>{{ $rating }}</td>
+                                <td>{{ $rating }}</td>
                             @endforeach
                         </tr>
                     @endfor

@@ -591,65 +591,14 @@
             </colgroup>
             <thead>
                 <tr>
-                    <th rowspan="2">SUBJECTS</th>
-                    @if(isset($headings) && count($headings) > 0)
-                        @php
-                            // Group headings by calc_pattern
-                            $inputHeadings = collect($headings)->where('calc_pattern', 'input');
-                            $totalHeadings = collect($headings)->where('calc_pattern', 'total');
-                            $positionHeadings = collect($headings)->where('calc_pattern', 'position');
-                            $gradeHeadings = collect($headings)->where('calc_pattern', 'grade_level');
-                            $classAvgHeadings = collect($headings)->where('calc_pattern', 'class_average');
-                            $classHighHeadings = collect($headings)->where('calc_pattern', 'class_highest_score');
-                            $classLowHeadings = collect($headings)->where('calc_pattern', 'class_lowest_score');
-                            $remarksHeadings = collect($headings)->where('calc_pattern', 'remarks');
-
-                            // Calculate column spans
-                            $inputColspan = $inputHeadings->count();
-                            $summaryColspan = $positionHeadings->count() + $gradeHeadings->count();
-                            $termColspan = $classAvgHeadings->count() + $classHighHeadings->count() + $classLowHeadings->count();
-                        @endphp
-
-                        @if($inputColspan > 0)
-                            <th colspan="{{ $inputColspan }}">MARKS OBTAINED</th>
-                        @endif
-                        @if($summaryColspan > 0)
-                            <th colspan="{{ $summaryColspan }}">STUDENT SUMMARY</th>
-                        @endif
-                        @if($termColspan > 0)
-                            <th colspan="{{ $termColspan }}">TERM SUMMARY</th>
-                        @endif
-                        @if($remarksHeadings->count() > 0)
-                            <th rowspan="2">REMARKS</th>
-                        @endif
-                    @endif
+                    <th rowspan="2">SUBJECT</th>
+                    <th rowspan="2">SCORES</th>
+                    <th rowspan="2">TOTAL</th>
+                    <th rowspan="2">GRADE</th>
+                    <th rowspan="2">REMARK</th>
                 </tr>
                 <tr>
-                    @if(isset($headings) && count($headings) > 0)
-                        {{-- Input headings --}}
-                        @foreach($inputHeadings as $heading)
-                            <th>{{ $heading['name'] }} ({{ $heading['score_weight'] ?? 0 }}%)</th>
-                        @endforeach
-
-                        {{-- Student summary headings --}}
-                        @foreach($positionHeadings as $heading)
-                            <th>{{ $heading['name'] }}</th>
-                        @endforeach
-                        @foreach($gradeHeadings as $heading)
-                            <th>{{ $heading['name'] }}</th>
-                        @endforeach
-
-                        {{-- Term summary headings --}}
-                        @foreach($classAvgHeadings as $heading)
-                            <th>{{ $heading['name'] }}</th>
-                        @endforeach
-                        @foreach($classHighHeadings as $heading)
-                            <th>{{ $heading['name'] }}</th>
-                        @endforeach
-                        @foreach($classLowHeadings as $heading)
-                            <th>{{ $heading['name'] }}</th>
-                        @endforeach
-                    @endif
+                    {{-- No additional headers needed --}}
                 </tr>
             </thead>
             <tbody>
@@ -678,11 +627,26 @@
 
                     // Helper function to get score from subject data
                     function getScoreFromSubject($subject, $calcPattern) {
-                        if (!isset($subject['scores']) || !is_array($subject['scores'])) return 'N/A';
+                        if (!isset($subject['scores'])) return 'N/A';
 
-                        foreach ($subject['scores'] as $score) {
-                            if (isset($score['calc_pattern']) && $score['calc_pattern'] === $calcPattern) {
-                                return $score['score'] ?? 'N/A';
+                        // Handle scores as object (new format)
+                        if (is_object($subject['scores']) || is_array($subject['scores'])) {
+                            // Check if it's an associative array/object with keys like "test"
+                            if (is_array($subject['scores']) && !isset($subject['scores'][0])) {
+                                // It's an associative array, try to find by calc_pattern
+                                foreach ($subject['scores'] as $key => $value) {
+                                    // For now, return the first value or try to match by key
+                                    return $value ?? 'N/A';
+                                }
+                            }
+
+                            // Handle as array of score objects (old format)
+                            if (is_array($subject['scores']) && isset($subject['scores'][0])) {
+                                foreach ($subject['scores'] as $score) {
+                                    if (isset($score['calc_pattern']) && $score['calc_pattern'] === $calcPattern) {
+                                        return $score['score'] ?? 'N/A';
+                                    }
+                                }
                             }
                         }
                         return 'N/A';
@@ -690,11 +654,27 @@
 
                     // Helper function to get score by code
                     function getScoreByCode($subject, $code) {
-                        if (!isset($subject['scores']) || !is_array($subject['scores'])) return 'N/A';
+                        if (!isset($subject['scores'])) return 'N/A';
 
-                        foreach ($subject['scores'] as $score) {
-                            if (isset($score['code']) && $score['code'] === $code) {
-                                return $score['score'] ?? 'N/A';
+                        // Handle scores as object (new format)
+                        if (is_object($subject['scores']) || is_array($subject['scores'])) {
+                            // Check if it's an associative array/object with keys like "test"
+                            if (is_array($subject['scores']) && !isset($subject['scores'][0])) {
+                                // It's an associative array, try to find by key
+                                foreach ($subject['scores'] as $key => $value) {
+                                    if (strtolower($key) === strtolower($code)) {
+                                        return $value ?? 'N/A';
+                                    }
+                                }
+                            }
+
+                            // Handle as array of score objects (old format)
+                            if (is_array($subject['scores']) && isset($subject['scores'][0])) {
+                                foreach ($subject['scores'] as $score) {
+                                    if (isset($score['code']) && $score['code'] === $code) {
+                                        return $score['score'] ?? 'N/A';
+                                    }
+                                }
                             }
                         }
                         return 'N/A';
@@ -714,62 +694,25 @@
                     <tr>
                         <td class="subject-name">{{ Str::limit($subject['subject_name'] ?? 'Subject', 15) }}</td>
 
-                        {{-- Marks Obtained - Show input calc_pattern scores by code --}}
-                        @if(isset($headings) && count($headings) > 0)
-                            @php
-                                // Group headings by calc_pattern
-                                $inputHeadings = collect($headings)->where('calc_pattern', 'input');
-                                $positionHeadings = collect($headings)->where('calc_pattern', 'position');
-                                $gradeHeadings = collect($headings)->where('calc_pattern', 'grade_level');
-                                $classAvgHeadings = collect($headings)->where('calc_pattern', 'class_average');
-                                $classHighHeadings = collect($headings)->where('calc_pattern', 'class_highest_score');
-                                $classLowHeadings = collect($headings)->where('calc_pattern', 'class_lowest_score');
-                                $remarksHeadings = collect($headings)->where('calc_pattern', 'remarks');
-                            @endphp
-
-                            {{-- Input scores --}}
-                            @foreach($inputHeadings as $heading)
-                                <td class="text-center">
-                                    {{ getScoreByCode($subject, $heading['name']) }}
-                                </td>
-                            @endforeach
-
-                            {{-- Student summary scores --}}
-                            @foreach($positionHeadings as $heading)
-                                <td class="text-center">
-                                    {{ getScoreFromSubject($subject, $heading['calc_pattern']) }}
-                                </td>
-                            @endforeach
-                            @foreach($gradeHeadings as $heading)
-                                <td class="text-center">
-                                    {{ getScoreFromSubject($subject, $heading['calc_pattern']) }}
-                                </td>
-                            @endforeach
-
-                            {{-- Term summary scores --}}
-                            @foreach($classAvgHeadings as $heading)
-                                <td class="text-center">
-                                    {{ getScoreFromSubject($subject, $heading['calc_pattern']) }}
-                                </td>
-                            @endforeach
-                            @foreach($classHighHeadings as $heading)
-                                <td class="text-center">
-                                    {{ getScoreFromSubject($subject, $heading['calc_pattern']) }}
-                                </td>
-                            @endforeach
-                            @foreach($classLowHeadings as $heading)
-                                <td class="text-center">
-                                    {{ getScoreFromSubject($subject, $heading['calc_pattern']) }}
-                                </td>
-                            @endforeach
-
-                            {{-- Remarks --}}
-                            @foreach($remarksHeadings as $heading)
-                                <td class="text-center">
-                                    {{ getScoreFromSubject($subject, $heading['calc_pattern']) }}
-                                </td>
-                            @endforeach
+                        {{-- Debug: Show the actual scores structure --}}
+                        @if(isset($subject['scores']))
+                            <td class="text-center">
+                                @if(is_array($subject['scores']) || is_object($subject['scores']))
+                                    @foreach($subject['scores'] as $scoreKey => $scoreValue)
+                                        <div><strong>{{ $scoreKey }}:</strong> {{ $scoreValue }}</div>
+                                    @endforeach
+                                @else
+                                    {{ $subject['scores'] }}
+                                @endif
+                            </td>
+                        @else
+                            <td class="text-center">No scores</td>
                         @endif
+
+                        {{-- Show total and grade --}}
+                        <td class="text-center">{{ $subjectTotal }}</td>
+                        <td class="text-center {{ $gradeClass }}">{{ $subjectGrade }}</td>
+                        <td class="text-center">{{ $gradeRemark }}</td>
                     </tr>
                 @endforeach
 

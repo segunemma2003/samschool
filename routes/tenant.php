@@ -123,15 +123,16 @@ Route::middleware([
                 ], 400);
             }
 
-            if (!$student->class->group) {
-                return response()->view('errors.student-data', [
-                    'error' => 'Student\'s class is not assigned to any group',
-                    'solution' => 'Please assign the class to a group first',
-                    'student_id' => $studentId,
-                    'student_name' => $student->name,
-                    'class_name' => $student->class->name
-                ], 400);
-            }
+            // Remove group requirement - system will work without groups
+            // if (!$student->class->group) {
+            //     return response()->view('errors.student-data', [
+            //         'error' => 'Student\'s class is not assigned to any school section',
+            //         'solution' => 'Please assign the class to a school section first',
+            //         'student_id' => $studentId,
+            //         'student_name' => $student->name,
+            //         'class_name' => $student->class->name
+            //     ], 400);
+            // }
 
             $term = \App\Models\Term::findOrFail($termId);
             $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
@@ -151,16 +152,23 @@ Route::middleware([
                 abort(404, 'No courses found for this student in the selected term and academic year.');
             }
 
-            // Get result section types (same as view result page)
+            // Get result section types (same as view result page) - modified to work without groups
             $resultSectionTypes = \App\Models\ResultSectionType::with('resultSection')
                 ->where('term_id', $termId)
-                ->whereHas('resultSection', function ($query) use ($student) {
-                    $query->where('group_id', $student->class->group->id);
-                })
                 ->get();
 
             if ($resultSectionTypes->isEmpty()) {
-                throw new \Exception('Result section types are not configured for this student\'s group.');
+                // If no result section types found, create a simple fallback
+                $resultSectionTypes = collect([
+                    (object) [
+                        'id' => 1,
+                        'name' => 'Total',
+                        'code' => 'total',
+                        'calc_pattern' => 'total',
+                        'type' => 'total',
+                        'score_weight' => 100
+                    ]
+                ]);
             }
 
             // Group headings by calc_pattern (same as view result page)
@@ -323,15 +331,17 @@ Route::middleware([
                 ], 400);
             }
 
-            if (!$student->class->group) {
-                return response()->view('errors.student-data', [
-                    'error' => 'Student\'s class is not assigned to any group',
-                    'solution' => 'Please assign the class to a group first',
-                    'student_id' => $studentId,
-                    'student_name' => $student->name,
-                    'class_name' => $student->class->name
-                ], 400);
-            }
+            // Remove group requirement - system will work without groups
+            // if (!$student->class->group) {
+            //     return response()->view('errors.student-data', [
+            //         'error' => 'Student\'s class is not assigned to any school section',
+            //         'solution' => 'Please assign the class to a school section first',
+            //         'student_id' => $studentId,
+            //         'student_name' => $student->name,
+            //         'class_name' => $student->class->name,
+            //         'no_groups_exist' => true
+            //     ], 400);
+            // }
 
             $term = \App\Models\Term::findOrFail($termId);
             $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
@@ -351,16 +361,23 @@ Route::middleware([
                 abort(404, 'No courses found for this student in the selected term and academic year.');
             }
 
-            // Get result section types (same as view result page)
+            // Get result section types (same as view result page) - modified to work without groups
             $resultSectionTypes = \App\Models\ResultSectionType::with('resultSection')
                 ->where('term_id', $termId)
-                ->whereHas('resultSection', function ($query) use ($student) {
-                    $query->where('group_id', $student->class->group->id);
-                })
                 ->get();
 
             if ($resultSectionTypes->isEmpty()) {
-                throw new \Exception('Result section types are not configured for this student\'s group.');
+                // If no result section types found, create a simple fallback
+                $resultSectionTypes = collect([
+                    (object) [
+                        'id' => 1,
+                        'name' => 'Total',
+                        'code' => 'total',
+                        'calc_pattern' => 'total',
+                        'type' => 'total',
+                        'score_weight' => 100
+                    ]
+                ]);
             }
 
             // Group headings by calc_pattern (same as view result page)

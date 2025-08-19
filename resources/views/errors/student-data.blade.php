@@ -130,9 +130,9 @@
                     <li>Save the changes</li>
                 @else
                     <li>Go to the Admin Panel</li>
-                    <li>Navigate to <strong>Classes</strong> section</li>
-                    <li>Find and edit class: <strong>{{ $class_name }}</strong></li>
-                    <li>Assign the class to a group</li>
+                    <li>Navigate to <strong>Students</strong> section</li>
+                    <li>Find and edit student: <strong>{{ $student_name }}</strong></li>
+                    <li>Make sure the student is assigned to class: <strong>{{ $class_name }}</strong></li>
                     <li>Save the changes</li>
                 @endif
             </ol>

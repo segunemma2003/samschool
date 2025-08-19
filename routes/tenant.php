@@ -114,8 +114,23 @@ Route::middleware([
             // Use the same logic as ExamController to get fresh data
             $student = \App\Models\Student::with(['class', 'class.group'])->whereId($studentId)->firstOrFail();
 
-            if (!$student->class || !$student->class->group) {
-                throw new \Exception('Student class or group information is missing.');
+            if (!$student->class) {
+                return response()->view('errors.student-data', [
+                    'error' => 'Student is not assigned to any class',
+                    'solution' => 'Please assign the student to a class first',
+                    'student_id' => $studentId,
+                    'student_name' => $student->name
+                ], 400);
+            }
+
+            if (!$student->class->group) {
+                return response()->view('errors.student-data', [
+                    'error' => 'Student\'s class is not assigned to any group',
+                    'solution' => 'Please assign the class to a group first',
+                    'student_id' => $studentId,
+                    'student_name' => $student->name,
+                    'class_name' => $student->class->name
+                ], 400);
             }
 
             $term = \App\Models\Term::findOrFail($termId);
@@ -299,8 +314,23 @@ Route::middleware([
             // Use the same logic as ExamController to get fresh data
             $student = \App\Models\Student::with(['class', 'class.group'])->whereId($studentId)->firstOrFail();
 
-            if (!$student->class || !$student->class->group) {
-                throw new \Exception('Student class or group information is missing.');
+            if (!$student->class) {
+                return response()->view('errors.student-data', [
+                    'error' => 'Student is not assigned to any class',
+                    'solution' => 'Please assign the student to a class first',
+                    'student_id' => $studentId,
+                    'student_name' => $student->name
+                ], 400);
+            }
+
+            if (!$student->class->group) {
+                return response()->view('errors.student-data', [
+                    'error' => 'Student\'s class is not assigned to any group',
+                    'solution' => 'Please assign the class to a group first',
+                    'student_id' => $studentId,
+                    'student_name' => $student->name,
+                    'class_name' => $student->class->name
+                ], 400);
             }
 
             $term = \App\Models\Term::findOrFail($termId);
@@ -377,14 +407,35 @@ Route::middleware([
                 ['academic_id', $academicYearId]
             ])->first();
 
-            // Get psychomotor/behavioral data
-            $psychomotorData = \App\Models\PyschomotorStudent::with('psychomotor')
-                ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+            // Get psychomotor/behavioral data with error handling
+            try {
+                $psychomotorData = \App\Models\PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
+                    ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+                        $query->where('term_id', $termId)
+                              ->where('academic_id', $academicYearId);
+                    })
+                    ->where('student_id', $studentId)
+                    ->get();
+
+                // Get psychomotor categories for this term and academic year
+                $psychomotorCategory = \App\Models\PsychomotorCategory::with(['psychomotors' => function ($query) use ($termId, $academicYearId) {
+                    $query->where('term_id', $termId)
+                          ->where('academic_id', $academicYearId);
+                }])
+                ->whereHas('psychomotors', function ($query) use ($termId, $academicYearId) {
                     $query->where('term_id', $termId)
                           ->where('academic_id', $academicYearId);
                 })
-                ->where('student_id', $studentId)
                 ->get();
+            } catch (\Exception $e) {
+                // If psychomotor data fails, use empty collections
+                $psychomotorData = collect();
+                $psychomotorCategory = collect();
+            }
+
+            // Ensure variables are always defined as collections
+            $psychomotorData = $psychomotorData ?? collect();
+            $psychomotorCategory = $psychomotorCategory ?? collect();
 
             // Organize behavioral data by category and term
             $behavioralData = [];
@@ -442,6 +493,8 @@ Route::middleware([
                 'studentAttendance' => $studentAttendance,
                 'nextTerm' => null,
                 'behavioralData' => $behavioralData,
+                'psychomotorCategory' => $psychomotorCategory,
+                'psychomotorData' => $psychomotorData,
                 'annualSummaryData' => [],
                 // Use calculated data
                 'totalScore' => $summary['total_score'] ?? $totalScore,
@@ -869,21 +922,39 @@ Route::middleware([
                     ->first();
             }
 
-            // Get psychomotor/behavioral data
-            $psychomotorData = \App\Models\PyschomotorStudent::with('psychomotor')
-                ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+            // Get psychomotor/behavioral data with error handling
+            try {
+                $psychomotorData = \App\Models\PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
+                    ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+                        $query->where('term_id', $termId)
+                              ->where('academic_id', $academicYearId);
+                    })
+                    ->where('student_id', $studentId)
+                    ->get();
+
+                // Get psychomotor categories for this term and academic year
+                $psychomotorCategory = \App\Models\PsychomotorCategory::with(['psychomotors' => function ($query) use ($termId, $academicYearId) {
+                    $query->where('term_id', $termId)
+                          ->where('academic_id', $academicYearId);
+                }])
+                ->whereHas('psychomotors', function ($query) use ($termId, $academicYearId) {
                     $query->where('term_id', $termId)
                           ->where('academic_id', $academicYearId);
                 })
-                ->where('student_id', $studentId)
                 ->get();
+            } catch (\Exception $e) {
+                // If psychomotor data fails, use empty collections
+                $psychomotorData = collect();
+                $psychomotorCategory = collect();
+            }
 
-            // Organize behavioral data
+            // Ensure variables are always defined as collections
+            $psychomotorData = $psychomotorData ?? collect();
+            $psychomotorCategory = $psychomotorCategory ?? collect();
+
+            // Organize behavioral data by category and term
             $behavioralData = [];
-
-            // Get all terms in the academic year for comparison
-            $allTerms = \App\Models\Term::all(); // Get all terms since terms don't have academic_year_id
-
+            $allTerms = \App\Models\Term::all();
             $termNames = ['1st', '2nd', '3rd'];
 
             foreach ($psychomotorData as $psychData) {
@@ -1123,3 +1194,97 @@ Route::get('/test/psychomotor/{studentId}/{termId}/{academicYearId}', function (
         ], 500);
     }
 })->name('test.psychomotor.data');
+
+// Test route to verify psychomotor data structure
+Route::get('/debug/psychomotor-structure/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
+    try {
+        // Get psychomotor data
+        $psychomotorData = \App\Models\PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
+            ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+                $query->where('term_id', $termId)
+                      ->where('academic_id', $academicYearId);
+            })
+            ->where('student_id', $studentId)
+            ->get();
+
+        // Get psychomotor categories
+        $psychomotorCategory = \App\Models\PsychomotorCategory::with(['psychomotors' => function ($query) use ($termId, $academicYearId) {
+            $query->where('term_id', $termId)
+                  ->where('academic_id', $academicYearId);
+        }])
+        ->whereHas('psychomotors', function ($query) use ($termId, $academicYearId) {
+            $query->where('term_id', $termId)
+                  ->where('academic_id', $academicYearId);
+        })
+        ->get();
+
+        return response()->json([
+            'success' => true,
+            'psychomotor_data_type' => get_class($psychomotorData),
+            'psychomotor_data_count' => $psychomotorData->count(),
+            'psychomotor_data_structure' => $psychomotorData->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'psychomotor_id' => $item->psychomotor_id,
+                    'rating' => $item->rating,
+                    'psychomotor' => $item->psychomotor ? [
+                        'id' => $item->psychomotor->id,
+                        'skill' => $item->psychomotor->skill,
+                        'category_id' => $item->psychomotor->psychomotor_category_id
+                    ] : null
+                ];
+            }),
+            'categories_count' => $psychomotorCategory->count(),
+            'categories' => $psychomotorCategory->map(function($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'psychomotors_count' => $category->psychomotors->count(),
+                    'psychomotors' => $category->psychomotors->map(function($psychomotor) {
+                        return [
+                            'id' => $psychomotor->id,
+                            'skill' => $psychomotor->skill
+                        ];
+                    })
+                ];
+            })
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+})->name('debug.psychomotor.structure');
+
+// Test route to check student data
+Route::get('/test/student/{studentId}', function ($studentId) {
+    try {
+        $student = \App\Models\Student::with(['class', 'class.group'])->findOrFail($studentId);
+
+        return response()->json([
+            'success' => true,
+            'student' => [
+                'id' => $student->id,
+                'name' => $student->name,
+                'class_id' => $student->class_id,
+                'class' => $student->class ? [
+                    'id' => $student->class->id,
+                    'name' => $student->class->name,
+                    'group_id' => $student->class->group_id,
+                    'group' => $student->class->group ? [
+                        'id' => $student->class->group->id,
+                        'name' => $student->class->group->name
+                    ] : null
+                ] : null
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+})->name('test.student.data');

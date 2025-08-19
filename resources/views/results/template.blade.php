@@ -822,7 +822,7 @@
         </div>
 
         <!-- Skills Development - Only if data exists -->
-        @if($psychomotorCategory && $psychomotorCategory->count() > 0)
+        @if(isset($psychomotorCategory) && $psychomotorCategory && $psychomotorCategory->count() > 0 && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0)
             <div class="section-header">SKILLS DEVELOPMENT AND BEHAVIORAL ATTRIBUTES</div>
 
             <table class="skills-table">
@@ -858,9 +858,18 @@
                                     $skill = $category->psychomotors->get($i);
                                     $skillName = $skill ? $skill->skill : '';
 
-                                    // Get student rating for this skill
-                                    $studentRating = $psychomotorData->where('psychomotor_id', $skill ? $skill->id : null)->first();
-                                    $rating = $studentRating ? $studentRating->rating : 'N/A';
+                                    // Get student rating for this skill with better error handling
+                                    $rating = 'N/A';
+                                    if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
+                                        try {
+                                            $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
+                                            if ($studentRating && isset($studentRating->rating)) {
+                                                $rating = $studentRating->rating;
+                                            }
+                                        } catch (\Exception $e) {
+                                            $rating = 'N/A';
+                                        }
+                                    }
                                 @endphp
 
                                 @if($skill)

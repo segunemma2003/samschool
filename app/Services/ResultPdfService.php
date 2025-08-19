@@ -70,6 +70,11 @@ class ResultPdfService
 
             // Get psychomotor/behavioral data from database
             $psychomotorData = $this->getPsychomotorData($studentId, $termId, $academicId);
+            $psychomotorCategory = $this->getPsychomotorCategories($termId, $academicId);
+
+            // Ensure psychomotor variables are always defined as collections
+            $psychomotorData = $psychomotorData ?? collect();
+            $psychomotorCategory = $psychomotorCategory ?? collect();
 
             // Extract summary and subjects from calculated data
             $summary = $calculatedData['summary'] ?? [];
@@ -115,7 +120,7 @@ class ResultPdfService
                 'position' => $school->activate_position === 'yes' ? ($studentRanking['position'] ?? 'N/A') : 'N/A',
                 'totalStudents' => $summary['total_students'] ?? $studentRanking['totalStudents'] ?? 0,
                 'psychomotorData' => $psychomotorData,
-                'psychomotorCategory' => $this->getPsychomotorCategories(),
+                'psychomotorCategory' => $psychomotorCategory,
                 'principalComment' => $this->getPerformanceComment(
                     $summary['average'] ?? 0,
                     $this->getSubjectScore($subjects, ['english', 'literacy']),
@@ -168,21 +173,38 @@ class ResultPdfService
 
     private function getPsychomotorData(int $studentId, int $termId, int $academicId)
     {
-        // Get psychomotor/behavioral assessment data from database
-        return PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
-            ->where('student_id', $studentId)
-            ->whereHas('psychomotor', function ($query) use ($termId, $academicId) {
+        try {
+            // Get psychomotor/behavioral assessment data from database
+            return PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
+                ->where('student_id', $studentId)
+                ->whereHas('psychomotor', function ($query) use ($termId, $academicId) {
+                    $query->where('term_id', $termId)
+                          ->where('academic_id', $academicId);
+                })
+                ->get();
+        } catch (\Exception $e) {
+            // If psychomotor data fails, return empty collection
+            return collect();
+        }
+    }
+
+    private function getPsychomotorCategories(int $termId, int $academicId)
+    {
+        try {
+            // Get psychomotor categories for this term and academic year
+            return PsychomotorCategory::with(['psychomotors' => function ($query) use ($termId, $academicId) {
+                $query->where('term_id', $termId)
+                      ->where('academic_id', $academicId);
+            }])
+            ->whereHas('psychomotors', function ($query) use ($termId, $academicId) {
                 $query->where('term_id', $termId)
                       ->where('academic_id', $academicId);
             })
-            ->get()
-            ->groupBy('psychomotor.psychomotor_category_id');
-    }
-
-    private function getPsychomotorCategories()
-    {
-        // Get all psychomotor categories from database
-        return PsychomotorCategory::orderBy('name')->get();
+            ->get();
+        } catch (\Exception $e) {
+            // If psychomotor categories fail, return empty collection
+            return collect();
+        }
     }
 
     /**

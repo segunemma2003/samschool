@@ -38,10 +38,32 @@ class StudentResultCalculationService
             $grade = $this->calculateGrade($summary['average']);
             $remarks = $this->calculateRemarks($summary['average']);
 
+            // Get result section types for headings
+            $resultSectionTypes = ResultSectionType::where('term_id', $termId)
+                ->whereHas('resultSection', function ($query) use ($student) {
+                    $query->where('group_id', $student->class->group->id);
+                })
+                ->orderBy('name')
+                ->get();
+
+            // Prepare headings data
+            $headings = [];
+            foreach ($resultSectionTypes as $sectionType) {
+                $headings[] = [
+                    'id' => $sectionType->id,
+                    'name' => $sectionType->name,
+                    'code' => $sectionType->code,
+                    'calc_pattern' => $sectionType->calc_pattern,
+                    'type' => $sectionType->type,
+                    'score_weight' => $sectionType->score_weight
+                ];
+            }
+
             // Prepare the complete JSON data
             $jsonData = [
                 'subjects' => $calculatedData['subjects'],
                 'summary' => $summary,
+                'headings' => $headings,
                 'metadata' => [
                     'calculated_at' => now()->toISOString(),
                     'calculated_by' => 'system',
@@ -135,9 +157,11 @@ class StudentResultCalculationService
         ->where('academic_year_id', $academicYearId)
         ->get();
 
+        // Filter for unique subjects (same as view result page)
+        $uniqueSubjects = $courseForms->unique('subject_id');
         $subjects = [];
 
-        foreach ($courseForms as $courseForm) {
+        foreach ($uniqueSubjects as $courseForm) {
             $subjectData = [
                 'subject_id' => $courseForm->subject_id,
                 'subject_name' => $courseForm->subject->subjectDepot->name ?? 'Unknown Subject',

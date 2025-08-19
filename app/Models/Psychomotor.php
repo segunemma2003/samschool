@@ -29,4 +29,9 @@ class Psychomotor extends Model
     {
         return $this->hasMany(PyschomotorStudent::class);
     }
+
+    public function psychomotorCategory()
+    {
+        return $this->belongsTo(PsychomotorCategory::class, 'psychomotor_category_id');
+    }
 }

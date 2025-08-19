@@ -9,4 +9,9 @@ class PsychomotorCategory extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+
+    public function psychomotors()
+    {
+        return $this->hasMany(Psychomotor::class, 'psychomotor_category_id');
+    }
 }

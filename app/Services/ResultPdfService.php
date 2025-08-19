@@ -52,6 +52,15 @@ class ResultPdfService
                 throw new \Exception('No saved results found for this student in the selected term and academic year. Please ensure results have been entered and saved first.');
             }
 
+            // Log the data for debugging
+            Log::info('StudentResult data retrieved', [
+                'student_id' => $studentId,
+                'term_id' => $termId,
+                'academic_id' => $academicId,
+                'has_calculated_data' => !empty($studentResult->calculated_data),
+                'calculation_status' => $studentResult->calculation_status ?? 'unknown'
+            ]);
+
             // Get calculated data (already an array due to model cast)
             $calculatedData = $studentResult->calculated_data;
 
@@ -65,6 +74,18 @@ class ResultPdfService
             // Extract summary and subjects from calculated data
             $summary = $calculatedData['summary'] ?? [];
             $subjects = $calculatedData['subjects'] ?? [];
+
+            // Ensure subjects are unique (filter by subject_id)
+            if (!empty($subjects)) {
+                $uniqueSubjects = collect($subjects)->unique('subject_id')->values()->toArray();
+                $subjects = $uniqueSubjects;
+            }
+
+            Log::info('Subjects data processed', [
+                'original_count' => count($calculatedData['subjects'] ?? []),
+                'unique_count' => count($subjects),
+                'subjects' => array_column($subjects, 'subject_name')
+            ]);
 
             // Get student's class ranking/position if available and if school allows positions
             $studentRanking = [];
@@ -330,28 +351,47 @@ class ResultPdfService
 
     private function generatePdf(array $viewData, Student $student, Term $term, AcademicYear $academy)
     {
-        $pdf = Pdf::loadView('results.template', $viewData)
-            ->setPaper('A4', 'portrait')
-            ->setOptions([
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'defaultFont' => 'Arial',
-                'dpi' => 150,
-                'defaultMediaType' => 'screen',
-                'isFontSubsettingEnabled' => true,
+        try {
+            Log::info('Starting PDF generation', [
+                'student_name' => $student->name,
+                'term_name' => $term->name,
+                'academic_year' => $academy->title,
+                'view_data_keys' => array_keys($viewData)
             ]);
 
-        $fileName = sprintf(
-            "result-%s-%s-%s.pdf",
-            str_replace(' ', '-', strtolower($student->name)),
-            str_replace(' ', '-', strtolower($term->name)),
-            str_replace('/', '-', $academy->title)
-        );
+            $pdf = Pdf::loadView('results.template', $viewData)
+                ->setPaper('A4', 'portrait')
+                ->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                    'defaultFont' => 'Arial',
+                    'dpi' => 150,
+                    'defaultMediaType' => 'screen',
+                    'isFontSubsettingEnabled' => true,
+                ]);
 
-        return [
-            'pdf' => $pdf,
-            'filename' => $fileName
-        ];
+            $fileName = sprintf(
+                "result-%s-%s-%s.pdf",
+                str_replace(' ', '-', strtolower($student->name)),
+                str_replace(' ', '-', strtolower($term->name)),
+                str_replace('/', '-', $academy->title)
+            );
+
+            Log::info('PDF generated successfully', ['filename' => $fileName]);
+
+            return [
+                'pdf' => $pdf,
+                'filename' => $fileName
+            ];
+        } catch (\Exception $e) {
+            Log::error('PDF generation failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'student_name' => $student->name
+            ]);
+            throw $e;
+        }
     }
 
     private function getPerformanceComment(float $percentage, float $englishScore, float $mathScore): string

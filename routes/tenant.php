@@ -111,26 +111,68 @@ Route::middleware([
         $academicYearId = (int) $academicYearId;
 
         try {
-            // Get basic data
-            $student = \App\Models\Student::with(['class'])->findOrFail($studentId);
+            // Use the same logic as ExamController to get fresh data
+            $student = \App\Models\Student::with(['class', 'class.group'])->whereId($studentId)->firstOrFail();
+
+            if (!$student->class || !$student->class->group) {
+                throw new \Exception('Student class or group information is missing.');
+            }
+
             $term = \App\Models\Term::findOrFail($termId);
             $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
 
-            // Get student result from StudentResult model
-            $studentResult = \App\Models\StudentResult::where('student_id', $studentId)
-                ->where('term_id', $termId)
-                ->where('academic_year_id', $academicYearId)
-                ->where('calculation_status', 'completed')
-                ->first();
+            // Get course forms with scores (same as view result page)
+            $courses = \App\Models\CourseForm::with([
+                'subject.subjectDepot',
+                'subject.teacher',
+                'scoreBoard.resultSectionType'
+            ])
+            ->where('student_id', $studentId)
+            ->where('term_id', $termId)
+            ->where('academic_year_id', $academicYearId)
+            ->get();
 
-            if (!$studentResult) {
-                abort(404, 'Result not ready yet. Please ensure the teacher has viewed and commented on the student result first.');
+            if ($courses->isEmpty()) {
+                abort(404, 'No courses found for this student in the selected term and academic year.');
             }
 
-            // Get calculated data from StudentResult
-            $calculatedData = $studentResult->calculated_data;
-            $summary = $calculatedData['summary'] ?? [];
-            $subjects = $calculatedData['subjects'] ?? [];
+            // Get result section types (same as view result page)
+            $resultSectionTypes = \App\Models\ResultSectionType::with('resultSection')
+                ->where('term_id', $termId)
+                ->whereHas('resultSection', function ($query) use ($student) {
+                    $query->where('group_id', $student->class->group->id);
+                })
+                ->get();
+
+            if ($resultSectionTypes->isEmpty()) {
+                throw new \Exception('Result section types are not configured for this student\'s group.');
+            }
+
+            // Group headings by calc_pattern (same as view result page)
+            $groupedHeadings = $resultSectionTypes->groupBy('calc_pattern');
+            $totalHeadings = $resultSectionTypes->where('calc_pattern', 'total');
+            $markObtained = $resultSectionTypes->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
+            $studentSummary = $resultSectionTypes->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
+            $termSummary = $resultSectionTypes->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
+            $remarks = $resultSectionTypes->whereIn('calc_pattern', ['remarks']) ?? collect([]);
+
+            // Calculate scores (same as view result page)
+            $totalScore = 0;
+            $totalSubject = count($courses);
+            $percent = 0;
+
+            if ($totalSubject > 0) {
+                $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings) {
+                    $score = $course->scoreBoard
+                        ->whereIn('result_section_type_id', $totalHeadings->pluck('id'))
+                        ->sum(function($item) {
+                            return (int) $item->score;
+                        });
+                    return $carry + $score;
+                }, 0);
+
+                $percent = round($totalScore / $totalSubject);
+            }
 
             // Get other data
             $school = \App\Models\SchoolInformation::where([
@@ -151,13 +193,24 @@ Route::middleware([
             ])->first();
 
             // Get psychomotor/behavioral data
-            $psychomotorData = \App\Models\PyschomotorStudent::with('psychomotor')
+            $psychomotorData = \App\Models\PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
                 ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
                     $query->where('term_id', $termId)
                           ->where('academic_id', $academicYearId);
                 })
                 ->where('student_id', $studentId)
                 ->get();
+
+            // Get psychomotor categories for this term and academic year
+            $psychomotorCategory = \App\Models\PsychomotorCategory::with(['psychomotors' => function ($query) use ($termId, $academicYearId) {
+                $query->where('term_id', $termId)
+                      ->where('academic_id', $academicYearId);
+            }])
+            ->whereHas('psychomotors', function ($query) use ($termId, $academicYearId) {
+                $query->where('term_id', $termId)
+                      ->where('academic_id', $academicYearId);
+            })
+            ->get();
 
             // Organize behavioral data by category and term
             $behavioralData = [];
@@ -175,7 +228,36 @@ Route::middleware([
                 }
             }
 
-            // Prepare data for template using StudentResult data
+            // Get student result to access calculated_data
+            $studentResult = \App\Models\StudentResult::where('student_id', $studentId)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicYearId)
+                ->where('calculation_status', 'completed')
+                ->first();
+
+            if (!$studentResult) {
+                abort(404, 'Result not ready yet. Please ensure the teacher has viewed and commented on the student result first.');
+            }
+
+            // Get calculated data from StudentResult
+            $calculatedData = $studentResult->calculated_data;
+            $summary = $calculatedData['summary'] ?? [];
+            $subjects = $calculatedData['subjects'] ?? [];
+            $headings = $calculatedData['headings'] ?? [];
+
+            // Get unique codes from subjects for Marks Obtained section
+            $inputCodes = [];
+            foreach ($subjects as $subject) {
+                if (isset($subject['scores']) && is_array($subject['scores'])) {
+                    foreach ($subject['scores'] as $score) {
+                        if (isset($score['calc_pattern']) && $score['calc_pattern'] === 'input') {
+                            $inputCodes[$score['code']] = $score['code'];
+                        }
+                    }
+                }
+            }
+
+            // Prepare data for template using calculated data
             $data = [
                 'student' => $student,
                 'term' => $term,
@@ -186,15 +268,18 @@ Route::middleware([
                 'studentAttendance' => $studentAttendance,
                 'nextTerm' => null,
                 'behavioralData' => $behavioralData,
+                'psychomotorCategory' => $psychomotorCategory,
+                'psychomotorData' => $psychomotorData,
                 'annualSummaryData' => [],
-                // Use data from StudentResult
-                'totalScore' => $summary['total_score'] ?? 0,
-                'totalSubject' => $summary['total_subjects'] ?? 0,
-                'percent' => $summary['average'] ?? 0,
+                // Use calculated data
+                'totalScore' => $summary['total_score'] ?? $totalScore,
+                'totalSubject' => $summary['total_subjects'] ?? $totalSubject,
+                'percent' => $summary['average'] ?? $percent,
                 'principalComment' => $studentResult->teacher_comment ?? 'No comment available',
                 'subjects' => $subjects,
+                'inputCodes' => array_values($inputCodes), // Pass unique input codes
+                'headings' => $headings,
                 'summary' => $summary,
-                'studentResult' => $studentResult,
             ];
 
             return view('results.template', $data);
@@ -211,26 +296,68 @@ Route::middleware([
         $academicYearId = (int) $academicYearId;
 
         try {
-            // Get basic data
-            $student = \App\Models\Student::with(['class'])->findOrFail($studentId);
+            // Use the same logic as ExamController to get fresh data
+            $student = \App\Models\Student::with(['class', 'class.group'])->whereId($studentId)->firstOrFail();
+
+            if (!$student->class || !$student->class->group) {
+                throw new \Exception('Student class or group information is missing.');
+            }
+
             $term = \App\Models\Term::findOrFail($termId);
             $academicYear = \App\Models\AcademicYear::findOrFail($academicYearId);
 
-            // Get student result from StudentResult model
-            $studentResult = \App\Models\StudentResult::where('student_id', $studentId)
-                ->where('term_id', $termId)
-                ->where('academic_year_id', $academicYearId)
-                ->where('calculation_status', 'completed')
-                ->first();
+            // Get course forms with scores (same as view result page)
+            $courses = \App\Models\CourseForm::with([
+                'subject.subjectDepot',
+                'subject.teacher',
+                'scoreBoard.resultSectionType'
+            ])
+            ->where('student_id', $studentId)
+            ->where('term_id', $termId)
+            ->where('academic_year_id', $academicYearId)
+            ->get();
 
-            if (!$studentResult) {
-                abort(404, 'Result not ready yet. Please ensure the teacher has viewed and commented on the student result first.');
+            if ($courses->isEmpty()) {
+                abort(404, 'No courses found for this student in the selected term and academic year.');
             }
 
-            // Get calculated data from StudentResult
-            $calculatedData = $studentResult->calculated_data;
-            $summary = $calculatedData['summary'] ?? [];
-            $subjects = $calculatedData['subjects'] ?? [];
+            // Get result section types (same as view result page)
+            $resultSectionTypes = \App\Models\ResultSectionType::with('resultSection')
+                ->where('term_id', $termId)
+                ->whereHas('resultSection', function ($query) use ($student) {
+                    $query->where('group_id', $student->class->group->id);
+                })
+                ->get();
+
+            if ($resultSectionTypes->isEmpty()) {
+                throw new \Exception('Result section types are not configured for this student\'s group.');
+            }
+
+            // Group headings by calc_pattern (same as view result page)
+            $groupedHeadings = $resultSectionTypes->groupBy('calc_pattern');
+            $totalHeadings = $resultSectionTypes->where('calc_pattern', 'total');
+            $markObtained = $resultSectionTypes->whereIn('calc_pattern', ['input', 'total']) ?? collect([]);
+            $studentSummary = $resultSectionTypes->whereIn('calc_pattern', ['position', 'grade_level']) ?? collect([]);
+            $termSummary = $resultSectionTypes->whereIn('calc_pattern', ['class_average', 'class_highest_score', 'class_lowest_score']) ?? collect([]);
+            $remarks = $resultSectionTypes->whereIn('calc_pattern', ['remarks']) ?? collect([]);
+
+            // Calculate scores (same as view result page)
+            $totalScore = 0;
+            $totalSubject = count($courses);
+            $percent = 0;
+
+            if ($totalSubject > 0) {
+                $totalScore = $courses->reduce(function ($carry, $course) use ($totalHeadings) {
+                    $score = $course->scoreBoard
+                        ->whereIn('result_section_type_id', $totalHeadings->pluck('id'))
+                        ->sum(function($item) {
+                            return (int) $item->score;
+                        });
+                    return $carry + $score;
+                }, 0);
+
+                $percent = round($totalScore / $totalSubject);
+            }
 
             // Get other data
             $school = \App\Models\SchoolInformation::where([
@@ -275,7 +402,36 @@ Route::middleware([
                 }
             }
 
-            // Prepare data for template using StudentResult data
+            // Get student result to access calculated_data
+            $studentResult = \App\Models\StudentResult::where('student_id', $studentId)
+                ->where('term_id', $termId)
+                ->where('academic_year_id', $academicYearId)
+                ->where('calculation_status', 'completed')
+                ->first();
+
+            if (!$studentResult) {
+                abort(404, 'Result not ready yet. Please ensure the teacher has viewed and commented on the student result first.');
+            }
+
+            // Get calculated data from StudentResult
+            $calculatedData = $studentResult->calculated_data;
+            $summary = $calculatedData['summary'] ?? [];
+            $subjects = $calculatedData['subjects'] ?? [];
+            $headings = $calculatedData['headings'] ?? [];
+
+            // Get unique codes from subjects for Marks Obtained section
+            $inputCodes = [];
+            foreach ($subjects as $subject) {
+                if (isset($subject['scores']) && is_array($subject['scores'])) {
+                    foreach ($subject['scores'] as $score) {
+                        if (isset($score['calc_pattern']) && $score['calc_pattern'] === 'input') {
+                            $inputCodes[$score['code']] = $score['code'];
+                        }
+                    }
+                }
+            }
+
+            // Prepare data for template using calculated data
             $data = [
                 'student' => $student,
                 'term' => $term,
@@ -287,14 +443,15 @@ Route::middleware([
                 'nextTerm' => null,
                 'behavioralData' => $behavioralData,
                 'annualSummaryData' => [],
-                // Use data from StudentResult
-                'totalScore' => $summary['total_score'] ?? 0,
-                'totalSubject' => $summary['total_subjects'] ?? 0,
-                'percent' => $summary['average'] ?? 0,
+                // Use calculated data
+                'totalScore' => $summary['total_score'] ?? $totalScore,
+                'totalSubject' => $summary['total_subjects'] ?? $totalSubject,
+                'percent' => $summary['average'] ?? $percent,
                 'principalComment' => $studentResult->teacher_comment ?? 'No comment available',
                 'subjects' => $subjects,
+                'inputCodes' => array_values($inputCodes), // Pass unique input codes
+                'headings' => $headings,
                 'summary' => $summary,
-                'studentResult' => $studentResult,
             ];
 
             // Generate PDF
@@ -311,6 +468,15 @@ Route::middleware([
             return $pdf->stream($filename);
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Result download error', [
+                'student_id' => $studentId,
+                'term_id' => $termId,
+                'academic_year_id' => $academicYearId,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             abort(500, 'Error generating result PDF: ' . $e->getMessage());
         }
     })->name('student.result.download');
@@ -751,6 +917,42 @@ Route::middleware([
                 }
             }
 
+            // Get psychomotor/behavioral data
+            $psychomotorData = \App\Models\PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
+                ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+                    $query->where('term_id', $termId)
+                          ->where('academic_id', $academicYearId);
+                })
+                ->where('student_id', $studentId)
+                ->get();
+
+            // Get psychomotor categories for this term and academic year
+            $psychomotorCategory = \App\Models\PsychomotorCategory::with(['psychomotors' => function ($query) use ($termId, $academicYearId) {
+                $query->where('term_id', $termId)
+                      ->where('academic_id', $academicYearId);
+            }])
+            ->whereHas('psychomotors', function ($query) use ($termId, $academicYearId) {
+                $query->where('term_id', $termId)
+                      ->where('academic_id', $academicYearId);
+            })
+            ->get();
+
+            // Organize behavioral data by category and term
+            $behavioralData = [];
+            $allTerms = \App\Models\Term::all();
+            $termNames = ['1st', '2nd', '3rd'];
+
+            foreach ($psychomotorData as $psychData) {
+                $skillName = strtolower(str_replace(' ', '_', $psychData->psychomotor->skill));
+                $termIndex = $allTerms->search(function ($term) use ($psychData) {
+                    return $term->id === $psychData->psychomotor->term_id;
+                });
+
+                if ($termIndex !== false && isset($termNames[$termIndex])) {
+                    $behavioralData[$skillName][$termNames[$termIndex]] = $psychData->rating;
+                }
+            }
+
             // Get annual summary data
             $annualSummaryData = [];
             foreach ($courseForms as $courseForm) {
@@ -826,6 +1028,8 @@ Route::middleware([
                 'studentAttendance' => $studentAttendance,
                 'nextTerm' => $nextTerm,
                 'behavioralData' => $behavioralData,
+                'psychomotorCategory' => $psychomotorCategory,
+                'psychomotorData' => $psychomotorData,
                 'resultSectionTypes' => $resultSectionTypes,
                 'annualSummaryData' => $annualSummaryData,
             ];
@@ -856,3 +1060,66 @@ Route::middleware([
 
     // Route::get('/teacher/assignment/{assignment}/student/{student}', ViewSubmittedAssignmentTeacher::class)->name('filament.pages.assignment-student-view');
 });
+
+// Test route to verify psychomotor data
+Route::get('/test/psychomotor/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
+    try {
+        // Get psychomotor data
+        $psychomotorData = \App\Models\PyschomotorStudent::with(['psychomotor.psychomotorCategory'])
+            ->whereHas('psychomotor', function ($query) use ($termId, $academicYearId) {
+                $query->where('term_id', $termId)
+                      ->where('academic_id', $academicYearId);
+            })
+            ->where('student_id', $studentId)
+            ->get();
+
+        // Get psychomotor categories
+        $psychomotorCategory = \App\Models\PsychomotorCategory::with(['psychomotors' => function ($query) use ($termId, $academicYearId) {
+            $query->where('term_id', $termId)
+                  ->where('academic_id', $academicYearId);
+        }])
+        ->whereHas('psychomotors', function ($query) use ($termId, $academicYearId) {
+            $query->where('term_id', $termId)
+                  ->where('academic_id', $academicYearId);
+        })
+        ->get();
+
+        return response()->json([
+            'success' => true,
+            'psychomotor_data_count' => $psychomotorData->count(),
+            'psychomotor_categories_count' => $psychomotorCategory->count(),
+            'psychomotor_data' => $psychomotorData->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'rating' => $item->rating,
+                    'comment' => $item->comment,
+                    'psychomotor' => [
+                        'id' => $item->psychomotor->id,
+                        'skill' => $item->psychomotor->skill,
+                        'category' => $item->psychomotor->psychomotorCategory ? $item->psychomotor->psychomotorCategory->name : null
+                    ]
+                ];
+            }),
+            'categories' => $psychomotorCategory->map(function($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'psychomotors_count' => $category->psychomotors->count(),
+                    'psychomotors' => $category->psychomotors->map(function($psychomotor) {
+                        return [
+                            'id' => $psychomotor->id,
+                            'skill' => $psychomotor->skill
+                        ];
+                    })
+                ];
+            })
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+})->name('test.psychomotor.data');

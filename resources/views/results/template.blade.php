@@ -590,9 +590,33 @@
                 <col class="sign-col">
             </colgroup>
             <thead>
+                @php
+                    // Get all unique score types across all subjects
+                    $allScoreTypes = [];
+                    foreach ($subjects as $subject) {
+                        if (isset($subject['scores']) && (is_array($subject['scores']) || is_object($subject['scores']))) {
+                            if (is_array($subject['scores']) && !isset($subject['scores'][0])) {
+                                // Associative array format
+                                foreach ($subject['scores'] as $scoreKey => $scoreValue) {
+                                    $allScoreTypes[$scoreKey] = strtoupper($scoreKey);
+                                }
+                            } elseif (is_array($subject['scores']) && isset($subject['scores'][0])) {
+                                // Array of objects format
+                                foreach ($subject['scores'] as $score) {
+                                    if (isset($score['code'])) {
+                                        $allScoreTypes[$score['code']] = strtoupper($score['code']);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    $scoreTypes = array_keys($allScoreTypes);
+                @endphp
                 <tr>
                     <th rowspan="2">SUBJECT</th>
-                    <th rowspan="2">SCORES</th>
+                    @foreach($scoreTypes as $scoreType)
+                        <th rowspan="2">{{ strtoupper($scoreType) }}</th>
+                    @endforeach
                     <th rowspan="2">TOTAL</th>
                     <th rowspan="2">GRADE</th>
                     <th rowspan="2">REMARK</th>
@@ -694,20 +718,34 @@
                     <tr>
                         <td class="subject-name">{{ Str::limit($subject['subject_name'] ?? 'Subject', 15) }}</td>
 
-                        {{-- Debug: Show the actual scores structure --}}
-                        @if(isset($subject['scores']))
+                        {{-- Display scores in dynamic columns --}}
+                        @foreach($scoreTypes as $scoreType)
                             <td class="text-center">
-                                @if(is_array($subject['scores']) || is_object($subject['scores']))
-                                    @foreach($subject['scores'] as $scoreKey => $scoreValue)
-                                        <div><strong>{{ $scoreKey }}:</strong> {{ $scoreValue }}</div>
-                                    @endforeach
+                                @if(isset($subject['scores']))
+                                    @if(is_array($subject['scores']) && !isset($subject['scores'][0]))
+                                        {{-- Associative array format --}}
+                                        {{ $subject['scores'][$scoreType] ?? 'N/A' }}
+                                    @elseif(is_array($subject['scores']) && isset($subject['scores'][0]))
+                                        {{-- Array of objects format --}}
+                                        @php
+                                            $found = false;
+                                            foreach ($subject['scores'] as $score) {
+                                                if (isset($score['code']) && $score['code'] === $scoreType) {
+                                                    echo $score['score'] ?? 'N/A';
+                                                    $found = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!$found) echo 'N/A';
+                                        @endphp
+                                    @else
+                                        N/A
+                                    @endif
                                 @else
-                                    {{ $subject['scores'] }}
+                                    N/A
                                 @endif
                             </td>
-                        @else
-                            <td class="text-center">No scores</td>
-                        @endif
+                        @endforeach
 
                         {{-- Show total and grade --}}
                         <td class="text-center">{{ $subjectTotal }}</td>
@@ -773,12 +811,12 @@
                     <tr>
                         @foreach($psychomotorCategory as $category)
                             <th rowspan="2">{{ $category->name }}</th>
-                            <th colspan="3">1st 2nd 3rd Term</th>
+                            <th>{{ $term->name ?? 'Current Term' }}</th>
                         @endforeach
                     </tr>
                     <tr>
                         @foreach($psychomotorCategory as $category)
-                            <th>1</th><th>2</th><th>3</th>
+                            <th>Rating</th>
                         @endforeach
                     </tr>
                 </thead>
@@ -801,7 +839,7 @@
                                     $skill = $category->psychomotors->get($i);
                                     $skillName = $skill ? $skill->skill : '';
 
-                                    // Get student rating for this skill with better error handling
+                                    // Get student rating for this skill for current term only
                                     $rating = 'N/A';
                                     if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
                                         try {
@@ -817,12 +855,8 @@
 
                                 @if($skill)
                                     <td class="skills-category">{{ $skillName }}:</td>
-                                    <td>{{ $rating }}</td>
-                                    <td>{{ $rating }}</td>
-                                    <td>{{ $rating }}</td>
+                                    <td class="text-center">{{ $rating }}</td>
                                 @else
-                                    <td></td>
-                                    <td></td>
                                     <td></td>
                                     <td></td>
                                 @endif

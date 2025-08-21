@@ -622,20 +622,22 @@
             </colgroup>
             <thead>
                 @php
-                    // Get all unique score types across all subjects
+                    // Get all unique score types across all subjects (optimized)
                     $allScoreTypes = [];
-                    foreach ($subjects as $subject) {
-                        if (isset($subject['scores']) && (is_array($subject['scores']) || is_object($subject['scores']))) {
-                            if (is_array($subject['scores']) && !isset($subject['scores'][0])) {
-                                // Associative array format
-                                foreach ($subject['scores'] as $scoreKey => $scoreValue) {
-                                    $allScoreTypes[$scoreKey] = strtoupper($scoreKey);
-                                }
-                            } elseif (is_array($subject['scores']) && isset($subject['scores'][0])) {
-                                // Array of objects format
-                                foreach ($subject['scores'] as $score) {
-                                    if (isset($score['code'])) {
-                                        $allScoreTypes[$score['code']] = strtoupper($score['code']);
+                    if (is_array($subjects)) {
+                        foreach ($subjects as $subject) {
+                            if (isset($subject['scores']) && (is_array($subject['scores']) || is_object($subject['scores']))) {
+                                if (is_array($subject['scores']) && !isset($subject['scores'][0])) {
+                                    // Associative array format
+                                    foreach ($subject['scores'] as $scoreKey => $scoreValue) {
+                                        $allScoreTypes[$scoreKey] = strtoupper($scoreKey);
+                                    }
+                                } elseif (is_array($subject['scores']) && isset($subject['scores'][0])) {
+                                    // Array of objects format
+                                    foreach ($subject['scores'] as $score) {
+                                        if (isset($score['code'])) {
+                                            $allScoreTypes[$score['code']] = strtoupper($score['code']);
+                                        }
                                     }
                                 }
                             }
@@ -652,6 +654,7 @@
                 </tr>
             </thead>
             <tbody>
+                @if(is_array($subjects) && count($subjects) > 0)
                                 @php
                                          // Helper function to get grade colors
                      function getGradeClass($grade) {
@@ -819,6 +822,11 @@
                         @endif
                     @endif
                 </tr>
+                @else
+                    <tr>
+                        <td colspan="{{ count($scoreTypes) + 2 }}" style="text-align: center;">No subjects data available</td>
+                    </tr>
+                @endif
             </tbody>
         </table>
 
@@ -853,7 +861,7 @@
             </div>
 
             <!-- Skills Development - Right Side -->
-            @if(isset($psychomotorCategory) && $psychomotorCategory && $psychomotorCategory->count() > 0 && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0)
+            @if(isset($psychomotorCategory) && $psychomotorCategory && $psychomotorCategory->count() > 0)
                 <div style="flex: 1;">
                     <div class="section-header">SKILLS DEVELOPMENT AND BEHAVIORAL ATTRIBUTES</div>
                     <table class="skills-table">
@@ -870,9 +878,11 @@
                                 // Get the maximum number of skills across all categories
                                 $maxSkills = 0;
                                 foreach($psychomotorCategory as $category) {
-                                    $skillCount = $category->psychomotors->count();
-                                    if($skillCount > $maxSkills) {
-                                        $maxSkills = $skillCount;
+                                    if ($category->psychomotors) {
+                                        $skillCount = $category->psychomotors->count();
+                                        if($skillCount > $maxSkills) {
+                                            $maxSkills = $skillCount;
+                                        }
                                     }
                                 }
                             @endphp
@@ -882,19 +892,24 @@
                                     <tr>
                                         @foreach($psychomotorCategory as $category)
                                             @php
-                                                $skill = $category->psychomotors->get($i);
-                                                $skillName = $skill ? $skill->skill : '';
-
-                                                // Get student rating for this skill for current term only
+                                                $skill = null;
+                                                $skillName = '';
                                                 $rating = 'N/A';
-                                                if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
-                                                    try {
-                                                        $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
-                                                        if ($studentRating && isset($studentRating->rating)) {
-                                                            $rating = $studentRating->rating;
+
+                                                if ($category->psychomotors && $category->psychomotors->count() > $i) {
+                                                    $skill = $category->psychomotors->get($i);
+                                                    $skillName = $skill ? $skill->skill : '';
+
+                                                    // Get student rating for this skill for current term only
+                                                    if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
+                                                        try {
+                                                            $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
+                                                            if ($studentRating && isset($studentRating->rating)) {
+                                                                $rating = $studentRating->rating;
+                                                            }
+                                                        } catch (\Exception $e) {
+                                                            $rating = 'N/A';
                                                         }
-                                                    } catch (\Exception $e) {
-                                                        $rating = 'N/A';
                                                     }
                                                 }
                                             @endphp

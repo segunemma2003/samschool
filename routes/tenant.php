@@ -319,6 +319,10 @@ Route::middleware([
         $termId = (int) $termId;
         $academicYearId = (int) $academicYearId;
 
+        // Set memory and time limits for PDF generation
+        ini_set('memory_limit', '512M');
+        set_time_limit(120); // 2 minutes timeout
+
         try {
             // Use the same logic as ExamController to get fresh data
             $student = \App\Models\Student::with(['class', 'class.group'])->whereId($studentId)->firstOrFail();
@@ -526,9 +530,12 @@ Route::middleware([
                 'studentResult' => $studentResult, // Add studentResult for calculation_total
             ];
 
-            // Generate PDF
+            // Generate PDF with memory optimization
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('results.template', $data);
             $pdf->setPaper('A4', 'portrait');
+
+            // Force garbage collection before PDF generation
+            gc_collect_cycles();
 
             // Generate filename with proper sanitization
             $safeStudentName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $student->name);

@@ -935,19 +935,16 @@
 
                     <div class="comment-label">Principal's Comments:</div>
                     <div class="comment-box">
-                        <strong>{{ $studentComment->promotion_status ?? 'PROMOTED' }}</strong>
                         @php
-                            // Generate principal comment based on performance
-                            $principalComment = match (true) {
-                                $percentage >= 80 => 'Excellent performance. Keep up the outstanding work!',
-                                $percentage >= 70 => 'Very good performance. Continue to strive for excellence.',
-                                $percentage >= 60 => 'Good performance. There is room for improvement.',
-                                $percentage >= 50 => 'Fair performance. More effort is needed.',
-                                $percentage >= 40 => 'Below average performance. Significant improvement required.',
-                                default => $remarks ?? 'Poor performance. Serious attention needed.'
-                            };
+                            // Calculate total percentage from student result
+                            $totalPercentage = 0;
+                            if (isset($studentResult) && $studentResult) {
+                                $totalScore = $studentResult->total_score ?? $studentResult->calculation_total ?? 0;
+                                $maxPossibleScore = 100; // Assuming 100 is the maximum possible score
+                                $totalPercentage = ($totalScore / $maxPossibleScore) * 100;
+                            }
                         @endphp
-                        {{ $principalComment }}
+                        <strong>{{ getPrincipalComment($totalPercentage) }}</strong>
                     </div>
 
                     <div class="comment-label">Parent's Name:</div>

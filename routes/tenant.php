@@ -303,6 +303,7 @@ Route::middleware([
                 'inputCodes' => array_values($inputCodes), // Pass unique input codes
                 'headings' => $headings,
                 'summary' => $summary,
+                'studentResult' => $studentResult, // Add studentResult for calculation_total
             ];
 
             return view('results.template', $data);
@@ -522,6 +523,7 @@ Route::middleware([
                 'inputCodes' => array_values($inputCodes), // Pass unique input codes
                 'headings' => $headings,
                 'summary' => $summary,
+                'studentResult' => $studentResult, // Add studentResult for calculation_total
             ];
 
             // Generate PDF

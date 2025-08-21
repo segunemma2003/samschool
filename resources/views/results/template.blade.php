@@ -50,13 +50,24 @@
         }
 
         .header-left {
-            width: 65px;
+            width: 80px;
+            text-align: center;
+        }
+
+        .header-center {
+            text-align: center;
+            padding: 0 8px; /* Reduced padding */
+            width: auto;
+        }
+
+        .header-right {
+            width: 80px;
             text-align: center;
         }
 
         .school-logo {
-            width: 50px; /* Reduced size */
-            height: 50px;
+            width: 60px; /* Increased size */
+            height: 60px;
             border-radius: 50%;
             background: linear-gradient(45deg, #8B5CF6, #F59E0B);
             display: flex;
@@ -68,9 +79,16 @@
             margin: 0 auto;
         }
 
-        .header-center {
-            text-align: center;
-            padding: 0 8px; /* Reduced padding */
+        .student-picture {
+            width: 60px; /* Match school logo size */
+            height: 60px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            border: 2px solid #ddd;
         }
 
         .school-name {
@@ -94,20 +112,6 @@
             padding: 3px 6px; /* Reduced */
             display: inline-block;
             margin-top: 2px;
-        }
-
-        .header-right {
-            width: 70px;
-            text-align: center;
-        }
-
-        .student-photo-header {
-            width: 60px;
-            height: 60px;
-            border: 2px solid #000;
-            border-radius: 8px;
-            overflow: hidden;
-            margin: 0 auto;
         }
 
         .term-box {
@@ -203,22 +207,22 @@
             font-weight: bold;
         }
 
-        /* Academic Performance Table - Main optimization area */
+        /* Academic Performance Table - Updated with larger font */
         .academic-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 8px 0; /* Reduced */
-            font-size: 7px; /* Significantly reduced */
-            table-layout: fixed; /* Important for preventing overflow */
+            margin: 8px 0;
+            font-size: 12px; /* Increased to 12px as requested */
+            table-layout: fixed;
         }
 
         .academic-table th,
         .academic-table td {
             border: 1px solid #000;
-            padding: 1px; /* Minimized */
+            padding: 3px; /* Increased padding for larger font */
             text-align: center;
-            font-size: 6px; /* Very small to fit */
-            line-height: 1.1;
+            font-size: 12px; /* Increased to 12px */
+            line-height: 1.2;
             word-wrap: break-word;
             overflow: hidden;
         }
@@ -226,8 +230,8 @@
         .academic-table th {
             background: #f0f0f0;
             font-weight: bold;
-            font-size: 5px; /* Very small headers */
-            padding: 2px 1px;
+            font-size: 12px; /* Increased to 12px */
+            padding: 4px 3px;
         }
 
         /* Column widths to prevent overflow */
@@ -360,6 +364,26 @@
             font-weight: bold;
         }
 
+        /* Rating Table for side-by-side layout */
+        .rating-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0;
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        .rating-table th,
+        .rating-table td {
+            border: 1px solid #000;
+            padding: 3px;
+            text-align: center;
+        }
+
+        .rating-table th {
+            background: #f0f0f0;
+        }
+
         /* Comments Section - Compact */
         .comments-section {
             margin: 8px 0; /* Reduced */
@@ -487,7 +511,7 @@
                 <div class="report-title">Continuous Assessment Report {{ $academy->title ?? 'ACADEMIC YEAR' }}</div>
             </div>
             <div class="header-cell header-right">
-                                  <div class="student-photo-header">
+                                  <div class="student-picture">
                       @if($student->avatar)
                           <img src="{{ Storage::disk('s3')->url($student->avatar) }}" alt="Student Photo" style="width: 100%; height: 100%; border-radius: 8px; object-fit: cover;">
                       @else
@@ -499,46 +523,53 @@
             </div>
         </div>
 
-        <!-- Student Information -->
-        <div class="student-section">
-            <div class="student-data">
+        <!-- Student Information and Attendance Side by Side -->
+        <div class="student-section" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <!-- Student Personal Data - Left Side -->
+            <div class="student-data" style="flex: 1;">
                 <div class="section-header">STUDENT'S PERSONAL DATA</div>
                 <table class="info-table">
                     <tr>
                         <td class="info-label">Name:</td>
                         <td>{{ $student->name ?? 'N/A' }}</td>
+                    </tr>
+                    <tr>
                         <td class="info-label">Admission No:</td>
                         <td>{{ $student->registration_number ?? 'N/A' }}</td>
                     </tr>
                     <tr>
                         <td class="info-label">Class:</td>
                         <td>{{ $student->class->name ?? 'N/A' }}</td>
+                    </tr>
+                    <tr>
                         <td class="info-label">Arm:</td>
                         <td>{{ $student->arm->name ?? 'N/A' }}</td>
                     </tr>
                     <tr>
                         <td class="info-label">Gender:</td>
                         <td>{{ ucfirst($student->gender ?? 'N/A') }}</td>
+                    </tr>
+                    <tr>
                         <td class="info-label">Date of Birth:</td>
                         <td>{{ $student->date_of_birth ? $student->date_of_birth->format('d/m/Y') : 'N/A' }}</td>
                     </tr>
                     <tr>
                         <td class="info-label">Guardian Name:</td>
                         <td>{{ $student->guardian->name ?? 'N/A' }}</td>
+                    </tr>
+                    <tr>
                         <td class="info-label">Guardian Phone:</td>
                         <td>{{ $student->guardian->phone ?? 'N/A' }}</td>
                     </tr>
                     <tr>
                         <td class="info-label">Address:</td>
-                        <td colspan="3">{{ $student->address ?? 'N/A' }}</td>
+                        <td>{{ $student->address ?? 'N/A' }}</td>
                     </tr>
                 </table>
             </div>
-        </div>
 
-        <!-- Attendance and Terminal Duration -->
-        <div class="attendance-section">
-            <div class="attendance-data">
+            <!-- Attendance and Terminal Duration - Right Side -->
+            <div class="attendance-data" style="flex: 1;">
                 <div class="section-header">ATTENDANCE</div>
                 <table class="duration-table">
                     <tr>
@@ -617,8 +648,6 @@
                     @foreach($scoreTypes as $scoreType)
                         <th rowspan="2">{{ strtoupper($scoreType) }}</th>
                     @endforeach
-                    <th rowspan="2">TOTAL</th>
-                    <th rowspan="2">GRADE</th>
                     <th rowspan="2">REMARK</th>
                 </tr>
                 <tr>
@@ -627,25 +656,39 @@
             </thead>
             <tbody>
                                 @php
-                    // Helper function to get grade colors
-                    function getGradeClass($grade) {
-                        $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+                    // Helper function to get grade colors based on percentage
+                    function getGradeClass($percentage) {
                         return match (true) {
-                            $gradeNumber <= 2 => 'text-green', // A1, A2
-                            $gradeNumber <= 4 => 'text-blue',  // B3, B4
-                            $gradeNumber <= 6 => 'pass-mark',  // C5, C6
-                            default => 'fail-mark'            // D7, E8, F9
+                            $percentage >= 80 => 'text-green', // Excellent
+                            $percentage >= 70 => 'text-blue',  // Very Good
+                            $percentage >= 65 => 'text-blue',  // Good
+                            $percentage >= 50 => 'pass-mark',  // Credit
+                            $percentage >= 40 => 'pass-mark',  // Pass
+                            default => 'fail-mark'            // Fail
                         };
                     }
 
-                    // Helper function to get grade remarks
-                    function getGradeRemark($grade) {
-                        $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+                    // Helper function to get grade remarks based on percentage
+                    function getGradeRemark($percentage) {
                         return match (true) {
-                            $gradeNumber <= 2 => 'EXCELLENT',
-                            $gradeNumber <= 4 => 'CREDIT',
-                            $gradeNumber <= 6 => 'PASS',
+                            $percentage >= 80 => 'EXCELLENT',
+                            $percentage >= 70 => 'VERY GOOD',
+                            $percentage >= 65 => 'GOOD',
+                            $percentage >= 50 => 'CREDIT',
+                            $percentage >= 40 => 'PASS',
                             default => 'FAIL'
+                        };
+                    }
+
+                    // Helper function to get grade letter based on percentage
+                    function getGradeLetter($percentage) {
+                        return match (true) {
+                            $percentage >= 80 => 'A',
+                            $percentage >= 70 => 'B',
+                            $percentage >= 65 => 'C',
+                            $percentage >= 50 => 'D',
+                            $percentage >= 40 => 'E',
+                            default => 'F'
                         };
                     }
 
@@ -747,9 +790,6 @@
                             </td>
                         @endforeach
 
-                        {{-- Show total and grade --}}
-                        <td class="text-center">{{ $subjectTotal }}</td>
-                        <td class="text-center {{ $gradeClass }}">{{ $subjectGrade }}</td>
                         <td class="text-center">{{ $gradeRemark }}</td>
                     </tr>
                 @endforeach
@@ -774,7 +814,7 @@
                         @endphp
 
                         @if($inputColspan > 0)
-                            <td colspan="{{ $inputColspan }}">TOTAL: {{ $totalScore }}</td>
+                            <td colspan="{{ $inputColspan }}">TOTAL: {{ $studentResult->calculation_total ?? $totalScore }}</td>
                         @endif
                         @if($summaryColspan > 0)
                             <td colspan="{{ $summaryColspan }}"></td>
@@ -802,85 +842,89 @@
             </table>
         </div>
 
-        <!-- Skills Development - Only if data exists -->
-        @if(isset($psychomotorCategory) && $psychomotorCategory && $psychomotorCategory->count() > 0 && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0)
-            <div class="section-header">SKILLS DEVELOPMENT AND BEHAVIORAL ATTRIBUTES</div>
-
-            <table class="skills-table">
-                <thead>
+        <!-- Rating Key and Psychomotor Side by Side -->
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <!-- Rating Key - Left Side -->
+            <div style="flex: 1;">
+                <div class="section-header">KEYS TO RATINGS ON OBSERVABLE BEHAVIOUR</div>
+                <table class="rating-table">
                     <tr>
-                        @foreach($psychomotorCategory as $category)
-                            <th rowspan="2">{{ $category->name }}</th>
-                            <th>{{ $term->name ?? 'Current Term' }}</th>
-                        @endforeach
+                        <th>5.) Excellent degree of traits</th>
+                        <th>4.) High level of traits</th>
+                        <th>3.) Acceptable level</th>
                     </tr>
                     <tr>
-                        @foreach($psychomotorCategory as $category)
-                            <th>Rating</th>
-                        @endforeach
+                        <td colspan="2" style="text-align: center;">2.) Minimal regards for traits</td>
+                        <td>1.) No regard for traits</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @php
-                        // Get the maximum number of skills across all categories
-                        $maxSkills = 0;
-                        foreach($psychomotorCategory as $category) {
-                            $skillCount = $category->psychomotors->count();
-                            if($skillCount > $maxSkills) {
-                                $maxSkills = $skillCount;
-                            }
-                        }
-                    @endphp
+                </table>
+            </div>
 
-                    @for($i = 0; $i < $maxSkills; $i++)
-                        <tr>
-                            @foreach($psychomotorCategory as $category)
-                                @php
-                                    $skill = $category->psychomotors->get($i);
-                                    $skillName = $skill ? $skill->skill : '';
-
-                                    // Get student rating for this skill for current term only
-                                    $rating = 'N/A';
-                                    if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
-                                        try {
-                                            $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
-                                            if ($studentRating && isset($studentRating->rating)) {
-                                                $rating = $studentRating->rating;
-                                            }
-                                        } catch (\Exception $e) {
-                                            $rating = 'N/A';
-                                        }
+            <!-- Skills Development - Right Side -->
+            @if(isset($psychomotorCategory) && $psychomotorCategory && $psychomotorCategory->count() > 0 && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0)
+                <div style="flex: 1;">
+                    <div class="section-header">SKILLS DEVELOPMENT AND BEHAVIORAL ATTRIBUTES</div>
+                    <table class="skills-table">
+                        <thead>
+                            <tr>
+                                @foreach($psychomotorCategory as $category)
+                                    <th rowspan="2">{{ $category->name }}</th>
+                                    <th>{{ $term->name ?? 'Current Term' }}</th>
+                                @endforeach
+                            </tr>
+                            <tr>
+                                @foreach($psychomotorCategory as $category)
+                                    <th>Rating</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php
+                                // Get the maximum number of skills across all categories
+                                $maxSkills = 0;
+                                foreach($psychomotorCategory as $category) {
+                                    $skillCount = $category->psychomotors->count();
+                                    if($skillCount > $maxSkills) {
+                                        $maxSkills = $skillCount;
                                     }
-                                @endphp
+                                }
+                            @endphp
 
-                                @if($skill)
-                                    <td class="skills-category">{{ $skillName }}:</td>
-                                    <td class="text-center">{{ $rating }}</td>
-                                @else
-                                    <td></td>
-                                    <td></td>
-                                @endif
-                            @endforeach
-                        </tr>
-                    @endfor
-                </tbody>
-            </table>
-        @endif
+                            @for($i = 0; $i < $maxSkills; $i++)
+                                <tr>
+                                    @foreach($psychomotorCategory as $category)
+                                        @php
+                                            $skill = $category->psychomotors->get($i);
+                                            $skillName = $skill ? $skill->skill : '';
 
-        <!-- Rating Scale -->
-        <div class="rating-scale">
-            <div class="section-header">KEYS TO RATINGS ON OBSERVABLE BEHAVIOUR</div>
-            <table>
-                <tr>
-                    <th>5.) Excellent degree of traits</th>
-                    <th>4.) High level of traits</th>
-                    <th>3.) Acceptable level</th>
-                </tr>
-                <tr>
-                    <td colspan="2" style="text-align: center;">2.) Minimal regards for traits</td>
-                    <td>1.) No regard for traits</td>
-                </tr>
-            </table>
+                                            // Get student rating for this skill for current term only
+                                            $rating = 'N/A';
+                                            if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
+                                                try {
+                                                    $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
+                                                    if ($studentRating && isset($studentRating->rating)) {
+                                                        $rating = $studentRating->rating;
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    $rating = 'N/A';
+                                                }
+                                            }
+                                        @endphp
+
+                                        @if($skill)
+                                            <td class="skills-category">{{ $skillName }}:</td>
+                                            <td class="text-center">{{ $rating }}</td>
+                                        @else
+                                            <td></td>
+                                            <td></td>
+                                        @endif
+                                    @endforeach
+                                </tr>
+                            @endfor
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </div>
 
         <!-- Comments Section -->
@@ -919,8 +963,12 @@
                     <div class="comment-label">Signature (Class Teacher)</div>
                     <div class="signature-line"></div>
 
-                    <div class="comment-label">Signature / School Stamp and Date</div>
-                    <div class="signature-line"></div>
+                    <div class="comment-label">Principal's Signature</div>
+                    <div class="signature-line">
+                        @if($school->principal_sign)
+                            <img src="{{ Storage::disk('s3')->url($school->principal_sign) }}" alt="Principal Signature" style="max-width: 100%; max-height: 30px; object-fit: contain;">
+                        @endif
+                    </div>
                     <div style="text-align: center; font-size: 7px; margin-top: 3px;">
                         {{ now()->format('d/m/Y') }}
                     </div>

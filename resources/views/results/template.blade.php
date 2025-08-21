@@ -656,41 +656,36 @@
             </thead>
             <tbody>
                                 @php
-                    // Helper function to get grade colors based on percentage
-                    function getGradeClass($percentage) {
-                        return match (true) {
-                            $percentage >= 80 => 'text-green', // Excellent
-                            $percentage >= 70 => 'text-blue',  // Very Good
-                            $percentage >= 65 => 'text-blue',  // Good
-                            $percentage >= 50 => 'pass-mark',  // Credit
-                            $percentage >= 40 => 'pass-mark',  // Pass
-                            default => 'fail-mark'            // Fail
-                        };
-                    }
+                                         // Helper function to get grade colors
+                     function getGradeClass($grade) {
+                         $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+                         return match (true) {
+                             $gradeNumber <= 2 => 'text-green', // A1, A2
+                             $gradeNumber <= 4 => 'text-blue',  // B3, B4
+                             $gradeNumber <= 6 => 'pass-mark',  // C5, C6
+                             default => 'fail-mark'            // D7, E8, F9
+                         };
+                     }
 
-                    // Helper function to get grade remarks based on percentage
-                    function getGradeRemark($percentage) {
-                        return match (true) {
-                            $percentage >= 80 => 'EXCELLENT',
-                            $percentage >= 70 => 'VERY GOOD',
-                            $percentage >= 65 => 'GOOD',
-                            $percentage >= 50 => 'CREDIT',
-                            $percentage >= 40 => 'PASS',
-                            default => 'FAIL'
-                        };
-                    }
+                     // Helper function to get grade remarks
+                     function getGradeRemark($grade) {
+                         $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+                         return match (true) {
+                             $gradeNumber <= 2 => 'EXCELLENT',
+                             $gradeNumber <= 4 => 'CREDIT',
+                             $gradeNumber <= 6 => 'PASS',
+                             default => 'FAIL'
+                         };
+                     }
 
-                    // Helper function to get grade letter based on percentage
-                    function getGradeLetter($percentage) {
-                        return match (true) {
-                            $percentage >= 80 => 'A',
-                            $percentage >= 70 => 'B',
-                            $percentage >= 65 => 'C',
-                            $percentage >= 50 => 'D',
-                            $percentage >= 40 => 'E',
-                            default => 'F'
-                        };
-                    }
+                     // Helper function to get principal comment based on total percentage
+                     function getPrincipalComment($totalPercentage) {
+                         return match (true) {
+                             $totalPercentage >= 51 => 'PROMOTED',
+                             $totalPercentage >= 41 => 'PROMOTED ON TRIAL',
+                             default => 'ADVISED TO REPEAT'
+                         };
+                     }
 
                     // Helper function to get score from subject data
                     function getScoreFromSubject($subject, $calcPattern) {

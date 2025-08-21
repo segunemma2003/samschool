@@ -644,14 +644,11 @@
                     $scoreTypes = array_keys($allScoreTypes);
                 @endphp
                 <tr>
-                    <th rowspan="2">SUBJECT</th>
+                    <th>SUBJECT</th>
                     @foreach($scoreTypes as $scoreType)
-                        <th rowspan="2">{{ strtoupper($scoreType) }}</th>
+                        <th>{{ strtoupper($scoreType) }}</th>
                     @endforeach
-                    <th rowspan="2">REMARK</th>
-                </tr>
-                <tr>
-                    {{-- No additional headers needed --}}
+                    <th>REMARK</th>
                 </tr>
             </thead>
             <tbody>
@@ -863,12 +860,7 @@
                         <thead>
                             <tr>
                                 @foreach($psychomotorCategory as $category)
-                                    <th rowspan="2">{{ $category->name }}</th>
-                                    <th>{{ $term->name ?? 'Current Term' }}</th>
-                                @endforeach
-                            </tr>
-                            <tr>
-                                @foreach($psychomotorCategory as $category)
+                                    <th>{{ $category->name }}</th>
                                     <th>Rating</th>
                                 @endforeach
                             </tr>
@@ -885,37 +877,43 @@
                                 }
                             @endphp
 
-                            @for($i = 0; $i < $maxSkills; $i++)
-                                <tr>
-                                    @foreach($psychomotorCategory as $category)
-                                        @php
-                                            $skill = $category->psychomotors->get($i);
-                                            $skillName = $skill ? $skill->skill : '';
+                            @if($maxSkills > 0)
+                                @for($i = 0; $i < $maxSkills; $i++)
+                                    <tr>
+                                        @foreach($psychomotorCategory as $category)
+                                            @php
+                                                $skill = $category->psychomotors->get($i);
+                                                $skillName = $skill ? $skill->skill : '';
 
-                                            // Get student rating for this skill for current term only
-                                            $rating = 'N/A';
-                                            if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
-                                                try {
-                                                    $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
-                                                    if ($studentRating && isset($studentRating->rating)) {
-                                                        $rating = $studentRating->rating;
+                                                // Get student rating for this skill for current term only
+                                                $rating = 'N/A';
+                                                if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
+                                                    try {
+                                                        $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
+                                                        if ($studentRating && isset($studentRating->rating)) {
+                                                            $rating = $studentRating->rating;
+                                                        }
+                                                    } catch (\Exception $e) {
+                                                        $rating = 'N/A';
                                                     }
-                                                } catch (\Exception $e) {
-                                                    $rating = 'N/A';
                                                 }
-                                            }
-                                        @endphp
+                                            @endphp
 
-                                        @if($skill)
-                                            <td class="skills-category">{{ $skillName }}:</td>
-                                            <td class="text-center">{{ $rating }}</td>
-                                        @else
-                                            <td></td>
-                                            <td></td>
-                                        @endif
-                                    @endforeach
+                                            @if($skill)
+                                                <td class="skills-category">{{ $skillName }}:</td>
+                                                <td class="text-center">{{ $rating }}</td>
+                                            @else
+                                                <td></td>
+                                                <td></td>
+                                            @endif
+                                        @endforeach
+                                    </tr>
+                                @endfor
+                            @else
+                                <tr>
+                                    <td colspan="{{ $psychomotorCategory->count() * 2 }}" style="text-align: center;">No skills data available</td>
                                 </tr>
-                            @endfor
+                            @endif
                         </tbody>
                     </table>
                 </div>

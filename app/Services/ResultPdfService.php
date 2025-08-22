@@ -19,6 +19,10 @@ class ResultPdfService
 {
     public function generateStudentResult(int $studentId, int $termId, int $academicId)
     {
+        // Set memory and time limits for PDF generation
+        ini_set('memory_limit', '512M');
+        set_time_limit(120); // 2 minutes timeout
+
         try {
             // Load student with all necessary relationships
             $student = Student::with([
@@ -129,6 +133,12 @@ class ResultPdfService
                 'showPosition' => $school->activate_position === 'yes',
                 'studentPhotoUrl' => $this->getStudentPhotoUrl($student),
                 'schoolLogoUrl' => $this->getSchoolLogoUrl($school),
+                // Add missing variables that might be expected by the template
+                'nextTerm' => null,
+                'behavioralData' => [],
+                'annualSummaryData' => [],
+                'inputCodes' => [],
+                'headings' => [],
             ];
 
             return $this->generatePdf($viewData, $student, $term, $academy);
@@ -380,6 +390,9 @@ class ResultPdfService
                 'academic_year' => $academy->title,
                 'view_data_keys' => array_keys($viewData)
             ]);
+
+            // Force garbage collection before PDF generation
+            gc_collect_cycles();
 
             $pdf = Pdf::loadView('results.template', $viewData)
                 ->setPaper('A4', 'portrait')

@@ -1,3 +1,35 @@
+@php
+    // Helper function to get grade colors
+    function getGradeClass($grade) {
+        $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+        return match (true) {
+            $gradeNumber <= 2 => 'text-green', // A1, A2
+            $gradeNumber <= 4 => 'text-blue',  // B3, B4
+            $gradeNumber <= 6 => 'pass-mark',  // C5, C6
+            default => 'fail-mark'            // D7, E8, F9
+        };
+    }
+
+    // Helper function to get grade remarks
+    function getGradeRemark($grade) {
+        $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
+        return match (true) {
+            $gradeNumber <= 2 => 'EXCELLENT',
+            $gradeNumber <= 4 => 'CREDIT',
+            $gradeNumber <= 6 => 'PASS',
+            default => 'FAIL'
+        };
+    }
+
+    // Helper function to get principal comment based on total percentage
+    function getPrincipalComment($totalPercentage) {
+        return match (true) {
+            $totalPercentage >= 51 => 'PROMOTED',
+            $totalPercentage >= 41 => 'PROMOTED ON TRIAL',
+            default => 'ADVISED TO REPEAT'
+        };
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -601,234 +633,97 @@
             </div>
         </div>
 
-        <!-- Academic Performance - Optimized Table -->
-        <div class="section-header" style="margin-top: 8px;">ACADEMIC PERFORMANCE</div>
-
-        <table class="academic-table">
-            <colgroup>
-                <col class="subject-col">
-                <col class="score-col">
-                <col class="score-col">
-                <col class="score-col">
-                <col class="grade-col">
-                @if($showPosition)
-                <col class="position-col">
-                @endif
-                <col class="average-col">
-                <col class="average-col">
-                <col class="average-col">
-                <col class="comment-col">
-                <col class="sign-col">
-            </colgroup>
-            <thead>
-                @php
-                    // Get all unique score types across all subjects (optimized)
-                    $allScoreTypes = [];
-                    if (is_array($subjects)) {
-                        foreach ($subjects as $subject) {
-                            if (isset($subject['scores']) && (is_array($subject['scores']) || is_object($subject['scores']))) {
-                                if (is_array($subject['scores']) && !isset($subject['scores'][0])) {
-                                    // Associative array format
-                                    foreach ($subject['scores'] as $scoreKey => $scoreValue) {
-                                        $allScoreTypes[$scoreKey] = strtoupper($scoreKey);
-                                    }
-                                } elseif (is_array($subject['scores']) && isset($subject['scores'][0])) {
-                                    // Array of objects format
+        {{-- Academic Performance Table --}}
+        <div class="academic-performance">
+            <h3>ACADEMIC PERFORMANCE</h3>
+            <table class="performance-table">
+                <thead>
+                    @php
+                        // Get all unique score types from calculated_data subjects
+                        $allScoreTypes = [];
+                        if (is_array($subjects) && count($subjects) > 0) {
+                            foreach ($subjects as $subject) {
+                                if (isset($subject['scores']) && is_array($subject['scores'])) {
                                     foreach ($subject['scores'] as $score) {
-                                        if (isset($score['code'])) {
+                                        if (isset($score['code']) && isset($score['calc_pattern']) && $score['calc_pattern'] === 'input') {
                                             $allScoreTypes[$score['code']] = strtoupper($score['code']);
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                    $scoreTypes = array_keys($allScoreTypes);
-                @endphp
-                <tr>
-                    <th>SUBJECT</th>
-                    @foreach($scoreTypes as $scoreType)
-                        <th>{{ strtoupper($scoreType) }}</th>
-                    @endforeach
-                    <th>REMARK</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if(is_array($subjects) && count($subjects) > 0)
-                                @php
-                                         // Helper function to get grade colors
-                     function getGradeClass($grade) {
-                         $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
-                         return match (true) {
-                             $gradeNumber <= 2 => 'text-green', // A1, A2
-                             $gradeNumber <= 4 => 'text-blue',  // B3, B4
-                             $gradeNumber <= 6 => 'pass-mark',  // C5, C6
-                             default => 'fail-mark'            // D7, E8, F9
-                         };
-                     }
+                        $scoreTypes = array_keys($allScoreTypes);
 
-                     // Helper function to get grade remarks
-                     function getGradeRemark($grade) {
-                         $gradeNumber = (int) filter_var($grade, FILTER_SANITIZE_NUMBER_INT);
-                         return match (true) {
-                             $gradeNumber <= 2 => 'EXCELLENT',
-                             $gradeNumber <= 4 => 'CREDIT',
-                             $gradeNumber <= 6 => 'PASS',
-                             default => 'FAIL'
-                         };
-                     }
-
-                     // Helper function to get principal comment based on total percentage
-                     function getPrincipalComment($totalPercentage) {
-                         return match (true) {
-                             $totalPercentage >= 51 => 'PROMOTED',
-                             $totalPercentage >= 41 => 'PROMOTED ON TRIAL',
-                             default => 'ADVISED TO REPEAT'
-                         };
-                     }
-
-                    // Helper function to get score from subject data
-                    function getScoreFromSubject($subject, $calcPattern) {
-                        if (!isset($subject['scores'])) return 'N/A';
-
-                        // Handle scores as object (new format)
-                        if (is_object($subject['scores']) || is_array($subject['scores'])) {
-                            // Check if it's an associative array/object with keys like "test"
-                            if (is_array($subject['scores']) && !isset($subject['scores'][0])) {
-                                // It's an associative array, try to find by calc_pattern
-                                foreach ($subject['scores'] as $key => $value) {
-                                    // For now, return the first value or try to match by key
-                                    return $value ?? 'N/A';
-                                }
-                            }
-
-                            // Handle as array of score objects (old format)
-                            if (is_array($subject['scores']) && isset($subject['scores'][0])) {
-                                foreach ($subject['scores'] as $score) {
-                                    if (isset($score['calc_pattern']) && $score['calc_pattern'] === $calcPattern) {
-                                        return $score['score'] ?? 'N/A';
-                                    }
-                                }
-                            }
+                        // Ensure we always have at least one score type to prevent table structure issues
+                        if (empty($scoreTypes)) {
+                            $scoreTypes = ['SCORE'];
+                            $allScoreTypes = ['SCORE' => 'SCORE'];
                         }
-                        return 'N/A';
-                    }
 
-                    // Helper function to get score by code
-                    function getScoreByCode($subject, $code) {
-                        if (!isset($subject['scores'])) return 'N/A';
-
-                        // Handle scores as object (new format)
-                        if (is_object($subject['scores']) || is_array($subject['scores'])) {
-                            // Check if it's an associative array/object with keys like "test"
-                            if (is_array($subject['scores']) && !isset($subject['scores'][0])) {
-                                // It's an associative array, try to find by key
-                                foreach ($subject['scores'] as $key => $value) {
-                                    if (strtolower($key) === strtolower($code)) {
-                                        return $value ?? 'N/A';
-                                    }
-                                }
-                            }
-
-                            // Handle as array of score objects (old format)
-                            if (is_array($subject['scores']) && isset($subject['scores'][0])) {
-                                foreach ($subject['scores'] as $score) {
-                                    if (isset($score['code']) && $score['code'] === $code) {
-                                        return $score['score'] ?? 'N/A';
-                                    }
-                                }
-                            }
-                        }
-                        return 'N/A';
-                    }
-                @endphp
-
-                @foreach($subjects as $subject)
-                    @php
-                        $subjectTotal = $subject['total'] ?? 0;
-                        $subjectGrade = $subject['grade'] ?? 'F9';
-                        $caScore = $subject['ca_score'] ?? 0;
-                        $examScore = $subject['exam_score'] ?? 0;
-
-                        $gradeClass = getGradeClass($subjectGrade);
-                        $gradeRemark = getGradeRemark($subjectGrade);
+                        $totalColumns = count($scoreTypes) + 2; // +2 for SUBJECT and REMARK columns
                     @endphp
                     <tr>
-                        <td class="subject-name">{{ Str::limit($subject['subject_name'] ?? 'Subject', 15) }}</td>
-
-                        {{-- Display scores in dynamic columns --}}
+                        <th>SUBJECT</th>
                         @foreach($scoreTypes as $scoreType)
-                            <td class="text-center">
-                                @if(isset($subject['scores']))
-                                    @if(is_array($subject['scores']) && !isset($subject['scores'][0]))
-                                        {{-- Associative array format --}}
-                                        {{ $subject['scores'][$scoreType] ?? 'N/A' }}
-                                    @elseif(is_array($subject['scores']) && isset($subject['scores'][0]))
-                                        {{-- Array of objects format --}}
-                                        @php
-                                            $found = false;
-                                            foreach ($subject['scores'] as $score) {
-                                                if (isset($score['code']) && $score['code'] === $scoreType) {
-                                                    echo $score['score'] ?? 'N/A';
-                                                    $found = true;
-                                                    break;
+                            <th>{{ strtoupper($scoreType) }}</th>
+                        @endforeach
+                        <th>REMARK</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if(is_array($subjects) && count($subjects) > 0)
+                        @foreach($subjects as $subject)
+                            @php
+                                $subjectTotal = $subject['total'] ?? 0;
+                                $subjectGrade = $subject['grade'] ?? 'F9';
+                                $gradeClass = getGradeClass($subjectGrade);
+                                $gradeRemark = getGradeRemark($subjectGrade);
+                            @endphp
+                            <tr>
+                                <td class="subject-name">{{ Str::limit($subject['subject_name'] ?? 'Subject', 15) }}</td>
+
+                                {{-- Display scores in dynamic columns --}}
+                                @foreach($scoreTypes as $scoreType)
+                                    <td class="text-center">
+                                        @if(isset($subject['scores']) && is_array($subject['scores']))
+                                            @php
+                                                $scoreValue = 'N/A';
+                                                foreach ($subject['scores'] as $score) {
+                                                    if (isset($score['code']) && $score['code'] === $scoreType) {
+                                                        $scoreValue = $score['score'] ?? 'N/A';
+                                                        break;
+                                                    }
                                                 }
-                                            }
-                                            if (!$found) echo 'N/A';
-                                        @endphp
-                                    @else
-                                        N/A
-                                    @endif
-                                @else
-                                    N/A
-                                @endif
-                            </td>
+                                            @endphp
+                                            {{ $scoreValue }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                @endforeach
+
+                                <td class="text-center">{{ $gradeRemark }}</td>
+                            </tr>
                         @endforeach
 
-                        <td class="text-center">{{ $gradeRemark }}</td>
-                    </tr>
-                @endforeach
-
-                <tr class="summary-row">
-                    <td class="subject-name">NO. IN CLASS: {{ $summary['total_students'] ?? 'N/A' }}</td>
-                    @if(isset($headings) && count($headings) > 0)
-                        @php
-                            // Group headings by calc_pattern
-                            $inputHeadings = collect($headings)->where('calc_pattern', 'input');
-                            $positionHeadings = collect($headings)->where('calc_pattern', 'position');
-                            $gradeHeadings = collect($headings)->where('calc_pattern', 'grade_level');
-                            $classAvgHeadings = collect($headings)->where('calc_pattern', 'class_average');
-                            $classHighHeadings = collect($headings)->where('calc_pattern', 'class_highest_score');
-                            $classLowHeadings = collect($headings)->where('calc_pattern', 'class_lowest_score');
-                            $remarksHeadings = collect($headings)->where('calc_pattern', 'remarks');
-
-                            // Calculate column spans
-                            $inputColspan = $inputHeadings->count();
-                            $summaryColspan = $positionHeadings->count() + $gradeHeadings->count();
-                            $termColspan = $classAvgHeadings->count() + $classHighHeadings->count() + $classLowHeadings->count();
-                        @endphp
-
-                        @if($inputColspan > 0)
-                            <td colspan="{{ $inputColspan }}">TOTAL: {{ $studentResult->calculation_total ?? $totalScore }}</td>
-                        @endif
-                        @if($summaryColspan > 0)
-                            <td colspan="{{ $summaryColspan }}"></td>
-                        @endif
-                        @if($termColspan > 0)
-                            <td colspan="{{ $termColspan }}">POS: {{ $summary['position'] ?? 'N/A' }} - {{ $percent }}%</td>
-                        @endif
-                        @if($remarksHeadings->count() > 0)
-                            <td></td>
-                        @endif
+                        {{-- Summary row with simplified structure --}}
+                        <tr class="summary-row">
+                            <td class="subject-name">NO. IN CLASS: {{ $summary['total_students'] ?? 'N/A' }}</td>
+                            <td colspan="{{ count($scoreTypes) }}">TOTAL: {{ $studentResult->total_score ?? $studentResult->calculation_total ?? $totalScore ?? 'N/A' }}</td>
+                            <td>POS: {{ $summary['position'] ?? 'N/A' }} - {{ $percent ?? 'N/A' }}%</td>
+                        </tr>
+                    @else
+                        <tr>
+                            <td>No subjects data available</td>
+                            @foreach($scoreTypes as $scoreType)
+                                <td>N/A</td>
+                            @endforeach
+                            <td>N/A</td>
+                        </tr>
                     @endif
-                </tr>
-                @else
-                    <tr>
-                        <td colspan="{{ count($scoreTypes) + 2 }}" style="text-align: center;">No subjects data available</td>
-                    </tr>
-                @endif
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
 
         <!-- Grade Scale -->
         <div class="grade-scale">
@@ -899,34 +794,29 @@
                                                 if ($category->psychomotors && $category->psychomotors->count() > $i) {
                                                     $skill = $category->psychomotors->get($i);
                                                     $skillName = $skill ? $skill->skill : '';
+                                                }
 
-                                                    // Get student rating for this skill for current term only
-                                                    if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
-                                                        try {
-                                                            $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
-                                                            if ($studentRating && isset($studentRating->rating)) {
-                                                                $rating = $studentRating->rating;
-                                                            }
-                                                        } catch (\Exception $e) {
-                                                            $rating = 'N/A';
+                                                // Get student rating for this skill for current term only
+                                                if ($skill && isset($psychomotorData) && $psychomotorData && $psychomotorData->count() > 0) {
+                                                    try {
+                                                        $studentRating = $psychomotorData->firstWhere('psychomotor_id', $skill->id);
+                                                        if ($studentRating && isset($studentRating->rating)) {
+                                                            $rating = $studentRating->rating;
                                                         }
+                                                    } catch (\Exception $e) {
+                                                        $rating = 'N/A';
                                                     }
                                                 }
                                             @endphp
 
-                                            @if($skill)
-                                                <td class="skills-category">{{ $skillName }}:</td>
-                                                <td class="text-center">{{ $rating }}</td>
-                                            @else
-                                                <td></td>
-                                                <td></td>
-                                            @endif
+                                            <td class="skills-category">{{ $skillName ? $skillName . ':' : '&nbsp;' }}</td>
+                                            <td class="text-center">{{ $rating }}</td>
                                         @endforeach
                                     </tr>
                                 @endfor
                             @else
                                 <tr>
-                                    <td colspan="{{ $psychomotorCategory->count() * 2 }}" style="text-align: center;">No skills data available</td>
+                                    <td colspan="{{ max(1, $psychomotorCategory->count() * 2) }}" style="text-align: center;">No skills data available</td>
                                 </tr>
                             @endif
                         </tbody>
@@ -934,6 +824,43 @@
                 </div>
             @endif
         </div>
+
+        {{-- Psychomotor Section --}}
+        @if($psychomotorCategory && $psychomotorCategory->count() > 0 && $psychomotorData && $psychomotorData->count() > 0)
+        <div class="psychomotor-section">
+            <h3>PSYCHOMOTOR DEVELOPMENT</h3>
+            <table class="psychomotor-table">
+                <thead>
+                    <tr>
+                        <th>SKILLS</th>
+                        @foreach($psychomotorCategory as $category)
+                            <th>{{ strtoupper($category->name) }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($psychomotorCategory as $category)
+                        @if($category->psychomotors && $category->psychomotors->count() > 0)
+                            @foreach($category->psychomotors as $psychomotor)
+                                <tr>
+                                    <td>{{ $psychomotor->name ?? 'N/A' }}</td>
+                                    @foreach($psychomotorCategory as $cat)
+                                        <td class="text-center">
+                                            @php
+                                                $rating = $psychomotorData->firstWhere('psychomotor_id', $psychomotor->id);
+                                                $ratingValue = $rating ? $rating->rating : 'N/A';
+                                            @endphp
+                                            {{ $ratingValue }}
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        @endif
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
 
         <!-- Comments Section -->
         <div class="comments-section">
@@ -943,7 +870,7 @@
                 <div class="comments-left">
                     <div class="comment-label">Class Teacher's Comments:</div>
                     <div class="comment-box">
-                        {{ $principalComment ?? 'Student demonstrates good academic potential. Keep up the good work and continue to strive for excellence.' }}
+                        {{ $studentResult->teacher_comment ?? 'Student demonstrates good academic potential. Keep up the good work and continue to strive for excellence.' }}
                     </div>
 
                     <div class="comment-label">Principal's Comments:</div>

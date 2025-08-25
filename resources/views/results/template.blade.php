@@ -636,17 +636,57 @@
         {{-- Academic Performance Table --}}
         <div class="academic-performance">
             <h3>ACADEMIC PERFORMANCE</h3>
+
+            {{-- Debug: Show data structure --}}
+            @if(config('app.debug'))
+                <div style="background: #f0f0f0; padding: 5px; margin: 5px 0; font-size: 8px;">
+                    <strong>Debug Info:</strong><br>
+                    Subjects Count: {{ count($subjects ?? []) }}<br>
+                    CalculatedData Subjects Count: {{ count($calculatedData['subjects'] ?? []) }}<br>
+                    @if(isset($subjects) && count($subjects) > 0)
+                        First Subject: {{ json_encode($subjects[0]) }}<br>
+                    @endif
+                    @if(isset($calculatedData['subjects']) && count($calculatedData['subjects']) > 0)
+                        First Calculated Subject: {{ json_encode($calculatedData['subjects'][0]) }}<br>
+                    @endif
+                </div>
+            @endif
+
             <table class="performance-table">
                 <thead>
                     @php
-                        // Get all unique score types from calculated_data subjects
+                        // Get subjects data from the correct source
+                        $subjectsData = [];
+                        if (isset($subjects) && is_array($subjects) && count($subjects) > 0) {
+                            $subjectsData = $subjects;
+                        } elseif (isset($calculatedData['subjects']) && is_array($calculatedData['subjects'])) {
+                            $subjectsData = $calculatedData['subjects'];
+                        } elseif (isset($studentResult) && $studentResult->calculated_data) {
+                            $parsedData = json_decode($studentResult->calculated_data, true);
+                            if (isset($parsedData['subjects']) && is_array($parsedData['subjects'])) {
+                                $subjectsData = $parsedData['subjects'];
+                            }
+                        }
+
+                        // Get all unique score types from subjects data
                         $allScoreTypes = [];
-                        if (is_array($subjects) && count($subjects) > 0) {
-                            foreach ($subjects as $subject) {
-                                if (isset($subject['scores']) && is_array($subject['scores'])) {
-                                    foreach ($subject['scores'] as $score) {
-                                        if (isset($score['code']) && isset($score['calc_pattern']) && $score['calc_pattern'] === 'input') {
-                                            $allScoreTypes[$score['code']] = strtoupper($score['code']);
+                        if (count($subjectsData) > 0) {
+                            foreach ($subjectsData as $subject) {
+                                if (isset($subject['scores'])) {
+                                    // Handle both array and object formats
+                                    if (is_array($subject['scores'])) {
+                                        if (isset($subject['scores'][0])) {
+                                            // Array of score objects
+                                            foreach ($subject['scores'] as $score) {
+                                                if (isset($score['code']) && isset($score['calc_pattern']) && $score['calc_pattern'] === 'input') {
+                                                    $allScoreTypes[$score['code']] = strtoupper($score['code']);
+                                                }
+                                            }
+                                        } else {
+                                            // Associative array (new format)
+                                            foreach ($subject['scores'] as $key => $value) {
+                                                $allScoreTypes[$key] = strtoupper($key);
+                                            }
                                         }
                                     }
                                 }
@@ -671,8 +711,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if(is_array($subjects) && count($subjects) > 0)
-                        @foreach($subjects as $subject)
+                    @if(count($subjectsData) > 0)
+                        @foreach($subjectsData as $subject)
                             @php
                                 $subjectTotal = $subject['total'] ?? 0;
                                 $subjectGrade = $subject['grade'] ?? 'F9';
@@ -685,13 +725,22 @@
                                 {{-- Display scores in dynamic columns --}}
                                 @foreach($scoreTypes as $scoreType)
                                     <td class="text-center">
-                                        @if(isset($subject['scores']) && is_array($subject['scores']))
+                                        @if(isset($subject['scores']))
                                             @php
                                                 $scoreValue = 'N/A';
-                                                foreach ($subject['scores'] as $score) {
-                                                    if (isset($score['code']) && $score['code'] === $scoreType) {
-                                                        $scoreValue = $score['score'] ?? 'N/A';
-                                                        break;
+
+                                                if (is_array($subject['scores'])) {
+                                                    if (isset($subject['scores'][0])) {
+                                                        // Array of score objects
+                                                        foreach ($subject['scores'] as $score) {
+                                                            if (isset($score['code']) && $score['code'] === $scoreType) {
+                                                                $scoreValue = $score['score'] ?? 'N/A';
+                                                                break;
+                                                            }
+                                                        }
+                                                    } else {
+                                                        // Associative array (new format)
+                                                        $scoreValue = $subject['scores'][$scoreType] ?? 'N/A';
                                                     }
                                                 }
                                             @endphp
@@ -714,11 +763,7 @@
                         </tr>
                     @else
                         <tr>
-                            <td>No subjects data available</td>
-                            @foreach($scoreTypes as $scoreType)
-                                <td>N/A</td>
-                            @endforeach
-                            <td>N/A</td>
+                            <td colspan="{{ $totalColumns }}">No subjects data available</td>
                         </tr>
                     @endif
                 </tbody>

@@ -314,14 +314,9 @@ Route::middleware([
     })->name('student.result.preview');
 
     Route::get('/student/result/download/{studentId}/{termId}/{academicYearId}', function ($studentId, $termId, $academicYearId) {
-        // Cast parameters to integers
-        $studentId = (int) $studentId;
-        $termId = (int) $termId;
-        $academicYearId = (int) $academicYearId;
-
-        // Set memory and time limits for PDF generation
-        ini_set('memory_limit', '512M');
-        set_time_limit(120); // 2 minutes timeout
+        // Set higher memory and time limits for PDF generation
+        ini_set('memory_limit', '1G');
+        set_time_limit(300); // 5 minutes timeout
 
         try {
             // Use the same logic as ExamController to get fresh data
@@ -530,12 +525,19 @@ Route::middleware([
                 'studentResult' => $studentResult, // Add studentResult for calculation_total
             ];
 
-            // Generate PDF with memory optimization
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('results.template', $data);
-            $pdf->setPaper('A4', 'portrait');
-
             // Force garbage collection before PDF generation
             gc_collect_cycles();
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('results.template', $data)
+                ->setPaper('A4', 'portrait')
+                ->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                    'defaultFont' => 'Arial',
+                    'dpi' => 150,
+                    'defaultMediaType' => 'screen',
+                    'isFontSubsettingEnabled' => true,
+                ]);
 
             // Generate filename with proper sanitization
             $safeStudentName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $student->name);

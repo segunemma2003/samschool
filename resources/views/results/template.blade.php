@@ -11,7 +11,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 11px;
+            font-size: 16px;
             margin: 0;
             padding: 0;
             line-height: 1.2;
@@ -52,7 +52,7 @@
         }
 
         .school-name {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             margin: 5px 0;
         }
@@ -387,7 +387,7 @@
     <div class="comments-section">
         <div class="section-title">REMARKS AND CONCLUSION</div>
         <div style="margin: 10px 0;">
-            <strong>Class Teacher's Comments:</strong><span class="signature-line"></span><strong>(Signature Class Teacher)</strong>
+            <strong>Class Teacher's Comments:</strong><span class="signature-line"></span>
             <div class="comment-box">Miracle demonstrates responsibility by beginning and completing tasks promptly without needing frequent reminders.</div>
         </div>
 
@@ -396,17 +396,12 @@
             <div class="comment-box">Fair academic performance.</div>
         </div>
 
-        <div style="margin: 10px 0;">
-            <strong>Parent's Name:</strong><span class="signature-line"></span>
-        </div>
+
     </div>
 
-    <div class="promoted-box">
-        PROMOTED
-    </div>
 
     <div class="footer">
-        ● Powered by Edu-Peckle Solutions
+        ● Powered by Compasse Africa
     </div>
 </body>
 </html>

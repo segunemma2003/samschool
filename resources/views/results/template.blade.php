@@ -291,45 +291,91 @@
         <div class="section-title">ACADEMIC PERFORMANCE</div>
         <table class="marks-table">
             <thead>
-                <tr>
-                    <th rowspan="2">MARKS OBTAINED</th>
-                    <th colspan="3">ANNUAL SUMMARY</th>
-                    <th colspan="5">TERMINAL DURATION</th>
-                    <th rowspan="2">Year Avg</th>
-                    <th rowspan="2">Grade</th>
-                    <th rowspan="2">Position</th>
-                    <th rowspan="2">Teacher's Comment</th>
-                    <th rowspan="2">Sign.</th>
-                </tr>
-                <tr>
-                    <th>1st Term Avg</th>
-                    <th>2nd Term Avg</th>
-                    <th>Term Avg</th>
-                    <th>Grade</th>
-                    <th>Position</th>
-                    <th>Class Avg</th>
-                    <th>Class Lowest Score</th>
-                    <th>Class Highest Score</th>
-                    <th>1st Term Avg</th>
-                    <th>2nd Term Avg</th>
-                </tr>
+                @if(isset($calculatedData) && isset($calculatedData['subjects']) && count($calculatedData['subjects']) > 0)
+                    @php
+                        $firstSubject = $calculatedData['subjects'][0];
+                        $excludedKeys = ['subject_code', 'subject_id', 'scores'];
+                        $otherHeadings = array_keys(array_diff_key($firstSubject, array_flip($excludedKeys)));
+
+                        // Extract codes from scores array to use as headers
+                        $scoreCodes = [];
+                        if (isset($firstSubject['scores']) && is_array($firstSubject['scores'])) {
+                            foreach ($firstSubject['scores'] as $scoreItem) {
+                                if (is_array($scoreItem) && isset($scoreItem['code'])) {
+                                    $scoreCodes[] = $scoreItem['code'];
+                                }
+                            }
+                        }
+                    @endphp
+                    <tr>
+                        <th rowspan="2">SUBJECT</th>
+                        @foreach($scoreCodes as $code)
+                            <th colspan="1">{{ strtoupper($code) }}</th>
+                        @endforeach
+                        @foreach($otherHeadings as $heading)
+                            <th rowspan="2">{{ strtoupper(str_replace('_', ' ', $heading)) }}</th>
+                        @endforeach
+                    </tr>
+                    <tr>
+                        @foreach($scoreCodes as $code)
+                            <th>{{ $code }}</th>
+                        @endforeach
+                    </tr>
+                @endif
             </thead>
             <tbody>
-                <tr><td>Max. Obtainable Mark</td><td>40%</td><td>60%</td><td>100%</td><td>-</td><td>-</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
-                <tr><td>English</td><td>15</td><td>23</td><td>38</td><td>F</td><td>19TH</td><td>63</td><td>36</td><td>85</td><td>-</td><td>46</td><td>42</td><td>E8</td><td>17TH</td><td class="pass">PASS</td><td>I. AYANOKUN</td></tr>
-                <tr><td>Mathematics</td><td>16</td><td>16</td><td>31</td><td>F</td><td>17TH</td><td>52</td><td>25</td><td>76</td><td>-</td><td>27</td><td>31</td><td>F9</td><td>16TH</td><td class="fail">FAIL</td><td>P. APAOUKUEZE</td></tr>
-                <tr><td>Agricultural Science</td><td>27</td><td>22</td><td>49</td><td>D</td><td>16TH</td><td>60</td><td>26</td><td>92</td><td>-</td><td>63</td><td>56</td><td>C5</td><td>19TH</td><td class="credit">CREDIT</td><td>I. AJUTHI</td></tr>
-                <tr><td>Visual Art</td><td>19</td><td>28</td><td>47</td><td>P</td><td>18TH</td><td>69</td><td>41</td><td>87</td><td>-</td><td>41</td><td>44</td><td>E8</td><td>18TH</td><td class="pass">PASS</td><td>M. ELJAGNIU</td></tr>
-                <tr><td>Basic Science</td><td>18</td><td>18</td><td>36</td><td>F</td><td>19TH</td><td>70</td><td>32</td><td>87</td><td>-</td><td>56</td><td>46</td><td>D7</td><td>19TH</td><td class="pass">PASS</td><td>S. G. OSAFIJE</td></tr>
-                <tr><td>Social Studies</td><td>11</td><td>30</td><td>41</td><td>P</td><td>17TH</td><td>69</td><td>32</td><td>96</td><td>-</td><td>49</td><td>45</td><td>D7</td><td>16TH</td><td class="pass">PASS</td><td>I. AYANOKUN</td></tr>
-                <tr><td>Business Studies</td><td>11</td><td>16</td><td>27</td><td>F</td><td>18TH</td><td>60</td><td>35</td><td>85</td><td>-</td><td>45</td><td>36</td><td>F9</td><td>18TH</td><td class="fail">FAIL</td><td>I. BUSARI</td></tr>
-                <tr><td>Computer Studies</td><td>12</td><td>22</td><td>34</td><td>F</td><td>19TH</td><td>63</td><td>33</td><td>94</td><td>-</td><td>36</td><td>35</td><td>F9</td><td>18TH</td><td class="fail">FAIL</td><td>P. APAOUKUEZE</td></tr>
-                <tr><td>Basic Technology</td><td>15</td><td>30</td><td>45</td><td>P</td><td>18TH</td><td>72</td><td>44</td><td>93</td><td>-</td><td>65</td><td>55</td><td>C5</td><td>17TH</td><td class="credit">CREDIT</td><td>E. EJEGI</td></tr>
-                <tr><td>Home Economics</td><td>27</td><td>22</td><td>49</td><td>D</td><td>19TH</td><td>77</td><td>54</td><td>94</td><td>-</td><td>65</td><td>57</td><td>C5</td><td>18TH</td><td class="credit">CREDIT</td><td>I. AJUTHI</td></tr>
-                <tr><td>PHE</td><td>18</td><td>-</td><td>18</td><td>F</td><td>19TH</td><td>67</td><td>40</td><td>85</td><td>-</td><td>62</td><td>40</td><td>E8</td><td>19TH</td><td class="pass">PASS</td><td>E. TENIMUAH</td></tr>
-                <tr><td>Civic Education</td><td>25</td><td>30</td><td>55</td><td>C</td><td>17TH</td><td>69</td><td>48</td><td>87</td><td>-</td><td>54</td><td>55</td><td>C5</td><td>16TH</td><td class="credit">CREDIT</td><td>M. ELJAGNIU</td></tr>
-                <tr><td>CRS</td><td>20</td><td>35</td><td>55</td><td>C</td><td>14TH</td><td>75</td><td>44</td><td>95</td><td>-</td><td>59</td><td>57</td><td>C5</td><td>16TH</td><td class="credit">CREDIT</td><td>E. TENIMUAH</td></tr>
-                <tr><td><strong>NO. IN CLASS: 19</strong></td><td colspan="2"><strong>TOTAL TERM SCORE: 528</strong></td><td colspan="9"><strong>POSITION: 18TH - 46% BRONZE</strong></td><td></td><td></td></tr>
+                @if(isset($calculatedData) && isset($calculatedData['subjects']) && count($calculatedData['subjects']) > 0)
+                    @foreach($calculatedData['subjects'] as $subject)
+                        <tr>
+                            <td>{{ is_string($subject['subject_name'] ?? '') ? ($subject['subject_name'] ?? '') : '' }}</td>
+                            @foreach($scoreCodes as $code)
+                                <td>
+                                    @php
+                                        $scoreValue = '';
+                                        if (isset($subject['scores']) && is_array($subject['scores'])) {
+                                            foreach ($subject['scores'] as $scoreItem) {
+                                                if (is_array($scoreItem) && isset($scoreItem['code']) && $scoreItem['code'] === $code) {
+                                                    $scoreValue = $scoreItem['score'] ?? '';
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        if (is_array($scoreValue)) {
+                                            $scoreValue = json_encode($scoreValue);
+                                        } elseif (!is_string($scoreValue)) {
+                                            $scoreValue = (string) $scoreValue;
+                                        }
+                                    @endphp
+                                    {{ $scoreValue }}
+                                </td>
+                            @endforeach
+                            @foreach($otherHeadings as $heading)
+                                <td>
+                                    @php
+                                        $value = $subject[$heading] ?? '';
+                                        if (is_array($value)) {
+                                            $value = json_encode($value);
+                                        } elseif (!is_string($value)) {
+                                            $value = (string) $value;
+                                        }
+                                    @endphp
+                                    {{ $value }}
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+
+                    <tr>
+                        <td><strong>NO. IN CLASS: {{ is_string($calculatedData['summary']['total_students'] ?? '') ? ($calculatedData['summary']['total_students'] ?? '') : '' }}</strong></td>
+                        @foreach($scoreCodes as $code)
+                            <td></td>
+                        @endforeach
+                        @foreach($otherHeadings as $heading)
+                            <td></td>
+                        @endforeach
+                    </tr>
+                @endif
             </tbody>
         </table>
     </div>

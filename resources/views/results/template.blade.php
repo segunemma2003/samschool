@@ -121,14 +121,19 @@
         }
 
         .marks-table th {
-            font-size: 8px;
-            padding: 2px 3px;
+            background: #f0f0f0;
+            font-weight: bold;
+            font-size: 9px;
         }
 
         .marks-table td {
             text-align: center;
             padding: 2px 3px;
             font-size: 9px;
+        }
+
+        .marks-table td:first-child {
+            text-align: left;
         }
 
         .student-info td:first-child {
@@ -291,35 +296,26 @@
         <div class="section-title">ACADEMIC PERFORMANCE</div>
         <table class="marks-table">
             <thead>
-                @if(isset($calculatedData) && isset($calculatedData['subjects']) && count($calculatedData['subjects']) > 0)
-                    @php
-                        $firstSubject = $calculatedData['subjects'][0];
-                        $excludedKeys = ['subject_code', 'subject_id', 'scores'];
-                        $otherHeadings = array_keys(array_diff_key($firstSubject, array_flip($excludedKeys)));
+                @php
+                    $firstSubject = $calculatedData['subjects'][0];
 
-                        // Extract codes from scores array to use as headers
-                        $scoreCodes = [];
-                        if (isset($firstSubject['scores']) && is_array($firstSubject['scores'])) {
-                            foreach ($firstSubject['scores'] as $scoreItem) {
-                                if (is_array($scoreItem) && isset($scoreItem['code'])) {
-                                    $scoreCodes[] = $scoreItem['code'];
-                                }
+                    // Extract codes from scores array to use as headers (only from first subject)
+                    $scoreCodes = [];
+                    if (isset($firstSubject['scores']) && is_array($firstSubject['scores'])) {
+                        foreach ($firstSubject['scores'] as $scoreItem) {
+                            if (is_array($scoreItem) && isset($scoreItem['code'])) {
+                                $scoreCodes[] = $scoreItem['code'];
                             }
                         }
-                    @endphp
+                    }
+                @endphp
+                @if(isset($calculatedData) && isset($calculatedData['subjects']) && count($calculatedData['subjects']) > 0)
                     <tr>
-                        <th rowspan="2">SUBJECT</th>
+                        <th>SUBJECT</th>
                         @foreach($scoreCodes as $code)
-                            <th colspan="1">{{ strtoupper($code) }}</th>
+                            <th>{{ strtoupper($code) }}</th>
                         @endforeach
-                        @foreach($otherHeadings as $heading)
-                            <th rowspan="2">{{ strtoupper(str_replace('_', ' ', $heading)) }}</th>
-                        @endforeach
-                    </tr>
-                    <tr>
-                        @foreach($scoreCodes as $code)
-                            <th>{{ $code }}</th>
-                        @endforeach
+                        <th>TEACHER NAME</th>
                     </tr>
                 @endif
             </thead>
@@ -350,19 +346,7 @@
                                     {{ $scoreValue }}
                                 </td>
                             @endforeach
-                            @foreach($otherHeadings as $heading)
-                                <td>
-                                    @php
-                                        $value = $subject[$heading] ?? '';
-                                        if (is_array($value)) {
-                                            $value = json_encode($value);
-                                        } elseif (!is_string($value)) {
-                                            $value = (string) $value;
-                                        }
-                                    @endphp
-                                    {{ $value }}
-                                </td>
-                            @endforeach
+                            <td>{{ $subject['teacher_name'] ?? '' }}</td>
                         </tr>
                     @endforeach
 
@@ -371,9 +355,7 @@
                         @foreach($scoreCodes as $code)
                             <td></td>
                         @endforeach
-                        @foreach($otherHeadings as $heading)
-                            <td></td>
-                        @endforeach
+                        <td></td>
                     </tr>
                 @endif
             </tbody>

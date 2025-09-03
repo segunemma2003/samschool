@@ -295,6 +295,7 @@ Route::middleware([
                 'psychomotorData' => $psychomotorData,
                 'annualSummaryData' => [],
                 // Use calculated data
+                'calculatedData' => $calculatedData, // Add this line
                 'totalScore' => $summary['total_score'] ?? $totalScore,
                 'totalSubject' => $summary['total_subjects'] ?? $totalSubject,
                 'percent' => $summary['average'] ?? $percent,
@@ -514,6 +515,7 @@ Route::middleware([
                 'psychomotorData' => $psychomotorData,
                 'annualSummaryData' => [],
                 // Use calculated data
+                'calculatedData' => $calculatedData, // Add this line
                 'totalScore' => $summary['total_score'] ?? $totalScore,
                 'totalSubject' => $summary['total_subjects'] ?? $totalSubject,
                 'percent' => $summary['average'] ?? $percent,

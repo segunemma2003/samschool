@@ -416,12 +416,12 @@
         <div class="section-title">REMARKS AND CONCLUSION</div>
         <div style="margin: 10px 0;">
             <strong>Class Teacher's Comments:</strong><span class="signature-line"></span>
-            <div class="comment-box">Miracle demonstrates responsibility by beginning and completing tasks promptly without needing frequent reminders.</div>
+            <div class="comment-box">{{$studentResult->teacher_comment}}</div>
         </div>
 
         <div style="margin: 10px 0;">
             <strong>Principal's Comments:</strong><span class="signature-line"></span><strong>(Signature / School Stamp and Date)</strong>
-            <div class="comment-box">Fair academic performance.</div>
+            <div class="comment-box"></div>
         </div>
 
 

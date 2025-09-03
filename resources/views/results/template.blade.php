@@ -371,39 +371,20 @@
 
     <div class="skills-section">
         <div class="section-title">SKILLS DEVELOPMENT AND BEHAVIOURAL ATTRIBUTES</div>
-        <table class="skills-table">
-            <tr>
-                <th rowspan="2">PERSONAL DEV.</th>
-                <th colspan="3">1st 2nd 3rd Term Term Term</th>
-                <th rowspan="2">SENSE OF RESP.</th>
-                <th colspan="3">1st 2nd 3rd Term Term Term</th>
-                <th rowspan="2">SOCIAL DEV.</th>
-                <th colspan="3">1st 2nd 3rd Term Term Term</th>
-                <th rowspan="2">PSYCHOMOTOR SKILLS DEV.</th>
-                <th colspan="3">1st 2nd 3rd Term Term Term</th>
-            </tr>
-            <tr>
-                <th>1st</th><th>2nd</th><th>3rd</th>
-                <th>1st</th><th>2nd</th><th>3rd</th>
-                <th>1st</th><th>2nd</th><th>3rd</th>
-                <th>1st</th><th>2nd</th><th>3rd</th>
-            </tr>
-            <tr>
-                <td>CRITICALITY:</td><td>3</td><td>5</td><td>5</td><td>PUNCTUALITY:</td><td>3</td><td>4</td><td>5</td><td>COOPERATIVENESS:</td><td>3</td><td>4</td><td>4</td><td>READING AND WRITING SKILLS:</td><td>4</td><td>4</td><td>4</td>
-            </tr>
-            <tr>
-                <td>HONESTY:</td><td>3</td><td>5</td><td>5</td><td>NEATNESS:</td><td>3</td><td>4</td><td>4</td><td>CONSIDERATIONS FOR OTHERS:</td><td>3</td><td>3</td><td>3</td><td>VERBAL COMMUNICATION:</td><td>4</td><td>5</td><td>5</td>
-            </tr>
-            <tr>
-                <td>SELF-CONTROL:</td><td>4</td><td>3</td><td>3</td><td>PERSEVERANCE:</td><td>3</td><td>4</td><td>4</td><td>SOCIABILITY/TEAM PLAYER:</td><td>4</td><td>4</td><td>4</td><td>SPORT AND GAME:</td><td>4</td><td>4</td><td>4</td>
-            </tr>
-            <tr>
-                <td>SELF-RELIANCE:</td><td>4</td><td>5</td><td>5</td><td>ATTENTIVENESS:</td><td>3</td><td>4</td><td>4</td><td>PROMPTING/USE OF INITIATIVE:</td><td>5</td><td>5</td><td>5</td><td>NOURISHINESS:</td><td>4</td><td>4</td><td>4</td>
-            </tr>
-            <tr>
-                <td>USE OF INITIATIVE:</td><td>4</td><td>4</td><td>4</td><td>ATTENTIVENESS:</td><td>3</td><td>4</td><td>4</td><td>ACCEPTS RESPONSIBILITIES:</td><td>4</td><td>3</td><td>3</td><td>DEXTERITY/MUSICAL & ART MATERIALS:</td><td>4</td><td>4</td><td>4</td>
-            </tr>
-        </table>
+        @if(isset($psychomotorData) && count($psychomotorData) > 0)
+            <table class="skills-table">
+                <tr>
+                    <th>SKILL</th>
+                    <th>SCORE</th>
+                </tr>
+                @foreach($psychomotorData as $psychData)
+                    <tr>
+                        <td>{{ $psychData->psychomotor->skill ?? 'Unknown Skill' }}:</td>
+                        <td>{{ $psychData->rating ?? '-' }}</td>
+                    </tr>
+                @endforeach
+            </table>
+        @endif
     </div>
 
     <div class="rating-section">
@@ -420,7 +401,7 @@
         </div>
 
         <div style="margin: 10px 0;">
-            <strong>Principal's Comments:</strong><span class="signature-line"></span><strong>(Signature / School Stamp and Date)</strong>
+            <strong>Head Teacher's/Principal's Comments:</strong><span class="signature-line"></span><strong>(Signature / School Stamp and Date)</strong>
             <div class="comment-box"></div>
         </div>
 
